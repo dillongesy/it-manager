@@ -73,6 +73,10 @@ else
 fi
 FIELD_ALLOWED_RANGES=private_ranges
 [ "$FIELD_PUBLIC" = "yes" ] && FIELD_ALLOWED_RANGES="0.0.0.0/0"
+# Certificate for clients that send no server name. Browsers never send one for a
+# bare IP, so in LAN mode this must be the IP or https://<ip> fails to connect.
+DEFAULT_SNI="$HOST_IP"
+[ "$MODE" = "domain" ] && DEFAULT_SNI="$PORTAL_HOST"
 
 DEFAULT_REG="${IMAGE_REGISTRY:-}"
 if [ -z "$DEFAULT_REG" ] && git remote get-url origin >/dev/null 2>&1; then
@@ -127,6 +131,7 @@ FIELD_SITE="$FIELD_SITE"
 FIELD_ORIGIN=$FIELD_ORIGIN
 FIELD_TLS="$FIELD_TLS"
 FIELD_ALLOWED_RANGES=$FIELD_ALLOWED_RANGES
+DEFAULT_SNI=$DEFAULT_SNI
 SKU_PREFIX=${SKU_PREFIX:-INV}
 NET_PREFIX=$NET_PREFIX
 EOF

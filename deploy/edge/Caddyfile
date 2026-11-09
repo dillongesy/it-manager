@@ -3,14 +3,25 @@
 # It cannot reach either API or database.
 #
 # Configured from .env (written by install.sh), substituted before parsing:
-#   PORTAL_SITE            e.g. "https://192.168.5.10, https://portal.lan" or "portal.example.com"
+#   PORTAL_SITE            e.g. "https://192.168.50.10, https://portal.lan" or "portal.example.com"
 #   PORTAL_TLS             "tls internal" (self-signed, LAN) or "tls you@example.com" (Let's Encrypt)
 #   PORTAL_ALLOWED_RANGES  who may open the Portal at all (default: private_ranges = LAN only)
 #   FIELD_SITE / FIELD_TLS / FIELD_ALLOWED_RANGES   — the same for the Field App
+#   DEFAULT_SNI            certificate for clients that send no server name: the
+#                          server's IP in LAN mode, the Portal hostname in domain mode
 {
 	# No admin API. Caddy trusts no upstream proxy by default, so a client-supplied
 	# X-Forwarded-For is discarded and replaced with the real peer address.
 	admin off
+
+	# Browsers send no SNI (server name) when the address is a bare IP, as in LAN mode's
+	# https://192.168.x.y. Without a default, Caddy has no certificate to pick and fails
+	# the handshake: ERR_SSL_PROTOCOL_ERROR, with no certificate warning to click past.
+	default_sni {$DEFAULT_SNI:localhost}
+
+	# The private CA can't be added to this container's own trust store (read-only, no
+	# root). Clients trust it via scripts/export-ca.sh instead.
+	skip_install_trust
 }
 
 (security_headers) {

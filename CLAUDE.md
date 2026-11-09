@@ -160,6 +160,10 @@ is the top backlog item.
   `docker compose exec` instead (as `import-existing.sh` does).
 - Python heredocs that contain `"""` next to shell quotes broke twice in Git Bash. Use
   the Edit/Write tools for those edits.
+- Browsers send no SNI for `https://<ip>`, so Caddy needs `default_sni` (from
+  `DEFAULT_SNI` in .env) or LAN mode fails with ERR_SSL_PROTOCOL_ERROR. This was found
+  on the first real run, 2026-11-08, on ITM-Sandbox (192.168.200.45, `ssh itm-sandbox`,
+  user `dillon`).
 - Migrations are tracked by version only (no checksums), so editing comments in old
   migration files is safe for existing databases.
 - Test fixtures must not carry real data (staff, customers, tenant IDs, LAN addresses).

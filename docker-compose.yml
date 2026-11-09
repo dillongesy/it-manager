@@ -72,6 +72,8 @@ services:
       FIELD_SITE: ${FIELD_SITE:-https://localhost:8443}
       FIELD_TLS: ${FIELD_TLS:-tls internal}
       FIELD_ALLOWED_RANGES: ${FIELD_ALLOWED_RANGES:-private_ranges}
+      # Never empty: a bare `default_sni` line would stop Caddy from starting.
+      DEFAULT_SNI: ${DEFAULT_SNI:-localhost}
     volumes:
       - caddy_data:/data
       - caddy_config:/config
