@@ -1,4 +1,4 @@
--- Portal — backlog items point at a real customer (not free-text company)
+-- Portal - backlog items point at a real customer (not free-text company)
 -- Migration 036
 --
 -- The "Company Requesting Service" field becomes a required customer dropdown (like

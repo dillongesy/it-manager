@@ -22,7 +22,7 @@ import { cadenceLabel, cadenceUnit } from '../utils/cadence.js';
 function woNum(n) { return `WO-${String(n).padStart(5, '0')}`; }
 const money = (v) => `$${parseFloat(v || 0).toFixed(2)}`;
 
-// ─── Timer hook ───────────────────────────────────────────────────────────────
+// --- Timer hook ---------------------------------------------------------------
 
 function useTimer() {
   const [running, setRunning] = useState(false);
@@ -41,7 +41,7 @@ function useTimer() {
   return { running, display, start, stop, reset };
 }
 
-// ─── Per-section parts list ─────────────────────────────────────────────────────
+// --- Per-section parts list -----------------------------------------------------
 
 function SectionItems({ woId, sectionId, items, onChanged, readonly }) {
   const [adding, setAdding] = useState(false);
@@ -283,7 +283,7 @@ function SectionItems({ woId, sectionId, items, onChanged, readonly }) {
   );
 }
 
-// ─── Per-section services (one-time + recurring) ─────────────────────────────────
+// --- Per-section services (one-time + recurring) ---------------------------------
 
 const RECURRENCE_OPTS = [
   { value: 'monthly',    label: 'Monthly' },
@@ -291,7 +291,7 @@ const RECURRENCE_OPTS = [
   { value: 'semiannual', label: 'Semi-annually' },
   { value: 'annual',     label: 'Annually' },
 ];
-// "/mo", "/yr", "/3yr" — the count is what makes a multi-year term readable.
+// "/mo", "/yr", "/3yr" - the count is what makes a multi-year term readable.
 const recurSuffix = (sv) => `/${cadenceUnit(sv.recurrence, sv.recurrence_count)}`;
 const blankService = () => ({ description: '', quantity: '1', unit_price: '', billing_type: 'one_time', recurrence: 'monthly', recurrence_count: 1, notes: '' });
 
@@ -567,7 +567,7 @@ function SectionServices({ woId, sectionId, services, onChanged, readonly }) {
   );
 }
 
-// ─── Section card ───────────────────────────────────────────────────────────────
+// --- Section card ---------------------------------------------------------------
 
 function SectionCard({ wo, section, index, users, rates, readonly, onChanged, onRemove, canRemove }) {
   const [local, setLocal] = useState({
@@ -767,7 +767,7 @@ function SectionCard({ wo, section, index, users, rates, readonly, onChanged, on
   );
 }
 
-// ─── WO-level proposal row ────────────────────────────────────────────────────
+// --- WO-level proposal row ----------------------------------------------------
 
 function WoProposalRow({ woId, woProp, customerId, readonly, onChanged, onView }) {
   const [price, setPrice] = useState(woProp.price_excl_tax != null ? String(woProp.price_excl_tax) : '');
@@ -831,13 +831,11 @@ function WoProposalRow({ woId, woProp, customerId, readonly, onChanged, onView }
   );
 }
 
-// ─── Add proposal picker ──────────────────────────────────────────────────────
+// --- Add proposal picker ------------------------------------------------------
 
-// Always offered on an editable WO. It used to vanish whenever the customer had no
-// (non-rejected) proposals on file, which read as the button having gone missing —
-// now the picker can also upload a new proposal/estimate straight from here: it
-// lands on the customer's Proposals tab (tagged with the WO's office) and is
-// attached to this WO in one go.
+// Offered on every editable work order. Attaches an existing proposal, or uploads a new
+// one to the customer's Proposals tab (tagged with the work order's office) and
+// attaches it in one step.
 function AddProposalPicker({ woId, customerId, locationId, proposals = [], onChanged }) {
   const qc = useQueryClient();
   const fileRef = useRef(null);
@@ -909,7 +907,7 @@ function AddProposalPicker({ woId, customerId, locationId, proposals = [], onCha
   );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
+// --- Main page ----------------------------------------------------------------
 
 export function WorkOrderDetail() {
   const { id } = useParams();
@@ -933,7 +931,7 @@ export function WorkOrderDetail() {
     api.get('/users').then(r => setUsers(r.data.filter(u => u.is_active)));
   }, []);
 
-  // Push a server response (full WO) straight into the cache — no flicker.
+  // Push a server response (full WO) straight into the cache - no flicker.
   const applyWO = (data) => qc.setQueryData(['work-orders', id], data);
 
   const setDefaultRate = async (rateId) => { const { data } = await workOrdersApi.update(id, { billing_rate_id: rateId || null }); applyWO(data); };
@@ -955,7 +953,7 @@ export function WorkOrderDetail() {
   const payWO     = async () => { await workOrdersApi.pay(id);     refetch(); qc.invalidateQueries(['work-orders']); };
 
   // Un-void puts the WO back in the Billing Queue. If the void handed its parts back
-  // to inventory, the server takes exactly those quantities out again — so warn first.
+  // to inventory, the server takes exactly those quantities out again - so warn first.
   const unvoidWO = async () => {
     const stockNote = wo.inventory_returned
       ? "\n\nIts parts were returned to inventory when it was voided; un-voiding will take that same stock back out."
@@ -997,10 +995,7 @@ export function WorkOrderDetail() {
     setPrintLoading(true);
     try {
       const { images, failures } = await loadProposalImages(wo);
-      // A proposal that can't be rendered used to be dropped with only a console
-      // warning — the printout still listed it under "Proposals" but the document
-      // itself was missing, and nobody found out until the customer did. Say so and
-      // let the user decide.
+      // Warn about proposals that can't be rendered and let the user decide.
       if (failures.length && !confirm(`${missingProposalsMessage(failures)}\n\nPrint anyway?`)) return;
       printWorkOrder(wo, images);
     } finally {
@@ -1013,7 +1008,7 @@ export function WorkOrderDetail() {
   }
 
   const isDraft = wo.status === 'draft';
-  // Editable when draft or pending_billing — UNLESS opened from the Billing Queue
+  // Editable when draft or pending_billing - UNLESS opened from the Billing Queue
   // (which is intentionally read-only). Invoiced/paid are always locked.
   const editable = ['draft', 'pending_billing'].includes(wo.status) && !fromBilling;
   const readonly = !editable;

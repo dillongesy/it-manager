@@ -16,7 +16,7 @@ const FIELDS = [
 ];
 
 // Empty strings from the form would fail DATE parsing, so blank them to NULL; a real
-// date is validated (and normalized to YYYY-MM-DD) by assertDateFields — an
+// date is validated (and normalized to YYYY-MM-DD) by assertDateFields - an
 // out-of-range year would otherwise store fine and lock the record. See lib/dates.js.
 const clean = (k, v, dates) => (k === 'install_date' ? (dates.install_date ?? null) : v);
 
@@ -59,7 +59,7 @@ router.post('/', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Persisted drag/sort order — body { ids: [cameraId, …] } in the new order.
+// Persisted drag/sort order - body { ids: [cameraId, …] } in the new order.
 router.post('/reorder', requireAuth, async (req, res, next) => {
   try {
     const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];

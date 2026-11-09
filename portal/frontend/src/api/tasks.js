@@ -1,6 +1,6 @@
 import api from './client.js';
 
-// Tasks — the internal task list (replaced the Backlog and customer To-Dos). Backend: routes/tasks.js.
+// Tasks: the internal task list. Backend: routes/tasks.js.
 export const tasksApi = {
   list:          (params)           => api.get('/tasks', { params }),
   summary:       ()                 => api.get('/tasks/summary'),

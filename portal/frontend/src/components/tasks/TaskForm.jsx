@@ -12,7 +12,7 @@ import { PRIORITIES, PRIORITY_LABEL, TASK_STATUSES, STATUS_LABEL, WAITING_ON, WA
 import { LENGTHS, lengthLabel } from '../../utils/calendar.js';
 import { useTechs } from './taskBits.jsx';
 
-// Create / edit a task. The customer is optional — blank = internal work. Giving an
+// Create / edit a task. The customer is optional - blank = internal work. Giving an
 // open task a scheduled date makes it Scheduled on save (backend lib/tasks.js). A scheduled task
 // can also have a time and a length, so it sits on the calendar like an appointment.
 

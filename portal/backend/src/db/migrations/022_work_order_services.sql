@@ -1,4 +1,4 @@
--- Portal — work-order services (recurring + one-time)
+-- Portal - work-order services (recurring + one-time)
 -- Migration 022
 --
 -- A sibling to work_order_items ("Parts & Materials"). Services capture billable

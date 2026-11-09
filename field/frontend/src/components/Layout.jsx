@@ -28,7 +28,7 @@ export function Layout({ children }) {
         {children}
       </main>
 
-      {/* Bottom nav — native-style tab bar that clears the home indicator / gesture bar */}
+      {/* Bottom nav - native-style tab bar that clears the home indicator / gesture bar */}
       <nav className="flex border-t border-surface-600 bg-surface-800 shrink-0 pb-nav safe-x">
         {NAV.map(({ to, label, icon: Icon }) => (
           <NavLink

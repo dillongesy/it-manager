@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { coerceIntervalCount, isAnnualCadence, MAX_INTERVAL_COUNT } from '../utils/cadence.js';
 
 /**
- * Work-order services — labor / one-time fees / recurring charges. Each service:
+ * Work-order services - labor / one-time fees / recurring charges. Each service:
  *   { description, quantity, unit_price, billing_type, recurrence, recurrence_count }
  * Maps 1:1 to the Portal's work_order_services on import.
  *
@@ -99,7 +99,7 @@ export default function ServicesPicker({ value = [], onChange }) {
                     {RECURRENCES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
                   </select>
                 )}
-                {/* "Annual" is just "every 1 year" — the box turns it into a real
+                {/* "Annual" is just "every 1 year" - the box turns it into a real
                     multi-year term (a domain bought 3 years at a time) instead of
                     the office having to guess later. */}
                 {sv.billing_type === 'recurring' && isAnnualCadence(sv.recurrence) && (

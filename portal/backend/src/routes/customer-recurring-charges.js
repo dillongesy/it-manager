@@ -14,13 +14,13 @@ function coerceFrequency(v) {
   return FREQUENCIES.includes(v) ? v : 'monthly';
 }
 function coerceMonth(v, frequency) {
-  // Monthly charges bill every month — no anchor month. Periodic charges keep 1..12.
+  // Monthly charges bill every month - no anchor month. Periodic charges keep 1..12.
   if (frequency === 'monthly') return null;
   const n = parseInt(v, 10);
   return Number.isInteger(n) && n >= 1 && n <= 12 ? n : null;
 }
 
-// Frequency, interval count and the two anchor fields are one unit — a charge's
+// Frequency, interval count and the two anchor fields are one unit - a charge's
 // schedule. Resolving them together (rather than field by field) is what stops a
 // half-applied PATCH leaving, say, 'every 3 years' on a charge switched back to
 // monthly, or a multi-year charge with no year to count from.
@@ -41,7 +41,7 @@ function coerceSchedule(body, current = {}) {
   return { frequency, interval_count, billing_month, billing_year };
 }
 
-// Money/quantity coercion and the derived line total live in lib/service-sync.js —
+// Money/quantity coercion and the derived line total live in lib/service-sync.js -
 // shared with the catalog price roll-out so both compute `amount` the same way.
 
 router.get('/', requireAuth, async (req, res, next) => {

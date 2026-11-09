@@ -1,4 +1,4 @@
--- Portal — Consolidated Production Schema
+-- Portal - Consolidated Production Schema
 -- =============================================================================
 -- This is the FULL schema as of migration 022, hand-reconciled from migrations
 -- 001–022 into one idempotent file for a clean production deploy.
@@ -18,7 +18,7 @@
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- ─── Users ─────────────────────────────────────────────────────────────────────
+-- --- Users ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
   id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
   username      VARCHAR(50)  UNIQUE NOT NULL,
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_hash    ON refresh_tokens(token_hash) WHERE NOT is_revoked;
 
--- ─── Customers ───────────────────────────────────────────────────────────────--
+-- --- Customers -----------------------------------------------------------------
 -- (migration 003 dropped the original `type` column; not present here.)
 CREATE TABLE IF NOT EXISTS customers (
   id                    UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS customers (
 CREATE INDEX IF NOT EXISTS idx_customers_name   ON customers USING gin(to_tsvector('english', name));
 CREATE INDEX IF NOT EXISTS idx_customers_active ON customers(is_active);
 
--- Contacts — person OR (with the address fields from 009) a contact location.
+-- Contacts - person OR (with the address fields from 009) a contact location.
 CREATE TABLE IF NOT EXISTS customer_contacts (
   id           UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id  UUID         NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
@@ -118,7 +118,7 @@ CREATE TABLE IF NOT EXISTS customer_billing_rates (
   created_at  TIMESTAMPTZ    NOT NULL DEFAULT NOW()
 );
 
--- ─── Devices (type-driven; migrations 002, 009, 014, 015) ───────────────────────
+-- --- Devices (type-driven; migrations 002, 009, 014, 015) -----------------------
 CREATE TABLE IF NOT EXISTS customer_devices (
   id                  UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id         UUID         NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
@@ -176,7 +176,7 @@ CREATE TABLE IF NOT EXISTS customer_device_type_order (
   PRIMARY KEY (customer_id, device_type)
 );
 
--- ─── Credentials (migrations 002, 006, 010, 011) ────────────────────────────────
+-- --- Credentials (migrations 002, 006, 010, 011) --------------------------------
 CREATE TABLE IF NOT EXISTS customer_credentials (
   id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id   UUID         NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
@@ -204,7 +204,7 @@ CREATE TABLE IF NOT EXISTS customer_credential_sections (
   PRIMARY KEY (customer_id, category)
 );
 
--- ─── Camera systems (migration 002) + shared access (migration 005) ─────────────
+-- --- Camera systems (migration 002) + shared access (migration 005) -------------
 CREATE TABLE IF NOT EXISTS customer_camera_systems (
   id             UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id    UUID         NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
@@ -263,7 +263,7 @@ CREATE TABLE IF NOT EXISTS customer_camera_shared_access (
 );
 CREATE INDEX IF NOT EXISTS idx_camera_shared_camera ON customer_camera_shared_access(camera_system_id);
 
--- ─── Guides (migration 002) ─────────────────────────────────────────────────────
+-- --- Guides (migration 002) -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS customer_guides (
   id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id UUID         NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
@@ -276,7 +276,7 @@ CREATE TABLE IF NOT EXISTS customer_guides (
 );
 CREATE INDEX IF NOT EXISTS idx_customer_guides_customer ON customer_guides(customer_id);
 
--- ─── Files & Proposals (migrations 002, 011, 012) ───────────────────────────────
+-- --- Files & Proposals (migrations 002, 011, 012) -------------------------------
 CREATE TABLE IF NOT EXISTS customer_files (
   id             UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id    UUID         NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
@@ -292,7 +292,7 @@ CREATE TABLE IF NOT EXISTS customer_files (
 );
 CREATE INDEX IF NOT EXISTS idx_customer_files_customer ON customer_files(customer_id);
 
--- ─── Work Orders (migrations 001, 007, 008, 016, 017, 021) ──────────────────────
+-- --- Work Orders (migrations 001, 007, 008, 016, 017, 021) ----------------------
 -- Work orders are section-based as of migration 017. Legacy WO-level description/
 -- hours columns are gone; data lives in work_order_sections.
 CREATE TABLE IF NOT EXISTS work_orders (
@@ -352,7 +352,7 @@ CREATE TABLE IF NOT EXISTS work_order_technicians (
   work_order_id UUID NOT NULL REFERENCES work_orders(id) ON DELETE CASCADE,
   section_id    UUID REFERENCES work_order_sections(id) ON DELETE CASCADE,
   -- A technician is EITHER a linked Portal user (user_id) OR a free-typed name
-  -- (user_id NULL, name set) — the latter for jobs imported from the Field App.
+  -- (user_id NULL, name set) - the latter for jobs imported from the Field App.
   user_id       UUID REFERENCES users(id) ON DELETE CASCADE,
   name          VARCHAR(120)
 );
@@ -389,7 +389,7 @@ CREATE TABLE IF NOT EXISTS work_order_services (
 CREATE INDEX IF NOT EXISTS idx_wo_services_wo      ON work_order_services(work_order_id);
 CREATE INDEX IF NOT EXISTS idx_wo_services_section ON work_order_services(section_id);
 
--- ─── Customer Licenses ───────────────────────────────────────────────────────--
+-- --- Customer Licenses ---------------------------------------------------------
 CREATE TABLE IF NOT EXISTS customer_licenses (
   id              UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id     UUID         NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
@@ -406,7 +406,7 @@ CREATE TABLE IF NOT EXISTS customer_licenses (
 );
 CREATE INDEX IF NOT EXISTS idx_customer_licenses_customer ON customer_licenses(customer_id);
 
--- ─── Order Log ───────────────────────────────────────────────────────────────--
+-- --- Order Log -----------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS order_log (
   id             UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
   vendor         TEXT          NOT NULL,
@@ -439,7 +439,7 @@ CREATE TABLE IF NOT EXISTS order_log_attachments (
 );
 CREATE INDEX IF NOT EXISTS idx_order_attachments_order ON order_log_attachments(order_id);
 
--- ─── Audit Log ───────────────────────────────────────────────────────────────--
+-- --- Audit Log -----------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS audit_log (
   id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id      UUID        REFERENCES users(id) ON DELETE SET NULL,
@@ -456,7 +456,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_log_user    ON audit_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_entity  ON audit_log(entity_type, entity_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at DESC);
 
--- ─── Migration bookkeeping ──────────────────────────────────────────────────────
+-- --- Migration bookkeeping ------------------------------------------------------
 CREATE TABLE IF NOT EXISTS schema_migrations (
   version    VARCHAR(255) PRIMARY KEY,
   applied_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()

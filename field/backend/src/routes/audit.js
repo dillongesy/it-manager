@@ -4,7 +4,7 @@ import { requireAuth, requireRole } from '../middleware/requireAuth.js';
 
 const router = Router();
 
-// GET /api/audit — admin only. Read-only view of the Field audit log
+// GET /api/audit - admin only. Read-only view of the Field audit log
 // (inventory, work orders, photos, users).
 router.get('/', requireAuth, requireRole('admin'), async (req, res, next) => {
   try {

@@ -1,7 +1,7 @@
 // Turning a multi-day Field job capture into a Portal work order: one section per
 // field day, with the per-technician hours preserved in the section's internal
 // notes (the Portal stores a single hours figure per section). Rates aren't part
-// of the import — every section inherits the work order's default, and the biller
+// of the import - every section inherits the work order's default, and the biller
 // overrides it per section in the Portal.
 
 import { test } from 'node:test';
@@ -17,7 +17,7 @@ import {
   splitTechnicians,
 } from '../../src/lib/field-import.js';
 
-// ─── Hours ─────────────────────────────────────────────────────────────────────
+// --- Hours ---------------------------------------------------------------------
 
 test('sumDayHours totals the technicians on the day', () => {
   assert.equal(sumDayHours({ technicians: [{ hours: 4 }, { hours: '2.5' }] }), 6.5);
@@ -44,7 +44,7 @@ test('hoursBreakdown is empty when nobody logged hours', () => {
   assert.equal(hoursBreakdown({ technicians: [] }), '');
 });
 
-// ─── Technician names ──────────────────────────────────────────────────────────
+// --- Technician names ----------------------------------------------------------
 
 test('dayTechnicianNames prefers full names and dedupes case-insensitively', () => {
   const day = { technicians: [
@@ -59,7 +59,7 @@ test('dayTechnicianNames skips entries with neither name nor initials', () => {
   assert.deepEqual(dayTechnicianNames({ technicians: [{}, { initials: '  ' }] }), []);
 });
 
-// ─── Section notes ─────────────────────────────────────────────────────────────
+// --- Section notes -------------------------------------------------------------
 
 const JOB = {
   number: 42,
@@ -94,7 +94,7 @@ test('a section with nothing to say gets null, not an empty string', () => {
   assert.equal(notes, null);
 });
 
-// ─── jobDays ───────────────────────────────────────────────────────────────────
+// --- jobDays -------------------------------------------------------------------
 
 test('jobDays passes a multi-day capture straight through', () => {
   const job = { days: [{ work_date: '2026-07-20' }, { work_date: '2026-07-21' }] };
@@ -126,7 +126,7 @@ test('jobDays tolerates an empty days array and a missing job', () => {
   assert.equal(jobDays(undefined).length, 1);
 });
 
-// ─── End to end ────────────────────────────────────────────────────────────────
+// --- End to end ----------------------------------------------------------------
 
 test('a three-day job maps to three sections with the right dates and hours', () => {
   const job = {
@@ -156,10 +156,10 @@ test('a three-day job maps to three sections with the right dates and hours', ()
   assert.match(sections[2].notes, /Hours: DG 8, RM 8/);
 });
 
-// ─── Matching field crew to Portal accounts ────────────────────────────────────
+// --- Matching field crew to Portal accounts ------------------------------------
 //
 // The bug these guard: a camera tech who also has a Portal login used to import as a
-// free-text chip sitting NEXT TO their own unselected user account on the work order —
+// free-text chip sitting NEXT TO their own unselected user account on the work order -
 // the same person listed twice.
 
 const USERS = [

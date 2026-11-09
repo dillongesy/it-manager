@@ -34,7 +34,7 @@ const router = Router({ mergeParams: true });
 
 router.get('/', requireAuth, async (req, res, next) => {
   try {
-    // ?kind=file (default) or ?kind=proposal — one table backs both tabs
+    // ?kind=file (default) or ?kind=proposal - one table backs both tabs
     const kind = req.query.kind === 'proposal' ? 'proposal' : 'file';
     const { rows } = await query(
       `SELECT id, customer_id, original_name, mime_type, size_bytes, category, kind, notes, proposal_status, location_id, uploaded_by, created_at
@@ -70,7 +70,7 @@ router.post('/', requireAuth, upload.single('file'), async (req, res, next) => {
   }
 });
 
-// Rename a category — body { kind, from, to }. Every file in it (on that tab only:
+// Rename a category - body { kind, from, to }. Every file in it (on that tab only:
 // Files and Proposals keep separate categories) moves to the new name. Categories
 // are plain text on each file, so renaming onto an existing one simply merges them.
 router.post('/categories/rename', requireAuth, async (req, res, next) => {
@@ -113,7 +113,7 @@ router.get('/:fileId/download', requireAuth, async (req, res, next) => {
     const disposition = inline ? 'inline' : 'attachment';
     res.setHeader('Content-Disposition', `${disposition}; filename="${rows[0].original_name}"`);
     res.setHeader('Content-Type', rows[0].mime_type ?? 'application/octet-stream');
-    // Audit access the same way credential reveals are logged — who looked at / downloaded what.
+    // Audit access the same way credential reveals are logged - who looked at / downloaded what.
     await logAudit({ userId: req.user.sub, userName: req.user.fullName, action: 'READ',
       entityType: rows[0].kind === 'proposal' ? 'proposal' : 'file', entityId: rows[0].id,
       entityName: `${inline ? 'viewed' : 'downloaded'}: ${rows[0].original_name}`, ipAddress: getClientIp(req) });
@@ -121,7 +121,7 @@ router.get('/:fileId/download', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Rename a file (display name only — the on-disk stored_name and extension never change)
+// Rename a file (display name only - the on-disk stored_name and extension never change)
 router.patch('/:fileId', requireAuth, async (req, res, next) => {
   try {
     const { original_name, category, proposal_status, location_id } = req.body ?? {};

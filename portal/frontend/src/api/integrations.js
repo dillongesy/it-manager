@@ -10,9 +10,9 @@ export const integrationsApi = {
   links:      (cid, provider) => api.get(`/customers/${cid}/integrations`, { params: provider ? { provider } : {} }),
   removeLink: (cid, linkId)   => api.delete(`/customers/${cid}/integrations/${linkId}`),
 
-  // Remote buttons — { configured, links: { [deviceId]: { url, online, matched_by, … } }, error? }
+  // Remote buttons - { configured, links: { [deviceId]: { url, online, matched_by, … } }, error? }
   remoteLinks: (cid, refresh = false) => api.get(`/customers/${cid}/screenconnect/links`, { params: refreshParam(refresh) }),
-  // Web UI buttons (Auvik Remote Browser) — { configured, links: { [deviceId]: { https_url, http_url, … } }, error? }
+  // Web UI buttons (Auvik Remote Browser) - { configured, links: { [deviceId]: { https_url, http_url, … } }, error? }
   webLinks:    (cid, refresh = false) => api.get(`/customers/${cid}/auvik/links`, { params: refreshParam(refresh) }),
 
   // Seat counts from a security vendor → the Billing tab (provider: 'threatlocker').

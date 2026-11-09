@@ -1,5 +1,5 @@
 -- Field jobs can now record SERVICES (labor / one-time fees / recurring charges)
--- alongside parts — the IT side will also use this app in the field and wants a
+-- alongside parts - the IT side will also use this app in the field and wants a
 -- record of what they did, not just hardware. Parts also gain a unit price so the
 -- price carries over to the Portal work order on import (instead of arriving blank).
 

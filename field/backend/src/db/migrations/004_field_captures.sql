@@ -7,10 +7,10 @@
 -- `status` + `*_at` columns are intentionally LEFT IN PLACE (back-compat, no
 -- destructive change) but the app no longer reads or writes them.
 --
---   open     — tech is still working/editing the capture
---   ready    — done; ready to be billed. Stock for its inventory lines is
+--   open     - tech is still working/editing the capture
+--   ready    - done; ready to be billed. Stock for its inventory lines is
 --              decremented at this point (single decrement point).
---   imported — pulled into the Portal as a real work order; locked, purgeable.
+--   imported - pulled into the Portal as a real work order; locked, purgeable.
 
 ALTER TABLE field_work_orders
   ADD COLUMN IF NOT EXISTS capture_status     VARCHAR(20) NOT NULL DEFAULT 'open',

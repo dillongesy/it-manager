@@ -6,7 +6,7 @@
 #                                       treat that backup like the keys themselves)
 #
 # Restoring onto a new server needs the data AND the Portal ENCRYPTION_KEY (from
-# the one-time reveal, or from a --secrets backup) — see README "Disaster recovery".
+# the one-time reveal, or from a --secrets backup) - see README "Disaster recovery".
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")/.."
 

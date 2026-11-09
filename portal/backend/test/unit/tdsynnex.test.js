@@ -45,7 +45,7 @@ test('a subscription → a charge: seats, cadence, cost, MSRP, term, and the Ste
     { d: f.description, c: f.category, q: f.quantity, u: f.unit_label, p: f.unit_price, fr: f.frequency, m: f.billing_month, cost: f.vendor_cost, msrp: f.vendor_msrp, end: f.term_end_date, active: f.is_active },
     { d: 'Microsoft 365 Business Standard', c: 'Microsoft 365', q: 5, u: 'licenses', p: 14.7, fr: 'monthly', m: null, cost: 12.23, msrp: 13.13, end: '2027-06-26', active: true });
   assert.equal(f.notes, 'Annual commitment, billed monthly · SKU C0LDPB-0001-1Y1M');
-  // Paid annually: anchored to the month it renews — the day after the term ends.
+  // Paid annually: anchored to the month it renews - the day after the term ends.
   const annual = chargeFields(subscriptionOf(raw({ billingFrequency: 'year', endDate: '2027-10-31T16:59:59.000-0700' })));
   assert.equal(annual.frequency, 'annually');
   assert.equal(annual.billing_month, 11);

@@ -11,7 +11,7 @@ import { getBranding } from '../lib/settings.js';
 
 const router = Router({ mergeParams: true });
 
-// ─── Formatting helpers ─────────────────────────────────────────────────────────
+// --- Formatting helpers ---------------------------------------------------------
 
 const money = (v) => (v == null || v === '' ? '' : `$${parseFloat(v).toFixed(2)}`);
 
@@ -45,7 +45,7 @@ function fmtJson(v) {
 const MONTHS = ['', 'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'];
 
-// ─── Sheet builders ─────────────────────────────────────────────────────────────
+// --- Sheet builders -------------------------------------------------------------
 
 const HEADER_FILL = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC0000' } };
 const HEADER_FONT = { bold: true, color: { argb: 'FFFFFFFF' } };
@@ -267,8 +267,8 @@ function buildBillingSheet(wb, charges) {
   }
 }
 
-// ─── Provider export ────────────────────────────────────────────────────────────
-// Full handoff workbook for another IT firm — includes DECRYPTED passwords for
+// --- Provider export ------------------------------------------------------------
+// Full handoff workbook for another IT firm - includes DECRYPTED passwords for
 // devices, credentials, cameras, and licenses. Admin-only, and the caller must
 // re-enter their password immediately before export. The whole action is audited.
 router.post('/provider', requireAuth, requireRole('admin'), async (req, res, next) => {

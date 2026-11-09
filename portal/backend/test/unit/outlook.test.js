@@ -39,7 +39,7 @@ test('matchTechs: shared first names need the full name; short names and initial
   assert.deepEqual(matchTechs('Sam Ortiz at Lakeside', users), ['s2']);
   assert.deepEqual(matchTechs('AL office closed', users), []);              // "Al" is too short
   assert.deepEqual(matchTechs('DG - PC setup', users), []);                 // initials ignored
-  assert.deepEqual(matchTechs('Dillonville trip', users), []);              // whole words only
+  assert.deepEqual(matchTechs('Danaville trip', users), []);              // whole words only
   assert.deepEqual(matchTechs('', users), []);
 });
 
@@ -88,7 +88,7 @@ test('normalizeEvents drops cancelled and unreadable events, and untitled ones g
   assert.deepEqual(list.map(e => [e.id, e.title, e.end]), [['z', '(No title)', '2026-11-03T14:00:00Z']]);
 });
 
-// ── Recurring events, assigning, writing ──
+// -- Recurring events, assigning, writing --
 
 test('normalizeEvent marks occurrences of a repeating event and keeps the etag', () => {
   const ev = normalizeEvent({
@@ -206,7 +206,7 @@ test('taskEventChanged: a status change alone leaves the Outlook event alone', (
   assert.equal(taskEventChanged({ ...base, scheduled_time: '09:00:00' }, { ...base, scheduled_time: '09:00:00', duration_minutes: 90 }), true);
 });
 
-// ── Times, lengths, repeating, deleting ──
+// -- Times, lengths, repeating, deleting --
 
 test('taskEvent: a task with a time is a busy, timed event for its length', () => {
   const ev = taskEvent({ number: 7, title: 'Swap switch', scheduled_day: '2026-11-05', scheduled_hm: '13:30', duration_minutes: 90 }, { zone });

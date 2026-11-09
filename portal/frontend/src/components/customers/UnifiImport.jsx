@@ -5,10 +5,10 @@ import { integrationsApi } from '../../api/integrations.js';
 import { SearchInput } from '../ui/SearchInput.jsx';
 import { ActionChip, MatchLine, ResultSection, SetupSteps, Env, OfficeTarget, NewerToggle, effectiveAction, countDiffers } from './SyncPreview.jsx';
 
-// "Import from UniFi" — from the Devices tab (network gear, plus the firewall's WAN,
+// "Import from UniFi" - from the Devices tab (network gear, plus the firewall's WAN,
 // VLANs and rules) or the Cameras tab (Protect cameras).
 //   1. pick a UniFi console (the one this customer was linked to opens straight away)
-//   2. tick devices / cameras — each row previews: new, update · N fields, up to date
+//   2. tick devices / cameras - each row previews: new, update · N fields, up to date
 //   3. import → summary. The console is remembered as this customer's.
 // Matching / merge rules live server-side in lib/unifi.js.
 
@@ -33,7 +33,7 @@ const KIND_ICON = {
 };
 const KIND_LABEL = { gateway: 'Firewall', switch: 'Switch', nas: 'NAS', console: 'Console', other: 'Network' };
 
-// "WAN 104.222.91.35, 3 VLANs and 4 firewall rules" — what a new firewall arrives with.
+// "WAN 104.222.91.35, 3 VLANs and 4 firewall rules" - what a new firewall arrives with.
 function gatewayExtras(f = {}) {
   const n = (count, word) => (count ? `${count} ${word}${count !== 1 ? 's' : ''}` : null);
   const parts = [
@@ -198,7 +198,7 @@ export function UnifiImport({ customerId, locations, companyName, defaultLocatio
   });
   const plan = previewQ.data;
 
-  // Pre-tick what would change (or everything new) — on the tab the dialog was opened from.
+  // Pre-tick what would change (or everything new) - on the tab the dialog was opened from.
   useEffect(() => {
     if (!plan) return;
     const worth = (i) => i.preview.action === 'create' || i.preview.action === 'update';
@@ -411,7 +411,7 @@ export function UnifiImport({ customerId, locations, companyName, defaultLocatio
         </div>
       )}
 
-      {/* Only the network side is limited on a shared console — cameras come through either way. */}
+      {/* Only the network side is limited on a shared console - cameras come through either way. */}
       {plan?.limited && (focus !== 'cameras' || devices.length > 0) && (
         <p className="text-xs text-amber-400 bg-amber-900/20 rounded-sm p-2 flex gap-2"><Lock size={13} className="shrink-0 mt-0.5" />{plan.limited}</p>
       )}

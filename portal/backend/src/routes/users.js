@@ -8,7 +8,7 @@ import { parsePaging, setTotalCount } from '../lib/pagination.js';
 
 const router = Router();
 
-// GET /api/users — all authenticated users (needed for WO tech assignment)
+// GET /api/users - all authenticated users (needed for WO tech assignment)
 router.get('/', requireAuth, async (req, res, next) => {
   try {
     const { rows } = await query(
@@ -21,10 +21,10 @@ router.get('/', requireAuth, async (req, res, next) => {
   }
 });
 
-// GET /api/users/:id/activity — recent audit entries for this user (admin only)
+// GET /api/users/:id/activity - recent audit entries for this user (admin only)
 router.get('/:id/activity', requireAuth, requireRole('admin'), async (req, res, next) => {
   try {
-    // Pageable rather than a hard 50 — a busy tech's history is worth scrolling.
+    // Pageable rather than a hard 50 - a busy tech's history is worth scrolling.
     const { limit, offset } = parsePaging(req.query, { defaultLimit: 100 });
     const { rows: countRows } = await query(
       'SELECT COUNT(*)::int AS total FROM audit_log WHERE user_id = $1', [req.params.id]
@@ -41,7 +41,7 @@ router.get('/:id/activity', requireAuth, requireRole('admin'), async (req, res, 
   } catch (err) { next(err); }
 });
 
-// POST /api/users/me/password — change own password
+// POST /api/users/me/password - change own password
 router.post('/me/password', requireAuth, async (req, res, next) => {
   try {
     const { current_password, new_password } = req.body ?? {};
@@ -74,7 +74,7 @@ router.post('/me/password', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// POST /api/users — admin only
+// POST /api/users - admin only
 router.post('/', requireAuth, requireRole('admin'), async (req, res, next) => {
   try {
     const { username, email, full_name, password, role } = req.body ?? {};
@@ -120,7 +120,7 @@ router.post('/', requireAuth, requireRole('admin'), async (req, res, next) => {
   }
 });
 
-// PATCH /api/users/:id — admin, or self (limited fields)
+// PATCH /api/users/:id - admin, or self (limited fields)
 router.patch('/:id', requireAuth, async (req, res, next) => {
   try {
     const targetId = req.params.id;

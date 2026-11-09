@@ -1,4 +1,4 @@
--- Migration 008 — branding pushed from the Portal over the one-way bridge.
+-- Migration 008 - branding pushed from the Portal over the one-way bridge.
 -- The Field App never fetches branding itself; the Portal PUTs it to
 -- /api/service/branding whenever an admin changes it (and on Portal start-up).
 

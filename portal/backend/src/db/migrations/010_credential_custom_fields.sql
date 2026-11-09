@@ -1,4 +1,4 @@
--- Portal — customizable credential fields
+-- Portal - customizable credential fields
 -- Migration 010
 --
 -- A credential keeps its standard fields (username, password, url, 2FA, notes)

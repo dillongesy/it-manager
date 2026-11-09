@@ -1,7 +1,7 @@
--- Portal — a device can have more than one MAC address
+-- Portal - a device can have more than one MAC address
 -- Migration 062
 --
--- customer_devices.other_macs — every MAC address the device has besides mac_address:
+-- customer_devices.other_macs - every MAC address the device has besides mac_address:
 --   [{ mac: "38:FF:59:40:2F:77", note: "Wi-Fi" }]
 -- A laptop has one for its network port and one for Wi-Fi, and UniFi sees whichever it
 -- is using, so imports kept swapping mac_address back and forth or created a second

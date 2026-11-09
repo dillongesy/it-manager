@@ -11,11 +11,11 @@ import {
 import { TaskForm } from '../TaskForm.jsx';
 
 // Outlook events on the schedule, the way Outlook does them:
-//   EventDialog   — open one: its details first (when, repeat, where, who, reminder, notes), then
+//   EventDialog   - open one: its details first (when, repeat, where, who, reminder, notes), then
 //                   Edit / Delete. A repeating event asks "just this one or the whole series?"
 //                   (and for deleting, "this and following" too) before anything changes.
-//   NewItemDialog — make something new at a time: an Outlook event, or a task.
-//   EventForm     — the editor both use: title, tech, start/end date and time with quick lengths,
+//   NewItemDialog - make something new at a time: an Outlook event, or a task.
+//   EventForm     - the editor both use: title, tech, start/end date and time with quick lengths,
 //                   all day, repeat (presets + custom), reminder, show as, location, notes.
 // Everything saves straight to Outlook. Events are never turned into tasks; private ones only show.
 

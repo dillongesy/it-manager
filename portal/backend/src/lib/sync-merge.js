@@ -1,10 +1,10 @@
 // How every import (ConnectWise, UniFi) merges into what the Portal already has, so the
 // two sources work the same way and never fight over a record:
 //
-//   fill    — a blank Portal field gets the source's value
-//   add     — new list items (VLANs, IPs, shares, accounts), MACs and notes lines are added;
+//   fill    - a blank Portal field gets the source's value
+//   add     - new list items (VLANs, IPs, shares, accounts), MACs and notes lines are added;
 //             nothing is removed (change mode 'add': `to` is just what's added)
-//   differs — a value the Portal already has that the source reports differently is KEPT.
+//   differs - a value the Portal already has that the source reports differently is KEPT.
 //             The preview lists it ("kept: 192.168.0.134 · ConnectWise has 192.168.0.194"),
 //             and it's only written when the person ticks "Also replace values that
 //             changed" (take_newer) for that import.

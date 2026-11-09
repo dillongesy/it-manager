@@ -1,11 +1,11 @@
 // Validation for date-only (Postgres DATE) request fields.
 //
 // Why this exists: an HTML <input type="date"> lets a user type a SIX-digit year, and
-// PostgreSQL's DATE type happily accepts years up to 5874897 — so a fat-fingered
+// PostgreSQL's DATE type happily accepts years up to 5874897 - so a fat-fingered
 // "20207-07-15" stores fine and only detonates later. Once stored, the API serializes
 // it as an expanded-year ISO string ("+020207-07-15T…"), which no client can round-trip,
 // and the next save fails with the Postgres parser's cryptic
-// `time zone displacement out of range: "+020207-07"` — leaving the record permanently
+// `time zone displacement out of range: "+020207-07"` - leaving the record permanently
 // un-editable. Catch it at the door instead, with a message a human can act on.
 
 export const MIN_DATE_YEAR = 1900;

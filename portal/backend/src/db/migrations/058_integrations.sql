@@ -1,7 +1,7 @@
--- Portal — linked outside systems (ConnectWise sites, UniFi consoles) + UniFi / Dell sync columns
+-- Portal - linked outside systems (ConnectWise sites, UniFi consoles) + UniFi / Dell sync columns
 -- Migration 058
 --
--- 1. customer_integration_links — which ConnectWise RMM site, UniFi console, … a customer
+-- 1. customer_integration_links - which ConnectWise RMM site, UniFi console, … a customer
 --    is. Recorded when an import runs, so the next sync opens straight on the right
 --    site/console for every tech (the ConnectWise picker used to remember it only in the
 --    browser's localStorage). `location_id` = the branch office new records from that
@@ -12,9 +12,9 @@
 --
 -- 2. UniFi links on the records an import creates or updates, so a re-import updates
 --    instead of duplicating (like customer_devices.rmm_endpoint_id for ConnectWise):
---      customer_devices.unifi_device_id      — the device's UniFi ID (its MAC, as hex)
---      customer_camera_systems.unifi_host_id — the Protect console (NVR / Cloud Key)
---      customer_cameras.unifi_device_id      — the camera's UniFi ID
+--      customer_devices.unifi_device_id      - the device's UniFi ID (its MAC, as hex)
+--      customer_camera_systems.unifi_host_id - the Protect console (NVR / Cloud Key)
+--      customer_cameras.unifi_device_id      - the camera's UniFi ID
 --
 -- 3. Dell warranty detail on a device: the coverage name ("ProSupport Plus") and when
 --    Dell was last asked, alongside the existing warranty_expires date.

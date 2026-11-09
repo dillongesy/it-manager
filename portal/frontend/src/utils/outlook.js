@@ -28,7 +28,7 @@ export function eventDayKeys(ev) {
 
 /**
  * The edit that moves an event to start on another day, keeping its times of day and its length
- * (across daylight saving too) — null when it already starts that day.
+ * (across daylight saving too) - null when it already starts that day.
  */
 export function movedEvent(ev, key) {
   const first = eventDayKeys(ev)[0];

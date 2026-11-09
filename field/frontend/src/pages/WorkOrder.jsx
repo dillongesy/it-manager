@@ -39,7 +39,7 @@ export default function WorkOrder() {
     const loaded = (wo.days || []).map(toFormDay);
     const next = loaded.length ? loaded : [blankDay()];
     setDays(next);
-    // Land on the day they're most likely here to work on — the last one. A
+    // Land on the day they're most likely here to work on - the last one. A
     // single-day job opens expanded; a multi-day job opens as a short overview.
     setExpandedKey(next.length === 1 ? next[0].key : null);
   };
@@ -233,7 +233,7 @@ export default function WorkOrder() {
 }
 
 /**
- * The running total, always in view above the day cards — the one number the
+ * The running total, always in view above the day cards - the one number the
  * office and the tech both care about, plus how it splits per person.
  */
 function JobTotals({ total, perTech, dayCount, range }) {

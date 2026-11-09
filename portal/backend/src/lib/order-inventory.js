@@ -5,12 +5,12 @@
 // it MATCHES an item that already exists there. A mixed order (a switch for stock +
 // a one-off laptop for a customer) receives only the lines that match; the rest are
 // treated as non-inventory purchases and left alone. Nothing is ever auto-created in
-// inventory — a guessed new item would be worse than a line the office links by hand.
+// inventory - a guessed new item would be worse than a line the office links by hand.
 //
 // Match order, strongest first:
 //   1. the line was already linked to an item (by a previous run or by hand)
 //   2. SKU / part # equals the item's inventory SKU or its manufacturer barcode
-//   3. item name equals the inventory item's name — only when exactly ONE item has
+//   3. item name equals the inventory item's name - only when exactly ONE item has
 //      that name; two same-named items are never guessed between
 // All comparisons are case- and whitespace-insensitive.
 
@@ -31,7 +31,7 @@ export function matchLine(line, inventory) {
   if (line.inventory_item_id) {
     const linked = items.find(it => it.id === line.inventory_item_id);
     if (linked) return { item: linked, by: 'linked' };
-    // The linked item was archived/deleted — fall through and try to re-match.
+    // The linked item was archived/deleted - fall through and try to re-match.
   }
 
   const sku = norm(line.sku);
@@ -62,16 +62,16 @@ export function receiveQty(q) {
  *
  * @param items     the order's items[] (JSONB lines)
  * @param inventory active Field inventory items
- * @param links     optional { [lineIndex]: inventoryItemId | 'skip' } — the user's
+ * @param links     optional { [lineIndex]: inventoryItemId | 'skip' } - the user's
  *                  manual choices from the preview (link an unmatched line to an
  *                  item, or leave a matched line out)
  * @returns [{ index, item_name, sku, quantity, state, by, match, candidates }]
- *   state: 'added'     — already received on an earlier run (never received twice)
- *          'receive'   — matched; will be received
- *          'skipped'   — matched, but the user chose to leave it out
- *          'unmatched' — no inventory item (a non-inventory line)
- *          'ambiguous' — several items fit; the user must pick one
- *          'bad_qty'   — matched, but the quantity is zero/blank
+ *   state: 'added'     - already received on an earlier run (never received twice)
+ *          'receive'   - matched; will be received
+ *          'skipped'   - matched, but the user chose to leave it out
+ *          'unmatched' - no inventory item (a non-inventory line)
+ *          'ambiguous' - several items fit; the user must pick one
+ *          'bad_qty'   - matched, but the quantity is zero/blank
  */
 export function planInventoryAdd(items, inventory, links = {}) {
   return (items ?? []).map((line, index) => {

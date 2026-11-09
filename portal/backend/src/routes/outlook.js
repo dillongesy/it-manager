@@ -10,16 +10,16 @@ import {
 
 //   GET    /api/outlook/events?start=<ISO>&end=<ISO>[&refresh=1]
 //     The shared Outlook calendar's events in that range for the Tasks schedule, repeating
-//     events expanded — each with the techs it's for (user_ids), and task_id when it's the event
+//     events expanded - each with the techs it's for (user_ids), and task_id when it's the event
 //     "Add to Outlook" made for a task (the schedule shows the task instead). Always 200
 //     { configured, events, error? }, so an Outlook problem shows as a note, not a broken page.
-//   GET    /api/outlook/events/:id   — one event with its description and reminder, plus its series
+//   GET    /api/outlook/events/:id   - one event with its description and reminder, plus its series
 //                                      (pattern in words and as repeat settings) if it repeats
-//   POST   /api/outlook/events       — a new event made in the Portal (fields: eventCreate in lib/outlook.js)
-//   PATCH  /api/outlook/events/:id   — edit it. { scope: 'occurrence' | 'series', etag, ...fields (eventPatch) }
+//   POST   /api/outlook/events       - a new event made in the Portal (fields: eventCreate in lib/outlook.js)
+//   PATCH  /api/outlook/events/:id   - edit it. { scope: 'occurrence' | 'series', etag, ...fields (eventPatch) }
 //   DELETE /api/outlook/events/:id?scope=occurrence|following|series[&etag=]
-//     occurrence — just this one; following — this and every later one (the series ends the day
-//     before); series — every one. A single event ignores the scope.
+//     occurrence - just this one; following - this and every later one (the series ends the day
+//     before); series - every one. A single event ignores the scope.
 // Everything that changes Outlook is audited as entity outlook_event. Events are never turned
 // into tasks; events a task put there are changed through the task. Private events are view-only.
 

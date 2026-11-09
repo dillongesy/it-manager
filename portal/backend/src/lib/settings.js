@@ -1,9 +1,9 @@
 // App settings stored in the database (app_settings / branding_assets).
 //
-//   Integrations — loaded into the live `config` object at start-up and after every
+//   Integrations - loaded into the live `config` object at start-up and after every
 //                  save, so the existing integration clients keep reading config.*.
-//   Branding     — company/product names, colors, print header, uploaded images.
-//   System       — setup + recovery-secret reveal bookkeeping.
+//   Branding     - company/product names, colors, print header, uploaded images.
+//   System       - setup + recovery-secret reveal bookkeeping.
 import crypto from 'crypto';
 import { query } from '../db/index.js';
 import { config } from '../config/index.js';
@@ -11,7 +11,7 @@ import { encrypt, decrypt } from './encrypt.js';
 import { INTEGRATIONS, integrationById } from './integration-registry.js';
 import { integrationChanged } from './integration-util.js';
 
-// ─── Generic key/value ───────────────────────────────────────────────────────
+// --- Generic key/value -------------------------------------------------------
 
 export async function getSetting(key, fallback = null) {
   const { rows } = await query('SELECT value FROM app_settings WHERE key = $1', [key]);
@@ -27,7 +27,7 @@ export async function setSetting(key, value, userId = null, db = { query }) {
   );
 }
 
-// ─── Integrations ────────────────────────────────────────────────────────────
+// --- Integrations ------------------------------------------------------------
 
 const intKey = (id) => `integration:${id}`;
 
@@ -51,7 +51,9 @@ function applyIntegration(def, stored) {
 // Start-up: load every integration from the DB. If an integration has never been
 // saved but its legacy .env variables are present (an upgraded install, or local
 // dev), seed the DB from them once so nothing silently switches off.
-export async function loadIntegrations() {
+//
+// `persist: false` applies environment values without writing them (diagnostic scripts).
+export async function loadIntegrations({ persist = true } = {}) {
   const { rows } = await query(`SELECT key, value FROM app_settings WHERE key LIKE 'integration:%'`);
   const byKey = new Map(rows.map(r => [r.key, r.value]));
 
@@ -66,15 +68,17 @@ export async function loadIntegrations() {
       const plain = Object.fromEntries(def.fields.map(f => [f.key, process.env[f.env] || null]));
       if (Object.keys(values).length && isComplete(def, plain)) {
         stored = { enabled: true, values };
-        await setSetting(intKey(def.id), stored);
-        console.log(`Integration "${def.id}" seeded from legacy environment variables.`);
+        if (persist) {
+          await setSetting(intKey(def.id), stored);
+          console.log(`Integration "${def.id}" seeded from legacy environment variables.`);
+        }
       }
     }
     applyIntegration(def, stored);
   }
 }
 
-// Admin view — secret values are never returned, only whether one is stored.
+// Admin view - secret values are never returned, only whether one is stored.
 export async function listIntegrations() {
   const { rows } = await query(`SELECT key, value, updated_at FROM app_settings WHERE key LIKE 'integration:%'`);
   const byKey = new Map(rows.map(r => [r.key, r]));
@@ -106,7 +110,7 @@ export async function listIntegrations() {
 
 // Save one integration. For secret fields: undefined / '' keeps the stored value,
 // null clears it, anything else replaces it. Returns the names of changed fields
-// (for the audit log — never the values).
+// (for the audit log - never the values).
 export async function saveIntegration(id, { enabled, values = {} }, userId) {
   const def = integrationById(id);
   if (!def) { const e = new Error('Unknown integration.'); e.status = 404; throw e; }
@@ -151,7 +155,7 @@ export async function saveIntegration(id, { enabled, values = {} }, userId) {
   return { def, changed };
 }
 
-// ─── Branding ────────────────────────────────────────────────────────────────
+// --- Branding ----------------------------------------------------------------
 
 export const BRANDING_DEFAULTS = Object.freeze({
   companyName:  'Your Company',
@@ -204,7 +208,7 @@ export async function getPublicBranding() {
   return { ...branding, assets };
 }
 
-// ─── Branding assets ─────────────────────────────────────────────────────────
+// --- Branding assets ---------------------------------------------------------
 
 export const ASSET_KINDS = {
   logo:             { label: 'App logo (square)',         maxBytes: 2 * 1024 * 1024 },

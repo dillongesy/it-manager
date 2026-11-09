@@ -35,7 +35,7 @@ export function decrypt(stored) {
   }
 }
 
-// Returns true/false — for API responses that indicate a password exists without revealing it
+// Returns true/false - for API responses that indicate a password exists without revealing it
 export function hasValue(stored) {
   return stored != null && stored !== '';
 }

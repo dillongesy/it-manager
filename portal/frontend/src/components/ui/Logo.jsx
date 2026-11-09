@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useBranding } from '../../contexts/BrandingContext.jsx';
 
 // The company logo from Admin → Branding.
-//   variant="badge" → square mark (headers / small marks) — uses the square logo,
+//   variant="badge" → square mark (headers / small marks) - uses the square logo,
 //                     falling back to the full logo, then to initials on a brand tile
 //   variant="full"  → whole lockup at natural aspect (login hero)
 function initialsOf(name) {

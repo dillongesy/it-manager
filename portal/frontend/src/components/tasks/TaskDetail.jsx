@@ -76,7 +76,7 @@ export function TaskDetailModal({ taskId, onClose }) {
     setBusy(true); setError('');
     try {
       const res = await fn();
-      // A task change whose Outlook event couldn't follow still saved — say so.
+      // A task change whose Outlook event couldn't follow still saved - say so.
       if (res?.data?.outlook_warning) setError(res.data.outlook_warning);
       await qc.invalidateQueries({ queryKey: ['tasks'] });
       qc.invalidateQueries({ queryKey: ['outlook'] });

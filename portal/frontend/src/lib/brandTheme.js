@@ -34,6 +34,13 @@ function readableOnWhite(rgb, ratio = 4.5) {
   return c;
 }
 
+/** The brand color as a hex string legible on white paper, or `fallback` if invalid. */
+export function printableColor(hex, fallback = '#1D4ED8') {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return fallback;
+  return `#${readableOnWhite(rgb).map(c => c.toString(16).padStart(2, '0')).join('')}`;
+}
+
 export function applyBrandTheme({ primaryColor, accentColor } = {}) {
   const brand = hexToRgb(primaryColor);
   const accent = hexToRgb(accentColor);

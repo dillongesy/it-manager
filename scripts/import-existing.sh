@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ──────────────────────────────────────────────────────────────────────────────
+# ------------------------------------------------------------------------------
 # Load an existing installation's data into this stack. Use it to:
 #   • restore this stack's own backups (scripts/backup.sh) onto a new server
 #   • move a legacy, non-Docker install of the app onto Docker
@@ -10,7 +10,7 @@
 #                                pg_dump -Fc --no-owner --no-acl -U <user> <field db>  > field.dump
 #   *-uploads.tgz              the uploads folders:  tar -C <backend>/uploads -czf portal-uploads.tgz .
 #   the ENCRYPTION_KEY         from the one-time reveal, a --secrets backup, or the old
-#                              portal/backend/.env — without it stored passwords can't be decrypted
+#                              portal/backend/.env - without it stored passwords can't be decrypted
 #   old-portal.env (optional)  a legacy .env whose integration settings should be copied
 #                              into Admin → Integrations
 #
@@ -18,7 +18,7 @@
 #   sudo ./scripts/import-existing.sh #     --portal-dump portal.dump [--field-dump field.dump] #     --encryption-key <64 hex chars> #     [--portal-uploads portal-uploads.tgz] [--field-uploads field-uploads.tgz] #     [--portal-env old-portal.env]
 #
 # This REPLACES the data in this stack. Users and logins from the import keep working.
-# ──────────────────────────────────────────────────────────────────────────────
+# ------------------------------------------------------------------------------
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")/.."
 [ "$(id -u)" -eq 0 ] || { echo "Run as root." >&2; exit 1; }

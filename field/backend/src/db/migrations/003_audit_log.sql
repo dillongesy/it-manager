@@ -1,7 +1,7 @@
--- Field App — audit log (inventory-focused first pass)
+-- Field App - audit log (inventory-focused first pass)
 -- Migration 003
 --
--- The Field App previously had no general audit table — only the immutable
+-- The Field App previously had no general audit table - only the immutable
 -- inventory_transactions ledger (quantity movements). This adds a Portal-style
 -- audit_log so every inventory change (create, metadata edit, receive, checkout,
 -- adjust, return) is recorded with who/what/when, including changes that come in

@@ -1,6 +1,6 @@
 import { FileManager } from './FileManager.jsx';
 
-// Business proposals & contracts — mostly PDFs, viewable in-browser.
+// Business proposals & contracts - mostly PDFs, viewable in-browser.
 export function ProposalsTab({ customerId, locations, companyName }) {
   return (
     <FileManager

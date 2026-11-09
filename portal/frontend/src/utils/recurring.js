@@ -1,11 +1,11 @@
 // Helpers for the customer recurring-billing tracker.
 //
 // Charges are month-granular (they bill "in November", not on a specific day), so the
-// next-due math is a simple walk over the next 12 months — no day clamping or leap-year
+// next-due math is a simple walk over the next 12 months - no day clamping or leap-year
 // edge cases to worry about, unlike the license renewal math.
 //
 // The exception is a MULTI-YEAR charge (a domain bought three years at a time). A month
-// alone can't place one — "November" could be 2027 or 2029 — so those also carry a year
+// alone can't place one - "November" could be 2027 or 2029 - so those also carry a year
 // anchor and step forward in whole N-year jumps from it. See utils/cadence.js for the
 // cadence vocabulary itself.
 
@@ -44,7 +44,7 @@ export function nextDue(frequency, billingMonth, from = new Date(), { count = 1,
 
   if (n > 1) {
     // Multi-year: one fixed anchor stepped by whole N-year jumps, so the cycle can't
-    // drift. A missing year anchor falls back to this year — the API always stores one,
+    // drift. A missing year anchor falls back to this year - the API always stores one,
     // but a row imported or edited by hand shouldn't render as "no next due".
     const step = 12 * n;
     const anchorIdx = (billingYear ?? curY) * 12 + (billingMonth - 1);
@@ -71,7 +71,7 @@ export function nextDue(frequency, billingMonth, from = new Date(), { count = 1,
   return null;
 }
 
-// nextDue() for a charge row straight off the API — the four schedule fields always
+// nextDue() for a charge row straight off the API - the four schedule fields always
 // travel together, so callers shouldn't have to remember to pass all of them.
 export const nextDueFor = (charge, from = new Date()) =>
   nextDue(charge?.frequency, charge?.billing_month, from,
@@ -90,7 +90,7 @@ export const chargeCadence = (charge) => cadenceLabel(charge?.frequency, charge?
 // Price suffix for a charge: 'mo', 'yr', '3yr'…
 export const chargeUnit = (charge) => cadenceUnit(charge?.frequency, charge?.interval_count);
 
-// Annualized dollar total of a set of charges — each amount times how often it bills
+// Annualized dollar total of a set of charges - each amount times how often it bills
 // per year. A charge billed every 3 years contributes a THIRD of its amount, which is
 // the whole reason the interval count has to reach these totals.
 export function annualizedTotal(charges) {

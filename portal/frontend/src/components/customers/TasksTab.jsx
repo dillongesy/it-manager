@@ -9,8 +9,7 @@ import { TaskForm } from '../tasks/TaskForm.jsx';
 import { TaskDetailModal } from '../tasks/TaskDetail.jsx';
 import { StatusChips, useRefreshTasks } from '../tasks/taskBits.jsx';
 
-// A customer's Tasks tab — the same tasks as the Tasks page, just this customer's.
-// (Replaced the old per-customer To-Do list; those to-dos were carried over as tasks.)
+// A customer's Tasks tab: the Tasks page filtered to this customer.
 export function TasksTab({ customerId, companyName }) {
   const refresh = useRefreshTasks();
   const [sp, setSp] = useSearchParams();

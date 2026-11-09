@@ -1,12 +1,11 @@
-// Every outside system the Portal can talk to, and the settings each one needs.
-// These used to be .env variables; they are now edited in Admin → Integrations,
-// stored in app_settings (secret fields encrypted), and copied into the live
-// `config` object (config[section][key]) — the integration clients read config at
-// call time, so a save takes effect immediately with no restart.
+// Every external system the Portal integrates with, and the settings each one needs.
+// Settings are edited in Admin → Integrations, stored in app_settings (secret fields
+// encrypted) and copied into the live `config` object (config[section][key]).
+// Integration clients read config at call time, so a save takes effect without a restart.
 //
 // Field shape: { key, label, secret?, required?, default?, placeholder?, help?, advanced?, env }
 //   key      → config[section][key]
-//   env      → the legacy .env variable, used once to seed settings on upgrade
+//   env      → environment variable used once to seed the setting on an upgraded install
 //   required → the integration counts as "configured" only when these are set
 
 export const INTEGRATIONS = [

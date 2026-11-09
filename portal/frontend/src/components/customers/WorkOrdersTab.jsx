@@ -16,7 +16,7 @@ export function WorkOrdersTab({ customerId }) {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
 
-  // A long-standing customer accumulates far more work orders than one page —
+  // A long-standing customer accumulates far more work orders than one page -
   // page through their full history rather than stopping at the API's first page.
   const woQuery = useInfiniteList({
     queryKey: ['work-orders', 'customer', customerId, search],

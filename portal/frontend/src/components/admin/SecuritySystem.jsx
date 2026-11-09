@@ -4,6 +4,7 @@ import { ShieldCheck, Server, CheckCircle2, XCircle, RefreshCw } from 'lucide-re
 import { adminApi } from '../../api/admin.js';
 import api from '../../api/client.js';
 import { RevealSecrets } from './RevealSecrets.jsx';
+import { Storage } from './Storage.jsx';
 
 export function Security() {
   return (
@@ -59,6 +60,8 @@ export function System() {
         </dl>
         <p className="text-gray-500 text-xs">Updates: on the server run <code className="font-mono text-gray-300">./update.sh</code> (pulls new images and restarts; database migrations run automatically).</p>
       </section>
+
+      <Storage />
 
       <section className="card p-5 space-y-3 text-sm">
         <h2 className="text-base font-semibold text-gray-200">Field App admin</h2>

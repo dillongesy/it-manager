@@ -99,7 +99,7 @@ test('normalizeTechnicians returns [] for non-arrays', () => {
   assert.deepEqual(normalizeTechnicians('nope'), []);
 });
 
-// ─── Service cadences ("every N years") ────────────────────────────────────────
+// --- Service cadences ("every N years") ----------------------------------------
 //
 // The value crosses the bridge into a real Portal work-order service, so this app's
 // rule about which periods may carry a count has to match the Portal's exactly.

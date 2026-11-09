@@ -2,8 +2,8 @@
 // price change out to the customer charges linked to that service.
 //
 // A recurring charge stores quantity × unit_price and a derived `amount` (the line
-// total). When the catalog price of a service changes — Microsoft 365 goes from
-// $35 to $38 — every ACTIVE charge linked to that service has to move with it, or
+// total). When the catalog price of a service changes - Microsoft 365 goes from
+// $35 to $38 - every ACTIVE charge linked to that service has to move with it, or
 // the Billing tab quietly keeps billing last year's price.
 
 // Money coercion: '' / null / garbage → null, so a blank price stays blank.
@@ -36,8 +36,8 @@ export function lineTotal(quantity, unitPrice) {
  *  - Inactive charges are skipped. They're kept as history and excluded from every
  *    total; silently re-pricing a discontinued line would rewrite the record.
  *  - A charge already at the new price is skipped, so a no-op edit writes no audit
- *    entries and reports "0 updated" honestly.
- *  - Quantity is never touched — seat counts are per-customer, the price is not.
+ *    entries and reports "0 updated".
+ *  - Quantity is never touched - seat counts are per-customer, the price is not.
  */
 export function priceSyncPlan(charges, newPrice) {
   const to = coerceMoney(newPrice);

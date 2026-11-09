@@ -19,7 +19,7 @@ router.get('/', async (_req, res, next) => {
     const assets = {};
     for (const r of a) assets[r.kind] = `/api/branding/assets/${r.kind}?v=${r.sha256.slice(0, 12)}`;
     const b = { ...DEFAULTS, ...(s[0]?.value ?? {}) };
-    // Only what the Field UI needs — not the Portal's address / print details.
+    // Only what the Field UI needs - not the Portal's address / print details.
     res.set('Cache-Control', 'no-cache');
     res.json({
       companyName: b.companyName, productName: b.productName, fieldAppName: b.fieldAppName,

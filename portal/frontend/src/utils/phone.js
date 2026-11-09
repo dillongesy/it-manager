@@ -3,7 +3,7 @@
  *
  * 10 digits:  (XXX) XXX-XXXX
  * >10 digits: +CC (XXX) XXX-XXXX  (extra leading digits become the country code)
- * <10 digits: partial progressive format — useful while the user is typing
+ * <10 digits: partial progressive format - useful while the user is typing
  */
 export function formatPhone(raw) {
   if (!raw) return '';

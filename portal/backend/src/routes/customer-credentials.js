@@ -7,7 +7,7 @@ import { encrypt, decrypt, hasValue } from '../lib/encrypt.js';
 const router = Router({ mergeParams: true });
 
 // Custom fields: secret values are encrypted at rest. On the way out we never
-// return a secret value — only its label, secret flag, and whether it's set.
+// return a secret value - only its label, secret flag, and whether it's set.
 // Non-secret values pass through as plain text.
 function sanitizeCustomFields(fields) {
   if (!Array.isArray(fields)) return [];
@@ -80,7 +80,7 @@ export async function ensureSection(customerId, category) {
   return cat;
 }
 
-// GET — credentials ordered by their section's order, then within-section order.
+// GET - credentials ordered by their section's order, then within-section order.
 // Section order comes from customer_credential_sections; returned alongside.
 router.get('/', requireAuth, async (req, res, next) => {
   try {
@@ -104,7 +104,7 @@ router.get('/', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Distinct section names across ALL customers — autocomplete so a section like "NAS"
+// Distinct section names across ALL customers - autocomplete so a section like "NAS"
 // created for one customer is suggested when adding credentials for another (keeps
 // section naming consistent and avoids casing/typo drift).
 router.get('/sections/suggestions', requireAuth, async (req, res, next) => {
@@ -118,7 +118,7 @@ router.get('/sections/suggestions', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Drag-reorder credential rows — body { ids: [credId, …] } in the new order.
+// Drag-reorder credential rows - body { ids: [credId, …] } in the new order.
 router.post('/reorder', requireAuth, async (req, res, next) => {
   try {
     const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
@@ -135,7 +135,7 @@ router.post('/reorder', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Drag-reorder sections — body { categories: [category, …] } in the new order.
+// Drag-reorder sections - body { categories: [category, …] } in the new order.
 router.post('/sections/reorder', requireAuth, async (req, res, next) => {
   try {
     const cats = Array.isArray(req.body?.categories) ? req.body.categories : [];
@@ -182,7 +182,7 @@ router.post('/sections/move', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Rename a section — body { from, to }. Every credential in it moves with it. If
+// Rename a section - body { from, to }. Every credential in it moves with it. If
 // this customer already has a section called `to`, the two are merged: the
 // renamed section's credentials go to the bottom of the existing one, in order.
 router.post('/sections/rename', requireAuth, async (req, res, next) => {
@@ -340,7 +340,7 @@ router.patch('/:credId', requireAuth, async (req, res, next) => {
     if (updates.location_id === '') updates.location_id = null;
     if (updates.category !== undefined) updates.category = await ensureSection(req.params.customerId, updates.category);
     if (req.body.password !== undefined) updates.password_enc = encrypt(req.body.password);
-    // Snapshot the row before — used for the custom-fields merge and the audit diff.
+    // Snapshot the row before - used for the custom-fields merge and the audit diff.
     const { rows: existingRows } = await query(
       `SELECT * FROM customer_credentials WHERE id = $1 AND customer_id = $2`,
       [req.params.credId, req.params.customerId]
@@ -372,7 +372,7 @@ router.patch('/:credId', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Reveal password — always audit logged
+// Reveal password - always audit logged
 router.post('/:credId/reveal', requireAuth, async (req, res, next) => {
   try {
     const { rows } = await query(
@@ -390,7 +390,7 @@ router.post('/:credId/reveal', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Reveal a secret custom field by its index — always audit logged
+// Reveal a secret custom field by its index - always audit logged
 router.post('/:credId/custom/:index/reveal', requireAuth, async (req, res, next) => {
   try {
     const { rows } = await query(

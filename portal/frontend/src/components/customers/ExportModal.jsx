@@ -11,7 +11,7 @@ import { RANGE_PRESETS, rangeLabel } from '../../utils/dateRanges.js';
 import { fetchAllPages } from '../../hooks/useInfiniteList.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 
-// ─── Customer (PDF) mode ────────────────────────────────────────────────────────
+// --- Customer (PDF) mode --------------------------------------------------------
 
 function CustomerMode({ customer }) {
   const [presetId, setPresetId] = useState('all');
@@ -36,7 +36,7 @@ function CustomerMode({ customer }) {
       const dateTo   = to   || undefined;
 
       const [workOrders, todoRes, propRes, licRes, chargeRes] = await Promise.all([
-        // Page through every matching work order — an export that stopped at the
+        // Page through every matching work order - an export that stopped at the
         // API's page size would silently leave work off the customer's report.
         fetchAllPages(({ limit, offset }) =>
           workOrdersApi.list({ customerId: customer.id, dateFrom, dateTo, limit, offset })),
@@ -50,7 +50,7 @@ function CustomerMode({ customer }) {
       // mirroring the single-WO print flow so appended pages look identical.
       const fullWorkOrders = [];
       // Proposals that can't be rendered are collected per work order rather than
-      // skipped silently — an export that quietly drops an attachment looks complete.
+      // skipped silently - an export that quietly drops an attachment looks complete.
       const proposalFailures = [];
       for (let i = 0; i < workOrders.length; i++) {
         setBusy(`Preparing work orders… (${i + 1}/${workOrders.length})`);
@@ -132,7 +132,7 @@ function CustomerMode({ customer }) {
   );
 }
 
-// ─── Provider (Excel) mode ──────────────────────────────────────────────────────
+// --- Provider (Excel) mode ------------------------------------------------------
 
 function ProviderMode({ customer }) {
   const { user } = useAuth();
@@ -169,7 +169,7 @@ function ProviderMode({ customer }) {
       URL.revokeObjectURL(url);
       setPassword('');
     } catch (err) {
-      // The error body is a Blob (responseType: 'blob') — read it back as JSON.
+      // The error body is a Blob (responseType: 'blob') - read it back as JSON.
       let msg = 'Export failed.';
       try {
         const text = await err.response?.data?.text?.();
@@ -212,7 +212,7 @@ function ProviderMode({ customer }) {
   );
 }
 
-// ─── Modal shell ────────────────────────────────────────────────────────────────
+// --- Modal shell ----------------------------------------------------------------
 
 export function ExportModal({ customer, open, onClose }) {
   const [mode, setMode] = useState('customer');

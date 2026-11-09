@@ -1,6 +1,6 @@
 #!/bin/sh
-# ──────────────────────────────────────────────────────────────────────────────
-# init — runs before every start (docker compose up), finishes, and exits.
+# ------------------------------------------------------------------------------
+# init - runs before every start (docker compose up), finishes, and exits.
 #
 # First boot: generates every secret the stack needs and writes each service ONLY
 # the secrets it needs, into its own volume (least privilege):
@@ -27,7 +27,7 @@
 #   new-setup-code     write and print a fresh setup code
 #   clear-setup-code   remove the setup code (after an import)
 #   set-encryption-key take the master key from $SET_ENCRYPTION_KEY (importing existing data)
-# ──────────────────────────────────────────────────────────────────────────────
+# ------------------------------------------------------------------------------
 set -eu
 umask 077
 

@@ -1,9 +1,9 @@
 // Pure, dependency-free work-order logic. Separate from the route handlers so it
 // can be unit-tested without a database.
 
-// ─── Legacy billing lifecycle (deprecated) ──────────────────────────────────────
-// Field "work orders" are now JOB CAPTURES; billing happens in the Portal. These
-// are kept only for back-compat with the old `status` column / existing tests.
+// --- Billing lifecycle (deprecated) ----------------------------------------------
+// Field work orders are job captures; billing happens in the Portal. These values
+// remain only for the `status` column on existing rows.
 export const WO_STATUSES = ['draft', 'submitted', 'pending_billing', 'invoiced', 'paid'];
 export const WO_TRANSITIONS = {
   submit:  { from: 'draft',           to: 'pending_billing', tsField: 'submitted_at' },
@@ -11,11 +11,11 @@ export const WO_TRANSITIONS = {
   pay:     { from: 'invoiced',        to: 'paid',            tsField: 'paid_at' },
 };
 
-// ─── Service cadences ───────────────────────────────────────────────────────────
+// --- Service cadences -----------------------------------------------------------
 // A recurring service carries a base period plus an INTERVAL COUNT: how many of those
 // periods pass between bills. Count 1 is the ordinary case and the default, so nothing
 // captured before this existed changes. Only a YEARLY period may carry a count above 1
-// ("every 3 years" — a domain registration, a multi-year cert); anything else is
+// ("every 3 years" - a domain registration, a multi-year cert); anything else is
 // forced back to 1, because "every 2 quarters" reads worse than "semi-annual" and no
 // label or import path is written for it.
 //
@@ -32,7 +32,7 @@ export function coerceIntervalCount(value, recurrence) {
   return Math.min(n, MAX_INTERVAL_COUNT);
 }
 
-// ─── Capture lifecycle (current) ────────────────────────────────────────────────
+// --- Capture lifecycle (current) ------------------------------------------------
 // open -> ready -> imported. See migration 004.
 export const CAPTURE_STATUSES = ['open', 'ready', 'imported'];
 
@@ -84,10 +84,10 @@ export function normalizeTechnicians(list) {
   return list.map(normalizeTechnician).filter(Boolean);
 }
 
-// ─── Days (migration 006) ───────────────────────────────────────────────────────
+// --- Days (migration 006) -------------------------------------------------------
 // A job is a list of days; each day carries its own date, crew (with per-tech
 // hours), parts and services. A day maps 1:1 onto a Portal section. Labor rates
-// are not captured here — the office sets them per section in the Portal.
+// are not captured here - the office sets them per section in the Portal.
 
 /**
  * Hours parse leniently: a blank field counts as 0 rather than blocking a save,
@@ -98,7 +98,7 @@ export function parseHours(v) {
   if (v === '' || v == null) return null;
   const n = Number(v);
   if (!Number.isFinite(n) || n < 0) return null;
-  // NUMERIC(6,2) — two decimals, and well under the column's range.
+  // NUMERIC(6,2) - two decimals, and well under the column's range.
   return Math.min(Math.round(n * 100) / 100, 9999.99);
 }
 
@@ -136,7 +136,7 @@ export function hoursByTechnician(days) {
  */
 export function normalizeDay(day, index = 0) {
   if (!day) return null;
-  // Attach hours per raw entry BEFORE filtering — normalizeTechnicians drops
+  // Attach hours per raw entry BEFORE filtering - normalizeTechnicians drops
   // empties, so mapping by index afterwards would misalign the hours.
   const technicians = (day.technicians ?? [])
     .map((t) => {

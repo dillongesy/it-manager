@@ -1,17 +1,15 @@
 // Shared paging for list endpoints.
 //
-// Every list route used to default to `limit = 50` with no way to tell you were
-// only seeing part of the data — a work-order list silently stopped at 50 rows and
-// looked complete. Routes now use `parsePaging` and report the FULL matching count
-// in the `X-Total-Count` header, so the UI can page through everything and show
-// "showing 100 of 312" instead of quietly truncating.
+// Routes read `limit` / `offset` with `parsePaging` and report the total number of
+// matching rows in the `X-Total-Count` header, so clients can page through the full
+// result and show how many rows exist.
 
 /** Rows per request when the caller doesn't ask for a specific page size. */
 export const DEFAULT_LIMIT = 100;
 
 /**
  * Hard ceiling per request. A caller that needs everything (exports) pages through
- * with `offset` rather than asking for one enormous result set — that keeps any
+ * with `offset` rather than asking for one enormous result set - that keeps any
  * single query bounded no matter what a client sends.
  */
 export const MAX_LIMIT = 500;

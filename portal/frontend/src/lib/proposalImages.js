@@ -1,17 +1,8 @@
 // Turn a work order's attached proposals into printable page images.
 //
-// This used to live inline in each caller as a `try { … } catch { /* skip */ }`, which
-// meant a proposal that COULDN'T be rendered was dropped silently: the printout still
-// listed it in the Proposals summary, but the document itself never appeared, and the
-// only trace was a console warning nobody was watching. On a customer-facing invoice
-// that is the worst possible failure mode, so every reason a proposal can fail is now
-// collected and handed back for the caller to show.
-//
-// Two things could fail invisibly before:
-//   • a NON-PDF proposal (a scanned JPEG/PNG quote) — pdf.js rejects anything without a
-//     %PDF header, so it was skipped. Images now render directly, no pdf.js involved.
-//   • a genuinely unrenderable attachment (.docx, .xlsx) — still can't be printed, but
-//     now it says so instead of quietly vanishing.
+// PDFs are rendered with pdf.js and images (scanned quotes) are embedded directly.
+// Anything that can't be rendered (e.g. .docx, .xlsx) is returned as a failure with a
+// reason, so the caller can warn before printing rather than omit it silently.
 
 import api from '../api/client.js';
 // pdf.js is large; it's loaded the first time a PDF proposal is rendered.
@@ -22,7 +13,7 @@ const extensionOf = (name) => {
   return m ? m[1].toLowerCase() : '';
 };
 
-// Trust the stored MIME type first, fall back to the filename — older uploads and some
+// Trust the stored MIME type first, fall back to the filename - older uploads and some
 // browsers store a generic application/octet-stream.
 const isPdf = (mime, name) =>
   String(mime ?? '').toLowerCase().includes('pdf') || extensionOf(name) === 'pdf';
@@ -69,7 +60,7 @@ export async function renderProposalPages(buffer, mimeType, name) {
  * Render every proposal attached to a work order.
  * Returns { images, failures }:
  *   images   → [{ name, pages: [dataUrl] }] ready for printWorkOrder()
- *   failures → [{ name, reason }] — proposals that will be MISSING from the printout
+ *   failures → [{ name, reason }] - proposals that will be MISSING from the printout
  * Never throws: one bad attachment must not block printing the work order.
  */
 export async function loadProposalImages(wo) {

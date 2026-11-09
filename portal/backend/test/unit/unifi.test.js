@@ -284,7 +284,7 @@ test('the console link points at the console', () => {
   assert.equal(consoleUrl('ABC:123'), 'https://unifi.ui.com/consoles/ABC:123/network/default/dashboard');
 });
 
-// ─── WiFi → Credentials ──────────────────────────────────────────────────────
+// --- WiFi → Credentials ------------------------------------------------------
 
 const networkconf = [{ _id: 'nc1', name: 'Default' }, { _id: 'nc3', name: 'Guest-WiFi', vlan: '3' }];
 const wlan = (o = {}) => ({ id: 'w1', external_id: 'ext-1', name: 'Huebner', security: 'wpapsk', wpa_mode: 'wpa2', enabled: true,

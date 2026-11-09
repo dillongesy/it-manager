@@ -1,4 +1,4 @@
--- Portal — work-order branch/location
+-- Portal - work-order branch/location
 -- Migration 021
 --
 -- A work order optionally targets one of the customer's branch offices

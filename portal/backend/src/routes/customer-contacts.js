@@ -5,7 +5,7 @@ import { logAudit, getClientIp, diffChanges } from '../middleware/audit.js';
 
 const router = Router({ mergeParams: true });
 
-// Drag-reorder contacts — body { ids: [contactId, …] } in the new order.
+// Drag-reorder contacts - body { ids: [contactId, …] } in the new order.
 router.post('/reorder', requireAuth, async (req, res, next) => {
   try {
     const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];

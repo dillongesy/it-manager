@@ -12,9 +12,9 @@ import { isThreatLockerConfigured } from '../lib/threatlocker-client.js';
 import { isOutlookConfigured } from '../lib/outlook-client.js';
 import { linksFor } from '../lib/integration-links.js';
 
-//   GET    /api/integrations/status                         — which outside systems are configured
-//   GET    /api/customers/:customerId/integrations          — the customer's linked sites / consoles
-//   DELETE /api/customers/:customerId/integrations/:linkId  — forget a link (imported records stay)
+//   GET    /api/integrations/status                         - which outside systems are configured
+//   GET    /api/customers/:customerId/integrations          - the customer's linked sites / consoles
+//   DELETE /api/customers/:customerId/integrations/:linkId  - forget a link (imported records stay)
 
 export const integrationsRouter = Router();
 

@@ -13,7 +13,7 @@ import {
 } from '../../src/lib/cadence.js';
 import { nextRenewal, toDateStr } from '../../src/lib/renewal.js';
 
-// ─── Which periods may carry a count ───────────────────────────────────────────
+// --- Which periods may carry a count -------------------------------------------
 
 test('both spellings of the yearly period are recognized', () => {
   // The service catalog stores 'annual'; customer recurring charges store 'annually'.
@@ -46,7 +46,7 @@ test('an absurd count is clamped rather than stored', () => {
   assert.equal(coerceIntervalCount(9999, 'annually'), MAX_INTERVAL_COUNT);
 });
 
-// ─── Labels ────────────────────────────────────────────────────────────────────
+// --- Labels --------------------------------------------------------------------
 
 test('a count of 1 reads as the plain cadence', () => {
   assert.equal(cadenceLabel('monthly', 1), 'Monthly');
@@ -78,7 +78,7 @@ test('an unknown cadence degrades to its own name rather than blank', () => {
   assert.equal(cadenceUnit('fortnightly', 1), '');
 });
 
-// ─── Annualizing ───────────────────────────────────────────────────────────────
+// --- Annualizing ---------------------------------------------------------------
 
 test('perYear is what keeps recurring-revenue totals honest', () => {
   assert.equal(perYear('monthly', 1), 12);
@@ -89,7 +89,7 @@ test('perYear is what keeps recurring-revenue totals honest', () => {
   assert.equal(60 * perYear('annually', 3), 20);
 });
 
-// ─── Year anchor ───────────────────────────────────────────────────────────────
+// --- Year anchor ---------------------------------------------------------------
 
 test('only a multi-year charge stores a year anchor', () => {
   assert.equal(coerceBillingYear(2027, 'annually', 1), null);
@@ -104,7 +104,7 @@ test('a missing or impossible anchor year defaults to the current year', () => {
   assert.equal(coerceBillingYear(1200, 'annually', 3, from), 2026);
 });
 
-// ─── Multi-year renewals ───────────────────────────────────────────────────────
+// --- Multi-year renewals -------------------------------------------------------
 
 const next = (anchor, interval, from, count) => toDateStr(nextRenewal(anchor, interval, from, count));
 

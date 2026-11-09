@@ -1,10 +1,10 @@
 import { X } from 'lucide-react';
 
 // Note: dismissal is intentionally limited to the X and the form's Cancel button.
-// Esc and backdrop-click do NOT close the modal — these forms hold a lot of typed
+// Esc and backdrop-click do NOT close the modal - these forms hold a lot of typed
 // input and accidental dismissal was losing work.
 //
-// On a phone (below `sm`) the modal takes the whole screen — a centered box with a
+// On a phone (below `sm`) the modal takes the whole screen - a centered box with a
 // margin left forms a couple of hundred pixels wide. From `sm` up it's the same
 // centered card as always.
 export const MODAL_OVERLAY = 'fixed inset-0 z-50 flex items-stretch sm:items-center justify-center p-0 sm:p-4';

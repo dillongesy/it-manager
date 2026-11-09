@@ -6,7 +6,7 @@ import { GripVertical } from 'lucide-react';
  *
  * items:      array of objects with a stable `id`
  * onReorder:  (reorderedItems) => void
- * renderItem: (item, handle) => JSX   — place `handle` wherever the grip should go
+ * renderItem: (item, handle) => JSX   - place `handle` wherever the grip should go
  *                                        (e.g. next to a heading).
  * itemClassName: optional classes for each row wrapper
  *
@@ -46,7 +46,7 @@ export function DragList({ items, onReorder, renderItem, itemClassName = '' }) {
   const reset = useCallback(() => { setDragId(null); setOverId(null); stopScroll(); }, [stopScroll]);
 
   // While a drag is active, listen globally so the red highlight + scroll always
-  // clear — even if the pointer is released outside any list item.
+  // clear - even if the pointer is released outside any list item.
   useEffect(() => {
     if (dragId == null) return;
     const onEnd = () => reset();

@@ -1,4 +1,4 @@
-# Field API — Node, runs as the unprivileged `node` user on a read-only root FS.
+# Field API - Node, runs as the unprivileged `node` user on a read-only root FS.
 FROM node:24-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./

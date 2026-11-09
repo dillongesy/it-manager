@@ -1,4 +1,4 @@
--- Portal — firewall & switch device types
+-- Portal - firewall & switch device types
 -- Migration 014
 --
 -- Two new device_type values ('firewall', 'switch') backed by these columns.

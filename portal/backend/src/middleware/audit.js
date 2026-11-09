@@ -34,7 +34,7 @@ export async function logAudit({
 
 // Build a { field: { from, to } } diff between a before-row and an after-row,
 // for audit `changes`. Only `fields` are considered. Any column whose name ends
-// in `_enc` (or is in `secretFields`) is recorded as a redacted "changed" marker —
+// in `_enc` (or is in `secretFields`) is recorded as a redacted "changed" marker -
 // never the plaintext or ciphertext. JSONB/objects are compared by value.
 export function diffChanges(before, after, fields, secretFields = []) {
   const changes = {};

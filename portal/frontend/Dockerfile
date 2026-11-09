@@ -1,4 +1,4 @@
-# Portal web — static React build served by unprivileged nginx, which also
+# Portal web - static React build served by unprivileged nginx, which also
 # proxies /api to the Portal API on the internal app network.
 FROM node:24-alpine AS build
 WORKDIR /src

@@ -3,8 +3,8 @@
 // license-key titles) into one lowercased blob, then matches all query terms (AND).
 //
 // Noise + secret keys are skipped: ids, foreign keys, timestamps, sort order, encrypted
-// blobs (*_enc), and has_/is_ flags. Encrypted values never reach the client anyway —
-// the server strips them and only returns labels/has_value — so this can't leak secrets.
+// blobs (*_enc), and has_/is_ flags. Encrypted values never reach the client anyway -
+// the server strips them and only returns labels/has_value - so this can't leak secrets.
 const SKIP_KEY = /(^id$|_id$|_enc$|_at$|^has_|^is_|sort_order|created_by|updated_by|done_by|_localid$|stored_name|mime_type|size_bytes|proposal_status)/i;
 
 export function searchableText(value, depth = 0) {

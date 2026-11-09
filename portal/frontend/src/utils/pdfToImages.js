@@ -1,9 +1,7 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
-// The ?v= suffix busts browser caches. nginx used to serve this .mjs as
-// application/octet-stream; browsers cached it that way, and a 304 revalidation
-// carries no Content-Type, so the bad type stuck even after nginx was fixed.
-// Bump it if the worker ever needs to be re-fetched everywhere again.
+// The ?v= query string versions the worker URL; bump it to force every browser to
+// re-fetch the worker instead of using a cached copy.
 pdfjsLib.GlobalWorkerOptions.workerSrc = `${new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url

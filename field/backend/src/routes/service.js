@@ -55,7 +55,7 @@ async function getServiceUserId() {
   return cachedServiceUserId;
 }
 
-// GET /api/service/inventory — list (read-only)
+// GET /api/service/inventory - list (read-only)
 router.get('/inventory', async (req, res, next) => {
   try {
     const { search, category, lowStock, limit = 200, offset = 0 } = req.query;
@@ -82,7 +82,7 @@ router.get('/inventory/categories', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// GET /api/service/inventory/:id — one item + recent ledger
+// GET /api/service/inventory/:id - one item + recent ledger
 router.get('/inventory/:id', async (req, res, next) => {
   try {
     const [itemRes, txRes] = await Promise.all([
@@ -100,7 +100,7 @@ router.get('/inventory/:id', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// POST /api/service/inventory/:id/checkout — IT side consumes shared stock.
+// POST /api/service/inventory/:id/checkout - IT side consumes shared stock.
 // Body: { quantity, actor?, notes? }. `actor` is the IT tech's name, stamped
 // into the ledger note so usage is traceable to a person.
 router.post('/inventory/:id/checkout', async (req, res, next) => {
@@ -135,7 +135,7 @@ router.post('/inventory/:id/checkout', async (req, res, next) => {
   finally { client.release(); }
 });
 
-// POST /api/service/inventory/:id/return — IT side puts shared stock BACK (the
+// POST /api/service/inventory/:id/return - IT side puts shared stock BACK (the
 // reverse of checkout, used when a work-order part is reduced or removed).
 router.post('/inventory/:id/return', async (req, res, next) => {
   const client = await getClient();
@@ -168,7 +168,7 @@ router.post('/inventory/:id/return', async (req, res, next) => {
   finally { client.release(); }
 });
 
-// POST /api/service/inventory — IT Portal creates a new inventory item.
+// POST /api/service/inventory - IT Portal creates a new inventory item.
 // Body: { name, description, category, manufacturer_barcode, unit,
 //         low_stock_threshold, cost_per_unit, notes, actor? }
 router.post('/inventory', async (req, res, next) => {
@@ -192,7 +192,7 @@ router.post('/inventory', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// PATCH /api/service/inventory/:id — IT Portal edits item metadata (not quantity).
+// PATCH /api/service/inventory/:id - IT Portal edits item metadata (not quantity).
 router.patch('/inventory/:id', async (req, res, next) => {
   try {
     const { actor } = req.body ?? {};
@@ -216,7 +216,7 @@ router.patch('/inventory/:id', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// POST /api/service/inventory/:id/receive — IT Portal adds stock on delivery.
+// POST /api/service/inventory/:id/receive - IT Portal adds stock on delivery.
 router.post('/inventory/:id/receive', async (req, res, next) => {
   const client = await getClient();
   try {
@@ -248,7 +248,7 @@ router.post('/inventory/:id/receive', async (req, res, next) => {
   finally { client.release(); }
 });
 
-// POST /api/service/inventory/:id/adjust — IT Portal corrects the on-hand count.
+// POST /api/service/inventory/:id/adjust - IT Portal corrects the on-hand count.
 router.post('/inventory/:id/adjust', async (req, res, next) => {
   const client = await getClient();
   try {
@@ -280,7 +280,7 @@ router.post('/inventory/:id/adjust', async (req, res, next) => {
   finally { client.release(); }
 });
 
-// DELETE /api/service/inventory/:id — IT Portal removes an item. Mirrors the Field-side
+// DELETE /api/service/inventory/:id - IT Portal removes an item. Mirrors the Field-side
 // rule: soft-delete (archive) if it has ledger history, hard-delete if it's a clean
 // mistake. Body: { actor? }.
 router.delete('/inventory/:id', async (req, res, next) => {
@@ -310,14 +310,14 @@ router.delete('/inventory/:id', async (req, res, next) => {
   finally { client.release(); }
 });
 
-// ─── Field job captures (Portal pulls these to promote into real work orders) ───
+// --- Field job captures (Portal pulls these to promote into real work orders) ---
 // The Portal reaches in over the LAN to read "ready" captures + their photos and
 // to mark a capture imported once it becomes a Portal WO. The Field App never
-// initiates any of this — it only answers the Portal's authenticated calls.
+// initiates any of this - it only answers the Portal's authenticated calls.
 
 // A capture is a list of DAYS (migration 006), each with its own date, crew +
 // per-technician hours, parts and services. The Portal turns each day into one
-// work_order_section on import, so the whole structure has to cross the bridge —
+// work_order_section on import, so the whole structure has to cross the bridge -
 // not just a flattened total. Rates aren't captured here; the biller sets them
 // per section in the Portal.
 async function getFullJob(id) {
@@ -381,7 +381,7 @@ async function getFullJob(id) {
   };
 }
 
-// GET /api/service/field-jobs?status=ready — list captures (default: ready)
+// GET /api/service/field-jobs?status=ready - list captures (default: ready)
 router.get('/field-jobs', async (req, res, next) => {
   try {
     const { status = 'ready', limit = 200, offset = 0 } = req.query;
@@ -419,7 +419,7 @@ router.get('/field-jobs', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// GET /api/service/field-jobs/:id — one full capture
+// GET /api/service/field-jobs/:id - one full capture
 router.get('/field-jobs/:id', async (req, res, next) => {
   try {
     const job = await getFullJob(req.params.id);
@@ -428,7 +428,7 @@ router.get('/field-jobs/:id', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// GET /api/service/field-jobs/:id/photos/:photoId — stream a photo's bytes so the
+// GET /api/service/field-jobs/:id/photos/:photoId - stream a photo's bytes so the
 // Portal can copy it into the customer's files at promotion.
 router.get('/field-jobs/:id/photos/:photoId', async (req, res, next) => {
   try {
@@ -444,7 +444,7 @@ router.get('/field-jobs/:id/photos/:photoId', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// POST /api/service/field-jobs/:id/imported — Portal marks a capture imported once
+// POST /api/service/field-jobs/:id/imported - Portal marks a capture imported once
 // it has become a real Portal WO. Body: { wo_number, actor? }.
 router.post('/field-jobs/:id/imported', async (req, res, next) => {
   try {

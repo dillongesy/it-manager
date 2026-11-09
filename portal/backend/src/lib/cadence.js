@@ -1,18 +1,18 @@
 // Billing cadences, including "every N years".
 //
-// Every recurring thing in the Portal — a catalog service, a customer's recurring
-// charge, an auto-renewing license — has a BASE period (monthly / quarterly /
+// Every recurring thing in the Portal - a catalog service, a customer's recurring
+// charge, an auto-renewing license - has a BASE period (monthly / quarterly /
 // semiannual / annual) plus an INTERVAL COUNT: how many of those periods pass
 // between bills. Count 1 is the ordinary case and the default everywhere, so a row
 // that predates this module behaves exactly as it always did.
 //
-// Only the ANNUAL cadence exposes a count above 1 ("every 3 years" — domain
+// Only the ANNUAL cadence exposes a count above 1 ("every 3 years" - domain
 // registrations, multi-year SSL certs, extended warranties). coerceIntervalCount()
 // enforces that: it forces the count back to 1 for any other period, so a stray
 // payload can't create an "every 2 quarters" charge that no label or next-due
 // calculation is written for. Widening that is a UI decision, not a schema one.
 //
-// Two vocabularies exist in the schema for the same thing — the service catalog and
+// Two vocabularies exist in the schema for the same thing - the service catalog and
 // work orders say 'annual', customer recurring charges say 'annually'. Both are
 // accepted here rather than migrated, since the strings are stored in three tables
 // and touched by the Field bridge.
@@ -27,7 +27,7 @@ const BASE_LABEL = {
   annually:   'Annually',
 };
 
-// Occurrences of the BASE period per year — divided by the interval count to
+// Occurrences of the BASE period per year - divided by the interval count to
 // annualize money.
 const BASE_PER_YEAR = { monthly: 12, quarterly: 4, semiannual: 2, annual: 1, annually: 1 };
 
@@ -61,7 +61,7 @@ export function cadenceUnit(frequency, count = 1) {
   return n > 1 ? `${n}yr` : base;
 }
 
-// How many times a year this cadence bills — 12 monthly, 1 annually, 1/3 for every
+// How many times a year this cadence bills - 12 monthly, 1 annually, 1/3 for every
 // three years. Multiply an amount by this to annualize it.
 export function perYear(frequency, count = 1) {
   const base = BASE_PER_YEAR[frequency] ?? 0;

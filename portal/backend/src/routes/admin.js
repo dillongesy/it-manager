@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import multer from 'multer';
-import { query } from '../db/index.js';
+import { query, getClient } from '../db/index.js';
 import { config } from '../config/index.js';
 import { requireAuth, requireRole } from '../middleware/requireAuth.js';
 import { logAudit, getClientIp } from '../middleware/audit.js';
@@ -12,8 +12,10 @@ import {
 import { BUNDLE, oneTimeExists, consumeOneTime } from '../lib/one-time.js';
 import { pushBrandingToField } from '../lib/branding-sync.js';
 import { fieldPlatform, isFieldConfigured } from '../lib/field-client.js';
+import { getDefaultRates, saveDefaultRates, RATE_LIMITS } from '../lib/billing-rates.js';
+import { storageReport } from '../lib/storage.js';
 
-// Admin → everything that used to be server configuration.
+// Admin API (admin role only).
 //
 //   GET    /api/admin/integrations              list (secret values never returned)
 //   PUT    /api/admin/integrations/:id          { enabled?, values? }
@@ -24,6 +26,9 @@ import { fieldPlatform, isFieldConfigured } from '../lib/field-client.js';
 //   GET    /api/admin/security                  setup / recovery-secret status
 //   POST   /api/admin/security/reveal           { password } → secrets, exactly once, ever
 //   GET    /api/admin/system                    version + Field bridge health
+//   GET    /api/admin/storage                   disk, database and file sizes + forecast
+//   GET    /api/admin/billing-rates             default hourly rates for new customers
+//   PUT    /api/admin/billing-rates             { rates: [{ label, rate }], applyToExisting? }
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireRole('admin'));
 
@@ -32,7 +37,7 @@ const audit = (req, action, entityType, entityName, extra = {}) => logAudit({
   entityName, ipAddress: getClientIp(req), ...extra,
 });
 
-// ─── Integrations ────────────────────────────────────────────────────────────
+// --- Integrations ------------------------------------------------------------
 
 adminRouter.get('/integrations', async (_req, res, next) => {
   try { res.json(await listIntegrations()); } catch (err) { next(err); }
@@ -49,7 +54,7 @@ adminRouter.put('/integrations/:id', async (req, res, next) => {
   }
 });
 
-// ─── Branding ────────────────────────────────────────────────────────────────
+// --- Branding ----------------------------------------------------------------
 
 adminRouter.get('/branding', async (_req, res, next) => {
   try {
@@ -104,7 +109,7 @@ adminRouter.delete('/branding/assets/:kind', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ─── Security: reveal-once recovery secrets ──────────────────────────────────
+// --- Security: reveal-once recovery secrets ----------------------------------
 
 async function securityStatus() {
   const system = await getSetting('system', {});
@@ -159,7 +164,34 @@ adminRouter.post('/security/reveal', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ─── System ──────────────────────────────────────────────────────────────────
+// --- Billing rates -----------------------------------------------------------
+
+adminRouter.get('/billing-rates', async (_req, res, next) => {
+  try { res.json({ rates: await getDefaultRates(), limits: RATE_LIMITS }); } catch (err) { next(err); }
+});
+
+adminRouter.put('/billing-rates', async (req, res, next) => {
+  const client = await getClient();
+  try {
+    await client.query('BEGIN');
+    const result = await saveDefaultRates(req.body?.rates, {
+      applyToExisting: req.body?.applyToExisting === true, userId: req.user.sub, client,
+    });
+    await client.query('COMMIT');
+    const summary = result.rates.map(r => `${r.label} ${r.rate.toFixed(2)}`).join(', ');
+    await audit(req, 'UPDATE', 'billing_rates', `Default rates: ${summary}` +
+      (result.customersUpdated ? ` (${result.customersUpdated} customer rates updated)` : ''));
+    res.json(result);
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    if (err.status) return res.status(err.status).json({ error: err.message });
+    next(err);
+  } finally {
+    client.release();
+  }
+});
+
+// --- System ------------------------------------------------------------------
 
 adminRouter.get('/system', async (_req, res, next) => {
   try {
@@ -170,6 +202,10 @@ adminRouter.get('/system', async (_req, res, next) => {
     }
     res.json({ version: config.appVersion, nodeEnv: config.nodeEnv, field });
   } catch (err) { next(err); }
+});
+
+adminRouter.get('/storage', async (_req, res, next) => {
+  try { res.json(await storageReport()); } catch (err) { next(err); }
 });
 
 // Retry of the setup wizard's Field admin creation, using the signed-in admin's own

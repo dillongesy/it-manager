@@ -3,7 +3,7 @@ import { config } from '../config/index.js';
 /**
  * Thin client for the shared-inventory bridge. The Portal calls the Field App's
  * /api/service/* endpoints with the static service token. This is the ONE place
- * the Portal reaches into the Field App — strictly one-way, read + checkout only.
+ * the Portal reaches into the Field App - strictly one-way, read + checkout only.
  */
 
 export function isFieldConfigured() {
@@ -34,7 +34,7 @@ async function call(path, { method = 'GET', body } = {}) {
       body: body ? JSON.stringify(body) : undefined,
     });
   } catch {
-    // Network-level failure — Field server unreachable.
+    // Network-level failure - Field server unreachable.
     throw new FieldBridgeError('Could not reach the Field App inventory service.', 502);
   }
 
@@ -81,7 +81,7 @@ export const fieldInventory = {
   remove:     (id, body)   => call(`/api/service/inventory/${encodeURIComponent(id)}`, { method: 'DELETE', body }),
 };
 
-// Field job captures — Portal pulls "ready" captures, reads photo bytes, and marks
+// Field job captures - Portal pulls "ready" captures, reads photo bytes, and marks
 // a capture imported once it becomes a Portal work order. Strictly Portal→Field.
 export const fieldJobs = {
   list:         (params = {})    => call(`/api/service/field-jobs${toQuery(params)}`),
@@ -97,13 +97,14 @@ export function toQuery(params) {
 }
 
 // Platform plumbing over the same one-way bridge (Portal → Field):
-//   branding  — the Portal is the single place branding is edited; it pushes a full
+//   branding  - the Portal is the single place branding is edited; it pushes a full
 //               copy (settings + images) to the Field App, which only stores it.
-//   bootstrap — the setup wizard creates the Field App's first admin with the same
+//   bootstrap - the setup wizard creates the Field App's first admin with the same
 //               login, so a fresh install needs no command-line seeding. The Field
 //               side refuses once any real user exists.
 export const fieldPlatform = {
   health:         ()     => call('/api/service/health'),
   pushBranding:   (body) => call('/api/service/branding', { method: 'PUT', body }),
   bootstrapAdmin: (body) => call('/api/service/bootstrap-admin', { method: 'POST', body }),
+  storage:        ()     => call('/api/service/storage'),
 };

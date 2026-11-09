@@ -283,7 +283,7 @@ test('match: nothing in common → new device', () => {
   assert.equal(r.ambiguous, undefined);
 });
 
-// ── Shapes seen on the live trial tenant, 2026-09-28 (values made up) ──
+// -- Shapes seen on the live trial tenant, 2026-09-28 (values made up) --
 const liveV2 = { companyID: 'c1', siteID: 's1', endpointID: 'a1b2', platform: {
   deviceName: 'FRONT-01', friendlyName: 'FRONT-01', endpointType: 'Desktop', type: 'assetCollection', subResourceType: 'Physical',
   ipAddress: ['192.168.50.20', '0.0.0.0', '172.25.64.1'], macAddress: ['10:98:19:0A:0B:0C', '08:B4:D2:0D:0E:0F'],
@@ -336,7 +336,7 @@ test('merge: drives are added only when the Portal device has none', () => {
 });
 
 
-// ─── Dell warranty carried by the import ─────────────────────────────────────
+// --- Dell warranty carried by the import -------------------------------------
 
 test('a Dell warranty found during the import fills, then refreshes, the device\'s warranty', () => {
   const m = { name: 'AARON10PC', machine_name: 'AARON10PC', type_hint: '', os: 'Windows 11 Pro', serial: 'JDJFX53',
@@ -346,7 +346,7 @@ test('a Dell warranty found during the import fills, then refreshes, the device\
   // Blank → filled.
   let plan = mergePlan({ id: 'd' }, fields);
   assert.ok(plan.changes.some(c => c.field === 'warranty_expires' && c.mode === 'fill'));
-  // pg hands a DATE back as a local-midnight Date — the same day is NOT a change.
+  // pg hands a DATE back as a local-midnight Date - the same day is NOT a change.
   plan = mergePlan({ id: 'd', warranty_expires: new Date(2027, 2, 10), warranty_coverage: 'ProSupport' }, fields);
   assert.equal(plan.changes.some(c => c.field === 'warranty_expires'), false);
   // A different date (an extension was bought) is refreshed.
@@ -361,7 +361,7 @@ test('no warranty from Dell never erases a stored one, and network gear gets non
   assert.equal(deviceFieldsFromMachine({ name: 'SW', type_hint: 'switch', warranty_expires: '2027-01-01' }).warranty_expires, '');
 });
 
-// ─── Re-sorting what older imports filed as "Network" ────────────────────────
+// --- Re-sorting what older imports filed as "Network" ------------------------
 
 test('a re-import moves an imported printer out of "Network"; a hand-picked type is left alone', () => {
   const printer = { name: 'HPI0A1B2C', machine_name: 'HPI0A1B2C', type_hint: 'NetworkDevice', category: 'PRINTER',

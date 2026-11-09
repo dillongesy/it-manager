@@ -16,7 +16,7 @@ export function sortByName(items, keyFn) {
   return [...items].sort((a, b) => alphaCompare(keyFn(a), keyFn(b)));
 }
 
-// True when `items` is already in alphabetical order — lets a Sort button
+// True when `items` is already in alphabetical order - lets a Sort button
 // disable itself instead of firing a pointless reorder request.
 export function isSortedByName(items, keyFn) {
   for (let i = 1; i < items.length; i++) {
@@ -25,7 +25,7 @@ export function isSortedByName(items, keyFn) {
   return true;
 }
 
-// ─── Sort by other keys (the Devices tab's Sort menu) ───────────────────────
+// --- Sort by other keys (the Devices tab's Sort menu) -----------------------
 
 // IPv4 addresses in numeric order ("192.168.1.2" before "192.168.1.10"); anything that
 // isn't an IPv4 address (a hostname, IPv6) sorts after them alphabetically. Blanks last.

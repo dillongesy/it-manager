@@ -1,7 +1,7 @@
--- Portal — device ordering, VLANs, firewall rules
+-- Portal - device ordering, VLANs, firewall rules
 -- Migration 015
 
--- ─── Device ordering ───────────────────────────────────────────────────────────
+-- --- Device ordering -----------------------------------------------------------
 ALTER TABLE customer_devices
   ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0,
   -- firewall/switch: VLAN definitions, each with nested static_devices.
@@ -24,7 +24,7 @@ SET sort_order = o.rn
 FROM ordered o
 WHERE d.id = o.id;
 
--- ─── Device-type ordering (per customer) ───────────────────────────────────────
+-- --- Device-type ordering (per customer) ---------------------------------------
 -- The Devices tab groups by device_type; this stores an explicit order for those
 -- groups so they can be drag-reordered, mirroring customer_credential_sections.
 CREATE TABLE IF NOT EXISTS customer_device_type_order (

@@ -9,12 +9,12 @@ const router = Router();
 // requests across the one-way bridge so IT staff can view and consume stock
 // without leaving the Portal. Read here, write only via checkout.
 
-// GET /api/inventory/status — is the bridge wired up?
+// GET /api/inventory/status - is the bridge wired up?
 router.get('/status', requireAuth, (req, res) => {
   res.json({ configured: isFieldConfigured() });
 });
 
-// GET /api/inventory — list shared stock
+// GET /api/inventory - list shared stock
 router.get('/', requireAuth, async (req, res, next) => {
   try {
     const { search, category, lowStock } = req.query;
@@ -30,14 +30,14 @@ router.get('/categories', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// GET /api/inventory/:id — one item + ledger
+// GET /api/inventory/:id - one item + ledger
 router.get('/:id', requireAuth, async (req, res, next) => {
   try {
     res.json(await fieldInventory.get(req.params.id));
   } catch (err) { next(err); }
 });
 
-// POST /api/inventory — IT side adds a new shared item (written in the Field DB)
+// POST /api/inventory - IT side adds a new shared item (written in the Field DB)
 router.post('/', requireAuth, async (req, res, next) => {
   try {
     const item = await fieldInventory.create({ ...req.body, actor: req.user.fullName });
@@ -51,7 +51,7 @@ router.post('/', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// PATCH /api/inventory/:id — IT side edits item metadata
+// PATCH /api/inventory/:id - IT side edits item metadata
 router.patch('/:id', requireAuth, async (req, res, next) => {
   try {
     const item = await fieldInventory.update(req.params.id, { ...req.body, actor: req.user.fullName });
@@ -65,7 +65,7 @@ router.patch('/:id', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// POST /api/inventory/:id/receive — IT side adds stock
+// POST /api/inventory/:id/receive - IT side adds stock
 router.post('/:id/receive', requireAuth, async (req, res, next) => {
   try {
     const { quantity, notes } = req.body ?? {};
@@ -80,7 +80,7 @@ router.post('/:id/receive', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// POST /api/inventory/:id/adjust — IT side corrects the on-hand count
+// POST /api/inventory/:id/adjust - IT side corrects the on-hand count
 router.post('/:id/adjust', requireAuth, async (req, res, next) => {
   try {
     const { new_quantity, notes } = req.body ?? {};
@@ -95,7 +95,7 @@ router.post('/:id/adjust', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// POST /api/inventory/:id/checkout — IT side uses shared stock
+// POST /api/inventory/:id/checkout - IT side uses shared stock
 router.post('/:id/checkout', requireAuth, async (req, res, next) => {
   try {
     const { quantity, notes } = req.body ?? {};
@@ -116,7 +116,7 @@ router.post('/:id/checkout', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// DELETE /api/inventory/:id — IT side removes a shared item. The Field App decides
+// DELETE /api/inventory/:id - IT side removes a shared item. The Field App decides
 // whether it's a hard delete (no history) or an archive (has ledger history) and tells
 // us via `mode`; we mirror it into the Portal audit log.
 router.delete('/:id', requireAuth, async (req, res, next) => {

@@ -38,7 +38,7 @@ export function CustomerDetail() {
   const navigate = useNavigate();
   const [sp, setSp] = useSearchParams();
   const qc = useQueryClient();
-  // ?tab=todos is the old name of the Tasks tab (links from before the Tasks change).
+  // ?tab=todos is an alias of the Tasks tab, kept so existing links still work.
   const tab = sp.get('tab') === 'todos' ? 'tasks' : (sp.get('tab') ?? 'overview');
 
   const { data: customer, isLoading, error, refetch } = useQuery({
@@ -48,7 +48,7 @@ export function CustomerDetail() {
 
   const setTab = (t) => setSp({ tab: t }, { replace: true });
 
-  // The tab strip scrolls sideways when it doesn't fit (phones, narrow windows) —
+  // The tab strip scrolls sideways when it doesn't fit (phones, narrow windows) -
   // keep the active tab in view, e.g. after a deep link to ?tab=billing.
   const tabsRef = useRef(null);
   useEffect(() => {
@@ -59,7 +59,7 @@ export function CustomerDetail() {
       nav.scrollLeft = btn.offsetLeft - nav.offsetLeft - (nav.clientWidth - btn.offsetWidth) / 2;
     };
     center();
-    // Tab widths change once the web font loads — re-center then.
+    // Tab widths change once the web font loads - re-center then.
     document.fonts?.ready.then(center).catch(() => {});
   }, [tab, customer?.id]);
 

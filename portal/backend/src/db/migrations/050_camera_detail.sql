@@ -1,10 +1,10 @@
--- Portal — camera system detail
+-- Portal - camera system detail
 -- Migration 050
 --
 -- Two parts:
 --
 -- 1. The camera SYSTEM (NVR/DVR) gains an install date and a physical location.
---    `system_location` is where the box physically sits ("server closet, back wall rack") —
+--    `system_location` is where the box physically sits ("server closet, back wall rack") -
 --    distinct from `location_id`, which is the branch office the system belongs to.
 --
 -- 2. Individual CAMERAS hanging off a system. Techs need per-camera detail on site:

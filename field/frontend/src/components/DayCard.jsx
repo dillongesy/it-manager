@@ -7,7 +7,7 @@ import { dayHours, fmtHours, formatDayDate, parseHours } from '../utils/jobDays.
 import { cadenceLabel } from '../utils/cadence.js';
 
 /**
- * One day of a job — its date, crew (with per-technician hours), parts used,
+ * One day of a job - its date, crew (with per-technician hours), parts used,
  * services, work performed and notes. Each day becomes one section on the Portal
  * work order at import.
  *

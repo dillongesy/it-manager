@@ -3,17 +3,11 @@ import { query, getClient } from '../db/index.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { logAudit, getClientIp } from '../middleware/audit.js';
 import { parsePaging, setTotalCount } from '../lib/pagination.js';
+import { seedCustomerRates } from '../lib/billing-rates.js';
 
 const router = Router();
 
-// Billing rates seeded on every new customer: [label, hourly rate], in display order.
-// Negotiated per-customer rates are edited on the customer's Overview tab afterwards.
-const DEFAULT_RATES = [
-  ['Standard', 90.00],
-  ['Tech',     70.00],
-];
-
-// GET /api/customers — list with search
+// GET /api/customers - list with search
 router.get('/', requireAuth, async (req, res, next) => {
   try {
     const { search, sortBy, sortDir } = req.query;
@@ -59,7 +53,7 @@ router.get('/', requireAuth, async (req, res, next) => {
   }
 });
 
-// GET /api/customers/:id — full record
+// GET /api/customers/:id - full record
 router.get('/:id', requireAuth, async (req, res, next) => {
   try {
     const [customerRes, contactsRes, locationsRes, ratesRes] = await Promise.all([
@@ -96,17 +90,8 @@ router.post('/', requireAuth, async (req, res, next) => {
       [name.trim(), address, city, state, zip, phone, notes, wan_ip, firewall_link, req.user.sub]
     );
 
-    // Every new customer starts with the house rates, in this order. Either can be
-    // renamed/re-priced per customer afterwards, and more can be added — this is just
-    // the starting point so nobody has to type them for every new account.
-    // "Standard" keeps its name deliberately: work-order creation looks up
-    // LOWER(label) = 'standard' for a new WO's default rate.
-    for (const [i, [label, rate]] of DEFAULT_RATES.entries()) {
-      await query(
-        `INSERT INTO customer_billing_rates (customer_id, label, rate, sort_order) VALUES ($1, $2, $3, $4)`,
-        [rows[0].id, label, rate, (i + 1) * 10]
-      );
-    }
+    // Seed the default rates (Admin → Billing); each can be changed per customer later.
+    await seedCustomerRates({ query }, rows[0].id);
 
     await logAudit({
       userId: req.user.sub,
@@ -185,7 +170,7 @@ router.patch('/:id', requireAuth, async (req, res, next) => {
   }
 });
 
-// DELETE /api/customers/:id — soft delete
+// DELETE /api/customers/:id - soft delete
 router.delete('/:id', requireAuth, async (req, res, next) => {
   try {
     const { rows } = await query(

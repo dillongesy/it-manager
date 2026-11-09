@@ -21,5 +21,9 @@ export const adminApi = {
   security: () => api.get('/admin/security').then(r => r.data),
   reveal:   (password) => api.post('/admin/security/reveal', { password }).then(r => r.data),
 
-  system: () => api.get('/admin/system').then(r => r.data),
+  system:  () => api.get('/admin/system').then(r => r.data),
+  storage: () => api.get('/admin/storage').then(r => r.data),
+
+  billingRates:     () => api.get('/admin/billing-rates').then(r => r.data),
+  saveBillingRates: (body) => api.put('/admin/billing-rates', body).then(r => r.data),
 };

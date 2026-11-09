@@ -1,7 +1,7 @@
-// Maintenance script — NOT a normal app feature.
+// Maintenance script - NOT a normal app feature.
 // Permanently deletes JOB CAPTURES that have already been imported into the Portal
 // (capture_status='imported') and are older than N days, along with their photo
-// files on disk. Keeps the internet-facing Field DB clean — captures are meant to
+// files on disk. Keeps the internet-facing Field DB clean - captures are meant to
 // be ephemeral once they become a real Portal work order.
 //
 // Usage:
@@ -10,7 +10,7 @@
 //   node scripts/purge-imported.js --yes      # actually delete (30-day age)
 //   node scripts/purge-imported.js --days=14 --yes
 //
-// Run from cron / a systemd timer. This cannot be undone — back up first if unsure.
+// Run from cron / a systemd timer. This cannot be undone - back up first if unsure.
 import { config as loadEnv } from 'dotenv';
 import pg from 'pg';
 import { existsSync, unlinkSync } from 'fs';

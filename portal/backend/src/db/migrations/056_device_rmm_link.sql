@@ -1,13 +1,13 @@
--- Portal — ConnectWise RMM device import
+-- Portal - ConnectWise RMM device import
 -- Migration 056
 --
 -- A customer's Devices tab can import machines from ConnectWise RMM (the ConnectWise
 -- Platform / "Asio" API). Each imported (or matched) device remembers which RMM
 -- endpoint it is, so a later re-import updates that same device instead of creating a
--- duplicate — even after it has been renamed in the Portal.
+-- duplicate - even after it has been renamed in the Portal.
 --
---   rmm_endpoint_id — ConnectWise RMM's endpoint (device) ID
---   rmm_synced_at   — last time an import refreshed this device
+--   rmm_endpoint_id - ConnectWise RMM's endpoint (device) ID
+--   rmm_synced_at   - last time an import refreshed this device
 --
 -- No new IP column: customer_devices.ip_address already exists (migration 009); the
 -- Devices tab now simply shows it on workstations, servers and switches too.

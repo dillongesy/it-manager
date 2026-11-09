@@ -4,7 +4,7 @@ import { requireAuth } from '../middleware/requireAuth.js';
 
 const router = Router();
 
-// GET /api/recurring-charges/active — every active recurring charge across active
+// GET /api/recurring-charges/active - every active recurring charge across active
 // customers, joined with the customer name. The dashboard aggregates these client-side
 // (per-customer totals + upcoming-in-N-months) reusing utils/recurring.js, so the
 // next-due month logic isn't duplicated server-side. The dataset is small (internal

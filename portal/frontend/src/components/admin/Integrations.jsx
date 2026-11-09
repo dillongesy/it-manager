@@ -4,8 +4,8 @@ import { ChevronDown, ChevronRight, CheckCircle2, CircleDashed, Info, Lock, Save
 import { adminApi } from '../../api/admin.js';
 import { PasswordInput } from '../ui/PasswordInput.jsx';
 
-// Admin → Integrations. Each outside system has an on/off switch and its settings
-// (formerly .env variables). Secret fields are write-only: the server only says
+// Admin → Integrations. Each external system has an on/off switch and its settings.
+// Secret fields are write-only: the server only says
 // whether one is stored, and leaving the box blank keeps it.
 
 function Toggle({ checked, onChange, disabled }) {

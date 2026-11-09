@@ -11,7 +11,7 @@ const FORMATS = [
   BarcodeFormat.QR_CODE, BarcodeFormat.DATA_MATRIX,
 ];
 
-// Downscale frames before decoding — plenty of detail for a barcode and much faster.
+// Downscale frames before decoding - plenty of detail for a barcode and much faster.
 const MAX_EDGE = 720;
 
 /**
@@ -20,7 +20,7 @@ const MAX_EDGE = 720;
  * We drive the camera ourselves (rather than letting a library own the <video>) so
  * the preview always fills the screen correctly, and so we can decode each frame at
  * BOTH 0° and 90°. That lets a sideways (vertical) barcode be read while the phone
- * is held normally in portrait — no need to rotate the phone.
+ * is held normally in portrait - no need to rotate the phone.
  *
  * Calls onScan(decodedText) on the first successful read, then stops.
  */
@@ -103,7 +103,7 @@ export default function BarcodeScanner({ onScan, onClose }) {
           onScan(result.getText());
         }
       } catch {
-        // No barcode in this frame/orientation — expected; try the other next tick.
+        // No barcode in this frame/orientation - expected; try the other next tick.
       }
       rotated = !rotated;
     }
@@ -153,7 +153,7 @@ export default function BarcodeScanner({ onScan, onClose }) {
         </button>
       </div>
 
-      {/* Centered aiming frame (cosmetic — the whole frame is decoded, both orientations) */}
+      {/* Centered aiming frame (cosmetic - the whole frame is decoded, both orientations) */}
       <div className="relative flex-1 flex items-center justify-center pointer-events-none">
         {!error && (
           <div className="w-[78%] max-w-sm aspect-square rounded-2xl border-2 border-white/70 shadow-[0_0_0_100vmax_rgba(0,0,0,0.35)]" />

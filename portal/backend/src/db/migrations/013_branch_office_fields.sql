@@ -1,9 +1,9 @@
--- Portal — branch offices (extra linked locations with their own details)
+-- Portal - branch offices (extra linked locations with their own details)
 -- Migration 013
 --
 -- customer_locations existed from migration 001 (label/address/city/state/zip/phone/notes)
 -- but had no write path. Branch offices need their own business name, static WAN IP,
--- and firewall management link — same richness as the main office.
+-- and firewall management link - same richness as the main office.
 
 ALTER TABLE customer_locations
   ADD COLUMN IF NOT EXISTS business_name VARCHAR(255),

@@ -8,7 +8,7 @@ import { ipInCidr } from '../lib/cidr.js';
  *
  * This is deliberately separate from requireAuth (human JWT logins). It never
  * grants access to anything but the explicit /api/service routes, and the Field
- * App holds no equivalent way to call the Portal — the bridge is one-way.
+ * App holds no equivalent way to call the Portal - the bridge is one-way.
  */
 export function requireService(req, res, next) {
   const expected = config.serviceToken;
@@ -18,7 +18,7 @@ export function requireService(req, res, next) {
 
   // Network check first (Docker): the TCP peer must be on the internal bridge
   // network. Uses the socket address, never X-Forwarded-For, so it can't be spoofed
-  // through the public web proxy — which also refuses /api/service outright.
+  // through the public web proxy - which also refuses /api/service outright.
   if (config.serviceAllowedCidr && !ipInCidr(req.socket.remoteAddress, config.serviceAllowedCidr)) {
     return res.status(404).json({ error: 'Not found.' });
   }

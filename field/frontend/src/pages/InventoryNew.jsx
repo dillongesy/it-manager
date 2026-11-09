@@ -57,7 +57,7 @@ export default function InventoryNew() {
       <form onSubmit={submit} className="space-y-6">
         {error && <p className="text-brand text-sm">{error}</p>}
 
-        {/* ─── Basics ─────────────────────────────── */}
+        {/* --- Basics ------------------------------- */}
         <Section title="Basics">
           <Labeled label="Name" required>
             <input className="input" value={form.name} onChange={set('name')} placeholder="e.g. 4MP Dome Camera" autoFocus required />
@@ -67,7 +67,7 @@ export default function InventoryNew() {
           </Labeled>
         </Section>
 
-        {/* ─── Stock ──────────────────────────────── */}
+        {/* --- Stock -------------------------------- */}
         <Section title="Stock">
           <div className="grid grid-cols-2 gap-3">
             <Labeled label="How many do you have now?" hint="The amount on hand today.">
@@ -82,7 +82,7 @@ export default function InventoryNew() {
           </Labeled>
         </Section>
 
-        {/* ─── Optional details ───────────────────── */}
+        {/* --- Optional details --------------------- */}
         <Section title="Optional details">
           <Labeled label="Description" hint="Any extra notes about the item.">
             <textarea className="input" rows={2} value={form.description} onChange={set('description')} />

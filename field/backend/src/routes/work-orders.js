@@ -10,7 +10,7 @@ const woName = (wo) => `Field Job #${wo.number}${wo.customer_name ? ` — ${wo.c
 
 // On open->ready we consume stock for each linked inventory line (the single
 // decrement point); on ready->open we put it back. Editing is locked while
-// 'ready', so the lines at reopen are exactly what was consumed at ready — no
+// 'ready', so the lines at reopen are exactly what was consumed at ready - no
 // reconciliation needed. Items can go negative: a capture should never be blocked
 // because the on-hand count is behind reality; the ledger records the truth and a
 // later adjust can correct it.
@@ -78,7 +78,7 @@ async function getFullWO(id) {
     ),
   ]);
 
-  // One query per child table for the whole job, then grouped in memory — not one
+  // One query per child table for the whole job, then grouped in memory - not one
   // query per day.
   const forDay = (rowsIn, dayId) => rowsIn.filter((r) => r.day_id === dayId);
   const nested = days.rows.map((d) => {
@@ -94,7 +94,7 @@ async function getFullWO(id) {
   return {
     ...rows[0],
     days: nested,
-    // Always computed from the per-technician hours — never the legacy column.
+    // Always computed from the per-technician hours - never the legacy column.
     hours: totalHours(nested),
     // Flat roll-ups across every day, each row carrying its day_id. Kept so the
     // capture-stock pass, list views and older consumers stay simple.
@@ -110,11 +110,11 @@ const RECURRENCES = ['monthly', 'quarterly', 'semiannual', 'annual'];
 
 /**
  * Replace a job's whole day structure (days + their technicians/parts/services).
- * A save is a clean full replace — the mobile form always posts the complete set,
+ * A save is a clean full replace - the mobile form always posts the complete set,
  * which avoids per-row diffing on a flaky field connection.
  */
 async function replaceDays(client, woId, dayList) {
-  // A job always has at least one day — everything (the date, the crew, the hours)
+  // A job always has at least one day - everything (the date, the crew, the hours)
   // hangs off one, so an empty list would leave an unusable record.
   const days = dayList.length ? dayList : [{
     work_date: null, description: null, notes: null,
@@ -122,7 +122,7 @@ async function replaceDays(client, woId, dayList) {
   }];
 
   // Children cascade from their day, but rows written before migration 006 could
-  // still be dangling with a NULL day_id — clear by work_order_id to be certain.
+  // still be dangling with a NULL day_id - clear by work_order_id to be certain.
   await client.query('DELETE FROM field_work_order_days WHERE work_order_id=$1', [woId]);
   await client.query('DELETE FROM field_work_order_technicians WHERE work_order_id=$1', [woId]);
   await client.query('DELETE FROM field_work_order_items WHERE work_order_id=$1', [woId]);
@@ -155,7 +155,7 @@ async function replaceDays(client, woId, dayList) {
       const recurrence = billing === 'recurring'
         ? (RECURRENCES.includes(sv.recurrence) ? sv.recurrence : 'monthly')
         : null;
-      // How many periods between bills — 3 for something sold three years at a time.
+      // How many periods between bills - 3 for something sold three years at a time.
       // Only a yearly period may carry a count; the Portal enforces the same rule, so
       // the value survives the import unchanged.
       const recurrenceCount = billing === 'recurring' ? coerceIntervalCount(sv.recurrence_count, recurrence) : 1;
@@ -180,7 +180,7 @@ async function replaceDays(client, woId, dayList) {
 /**
  * Read the day list out of a request body. The app always sends `days`. A flat
  * pre-006 body ({ work_date, technicians, items, services }) is still accepted and
- * becomes a single Day 1 — that shape is what older clients and the API tests use.
+ * becomes a single Day 1 - that shape is what older clients and the API tests use.
  * Returns null when the body says nothing about days, so a partial PATCH (e.g.
  * just renaming the customer) leaves the existing structure alone.
  */
@@ -217,7 +217,7 @@ function daysFromBody(body) {
 router.get('/', requireAuth, async (req, res, next) => {
   try {
     const { status, search, limit = 50, offset = 0 } = req.query;
-    // Hours, the date range and the crew are all derived from the job's days —
+    // Hours, the date range and the crew are all derived from the job's days -
     // the card can show "Jul 20 – Jul 24 · 3 days · 17.5h" without a second fetch.
     let sql = `
       SELECT wo.id, wo.number, wo.customer_name, wo.customer_address, wo.notes,
@@ -324,7 +324,7 @@ router.patch('/:id', requireAuth, async (req, res, next) => {
     const days = daysFromBody(req.body);
     if (days) {
       // The flat pre-006 fallback collapses a job to a single day, so only let it
-      // run on a job that is still one day — it must never silently drop days off
+      // run on a job that is still one day - it must never silently drop days off
       // a multi-day job. A body with an explicit `days` array is always honored.
       const { rows: dayCount } = await client.query(
         'SELECT COUNT(*)::int AS n FROM field_work_order_days WHERE work_order_id=$1', [req.params.id]

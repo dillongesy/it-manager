@@ -1,4 +1,4 @@
--- Portal — allow uncategorized files + roomier user-defined categories
+-- Portal - allow uncategorized files + roomier user-defined categories
 -- Migration 012
 --
 -- Categories are now user-defined free text and optional. The original column was

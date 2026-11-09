@@ -5,7 +5,7 @@ import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
 
 // Read an image File and return a (possibly downscaled) JPEG/PNG data URL so the
-// image embeds inline in the HTML — no upload endpoint, no orphaned files, and it
+// image embeds inline in the HTML - no upload endpoint, no orphaned files, and it
 // renders without needing the in-memory JWT that <img src="/api/…"> can't send.
 export function fileToDataUrl(file, maxDim = 1600) {
   return new Promise((resolve, reject) => {
@@ -92,7 +92,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Write here…
         <div className="w-px bg-surface-500 mx-1" />
         {btn(openImagePicker, 'Image')}
       </div>
-      {/* Click anywhere in the box (incl. padding / blank area) to place the cursor —
+      {/* Click anywhere in the box (incl. padding / blank area) to place the cursor -
           padding + min-height live on the editable element so the whole box is clickable. */}
       <EditorContent
         editor={editor}

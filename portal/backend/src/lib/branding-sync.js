@@ -1,6 +1,6 @@
 // Push the Portal's branding (settings + images) to the Field App over the bridge.
 // Called after every branding change and once at start-up (with retries, since the
-// Field API may still be booting). Failures are logged, never thrown — branding is
+// Field API may still be booting). Failures are logged, never thrown - branding is
 // cosmetic and must not break a save.
 import { getBranding, allAssets } from './settings.js';
 import { fieldPlatform, isFieldConfigured } from './field-client.js';

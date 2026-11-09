@@ -4,7 +4,7 @@ import { isOutlookConfigured, createEvent, updateEvent, deleteEvent, OutlookErro
 import { taskEvent, taskEventChanged } from './outlook.js';
 
 // "Add to Outlook" on a task: an event on the shared calendar (at the task's time, or all-day) that the Portal owns and
-// keeps in step — the task's date, time, length, title, customer, tech, priority, estimate or notes change it;
+// keeps in step - the task's date, time, length, title, customer, tech, priority, estimate or notes change it;
 // taking the task off the schedule (or deleting it) removes it. Marking the task done leaves the
 // event alone (the Portal crosses the task off on its side).
 
@@ -68,7 +68,7 @@ export async function syncTaskEvent(before, after) {
   }
 }
 
-/** A deleted task's event goes too — best effort; returns a warning string or null. */
+/** A deleted task's event goes too - best effort; returns a warning string or null. */
 export async function dropDeletedTaskEvent(eventId) {
   if (!eventId || !isOutlookConfigured()) return null;
   try { await deleteEvent(eventId); return null; }

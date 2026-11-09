@@ -28,12 +28,12 @@ export function formatDate(value, opts) {
 
 // A <input type="date"> can hold a SIX-digit year, and Postgres DATE accepts it, so a
 // fat-fingered "20207-07-15" stores happily. It comes back as an expanded-year ISO
-// string ("+020207-07-15T…"), where the old `value.slice(0, 10)` yields "+020207-07" —
+// string ("+020207-07-15T…"), where the old `value.slice(0, 10)` yields "+020207-07" -
 // which the date input silently rejects (renders blank) while the form still holds it,
 // so every later save of that record fails in Postgres with
 // `time zone displacement out of range`. Even a plain rename becomes impossible.
 //
-// toDateInput() is the safe replacement: a real 'YYYY-MM-DD' or '' — never a string the
+// toDateInput() is the safe replacement: a real 'YYYY-MM-DD' or '' - never a string the
 // input can't show and the API can't accept.
 export const MIN_INPUT_YEAR = 1900;
 export const MAX_INPUT_YEAR = 9999;
@@ -51,14 +51,14 @@ export function toDateInput(value) {
 }
 
 // True when a stored value exists but can't be shown in a date input (corrupt/out of
-// range). Forms use this to say so out loud instead of silently blanking the field —
+// range). Forms use this to say so out loud instead of silently blanking the field -
 // otherwise the next save would quietly erase a date the user never touched.
 export function isUnusableDate(value) {
   return !!value && toDateInput(value) === '';
 }
 
 // Today as a 'YYYY-MM-DD' input value, in LOCAL time. (`new Date().toISOString()
-// .slice(0,10)` is UTC — after ~7pm in US timezones it hands back tomorrow.)
+// .slice(0,10)` is UTC - after ~7pm in US timezones it hands back tomorrow.)
 export function todayInput() {
   return toDateInput(new Date());
 }

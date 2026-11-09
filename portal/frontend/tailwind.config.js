@@ -52,7 +52,7 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       // Drive rich-text (guide) colors from the same theme variables so `prose`
-      // is readable in both themes — no need for prose-invert.
+      // is readable in both themes - no need for prose-invert.
       typography: {
         DEFAULT: {
           css: {

@@ -22,7 +22,7 @@ export function LinkToWorkOrder({ customerId, customerName, description, interna
   const [error, setError] = useState('');
 
   // The editable work orders are filtered client-side, so a partial fetch could
-  // hide a valid target behind a page of already-invoiced ones — pull them all.
+  // hide a valid target behind a page of already-invoiced ones - pull them all.
   const { data: wos = [], isLoading } = useQuery({
     queryKey: ['work-orders', 'for-customer', customerId],
     queryFn: () => fetchAllPages(({ limit, offset }) => workOrdersApi.list({ customerId, limit, offset })),

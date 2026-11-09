@@ -10,7 +10,7 @@ import { matchSessions } from '../lib/screenconnect.js';
 //
 // Matched live on every load (no stored session IDs), so a reinstalled agent or a
 // renamed machine just works. Always answers 200: the Devices tab must never fail because
-// ScreenConnect is down or unset — it just shows no Remote buttons and says why.
+// ScreenConnect is down or unset - it just shows no Remote buttons and says why.
 
 export const screenConnectRouter = Router({ mergeParams: true });
 

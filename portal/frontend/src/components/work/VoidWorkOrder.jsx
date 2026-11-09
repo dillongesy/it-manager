@@ -6,7 +6,7 @@ import { Modal } from '../ui/Modal.jsx';
 
 function woNum(n) { return `WO-${String(n).padStart(5, '0')}`; }
 
-// Voiding a work order — used from both the Billing Queue row and the WO detail page.
+// Voiding a work order - used from both the Billing Queue row and the WO detail page.
 //
 // Two things have to be decided at void time, which is why this is a modal and not a
 // confirm(): what happens to the parts, and (optionally) why it's being voided.
@@ -19,7 +19,7 @@ export function VoidWorkOrderModal({ wo, open, onClose, onVoided }) {
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState('');
 
-  // The WO detail page already has the full record — only the Billing Queue's list
+  // The WO detail page already has the full record - only the Billing Queue's list
   // row needs fetching, so don't re-request what the caller handed us.
   const needsFetch = !!wo?.id && open && !wo.sections;
   const { data: fetched, isLoading } = useQuery({
@@ -29,7 +29,7 @@ export function VoidWorkOrderModal({ wo, open, onClose, onVoided }) {
   });
   const full = wo?.sections ? wo : fetched;
 
-  // Only inventory-linked lines can be returned — hand-typed parts were never tracked
+  // Only inventory-linked lines can be returned - hand-typed parts were never tracked
   // in shared inventory, so there is nothing to give back for them.
   const linkedParts = (full?.sections ?? [])
     .flatMap(s => s.items ?? [])

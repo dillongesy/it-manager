@@ -15,11 +15,11 @@ import { makeBearer, makeCache, onIntegrationChange } from './integration-util.j
  *   GET  {base}/api/platform/v1/device/endpoints/{endpointId}
  *
  * What's known from real tenants (ConnectWise publishes the schemas only behind a
- * partner login — see scripts/connectwise-probe.js to inspect yours):
- *   - resourceType must be SINGULAR ("site", not "sites" — the plural is rejected by
+ * partner login - see scripts/connectwise-probe.js to inspect yours):
+ *   - resourceType must be SINGULAR ("site", not "sites" - the plural is rejected by
  *     name). Which one a tenant accepts isn't documented, so the device list tries each
  *     request shape in turn and keeps the first that works.
- *   - The device list is grouped by category — { platform: [...], network: [...] } —
+ *   - The device list is grouped by category - { platform: [...], network: [...] } -
  *     and each record is a short summary (endpointID, deviceName, friendlyName,
  *     endpointType) with NO site ID.
  *   - The v2 details put the device's fields under its category key: { companyID,
@@ -35,8 +35,8 @@ import { makeBearer, makeCache, onIntegrationChange } from './integration-util.j
 
 export const SCOPES = 'platform.companies.read platform.sites.read platform.devices.read';
 // Optional: unlocks the v1 asset inventory (processor, installed RAM, physical disks,
-// local accounts, shares). A key without it can't even be asked for it — the token
-// request is refused — so sign-in retries without it.
+// local accounts, shares). A key without it can't even be asked for it - the token
+// request is refused - so sign-in retries without it.
 export const ASSET_SCOPE = 'platform.asset.read';
 
 // Three regional servers; the first characters of the Client ID say which one a
@@ -98,7 +98,7 @@ async function send(request) {
   }
 }
 
-// ─── Auth — one shared token; concurrent callers share a single sign-in ───────
+// --- Auth - one shared token; concurrent callers share a single sign-in -------
 
 let assetScope = null; // true/false once known: does the key have platform.asset.read?
 export const hasAssetScope = () => assetScope === true;
@@ -147,7 +147,7 @@ async function signIn(isCurrent) {
 
 const bearer = makeBearer(signIn);
 
-// ─── Requests ─────────────────────────────────────────────────────────────────
+// --- Requests -----------------------------------------------------------------
 
 async function call(method, path, body) {
   const url = `${base()}${path}`;
@@ -216,7 +216,7 @@ export function recordsOf(body, depth = 0) {
   });
 }
 
-// ─── Cached reads ─────────────────────────────────────────────────────────────
+// --- Cached reads -------------------------------------------------------------
 
 const cache = makeCache(2 * 60 * 1000);
 const cached = (key, refresh, load) => cache.get(key, refresh, load);
@@ -228,7 +228,7 @@ export const sites = (companyId, { refresh = false } = {}) =>
   cached(`sites:${companyId}`, refresh, async () =>
     listOf(await call('GET', `/api/platform/v1/company/companies/${encodeURIComponent(companyId)}/sites`)));
 
-// ─── Devices ──────────────────────────────────────────────────────────────────
+// --- Devices ------------------------------------------------------------------
 
 // Device-list request shapes, most specific first. The first one the tenant accepts is
 // remembered for the life of the process.
@@ -299,9 +299,9 @@ async function mapLimit(items, limit, fn) {
 }
 
 // v2 details for one device at one site.
-//   { data }       — found at this site
-//   { notHere }    — 404: the device lives at another site
-//   { error }      — anything else; the device's site can't be confirmed
+//   { data }       - found at this site
+//   { notHere }    - 404: the device lives at another site
+//   { error }      - anything else; the device's site can't be confirmed
 let detailsNote = null;
 async function v2Details(companyId, siteId, endpointId) {
   try {
@@ -315,10 +315,10 @@ async function v2Details(companyId, siteId, endpointId) {
 }
 export const lastDetailsNote = () => detailsNote;
 
-// ─── v1 asset inventory (needs platform.asset.read) ──────────────────────────
+// --- v1 asset inventory (needs platform.asset.read) --------------------------
 //
-// The v1 device routes carry the full asset collection — processors, physicalMemory,
-// drives (physical disks), networks, users, shares, installed software, … — but under
+// The v1 device routes carry the full asset collection - processors, physicalMemory,
+// drives (physical disks), networks, users, shares, installed software, … - but under
 // DIFFERENT endpoint IDs than v2 uses for the same machine (confirmed on a live
 // tenant). The v1 list says which site each device is at; the Portal pairs v1 records
 // with v2 devices by serial number, then computer name (lib/connectwise.js).
@@ -364,7 +364,7 @@ async function v1SiteInventory(companyId, siteId) {
 // Live-usage routes that also carry the fixed facts the Portal wants:
 //   memory-usage → [{ physicalTotalBytes, … }]              (installed RAM)
 //   disk-usage   → [{ storages: [{ name: "0 C:", metric: { totalSpaceBytes }, partitions: [{ name: "C:" }] }] }]
-// Best effort — a failure just leaves RAM / drives blank.
+// Best effort - a failure just leaves RAM / drives blank.
 async function usage(endpointId, kind) {
   try {
     return await call('GET', `/api/platform/v2/device/endpoints/${encodeURIComponent(endpointId)}/${kind}`);
@@ -380,7 +380,7 @@ async function usage(endpointId, kind) {
  * { summary, v2, v1 } so the mapper (lib/connectwise.js) can flatten them in order.
  *
  * When the list couldn't be scoped to the site, each device's v2 details are asked for
- * AT this site — ConnectWise answers 404 for a device that lives elsewhere, and those
+ * AT this site - ConnectWise answers 404 for a device that lives elsewhere, and those
  * are dropped.
  */
 export const siteEndpoints = (companyId, siteId, { refresh = false } = {}) =>
@@ -393,7 +393,7 @@ export const siteEndpoints = (companyId, siteId, { refresh = false } = {}) =>
       const owner = r.companyID ?? r.companyId ?? r.clientId ?? r.clientID;
       return owner == null || String(owner) === String(companyId);
     });
-    // The same device can appear under two categories — keep one.
+    // The same device can appear under two categories - keep one.
     const seen = new Set();
     const unique = candidates.filter(r => { const id = recordId(r); if (!id || seen.has(id)) return false; seen.add(id); return true; });
 

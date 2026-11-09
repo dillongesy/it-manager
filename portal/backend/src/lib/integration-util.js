@@ -56,7 +56,7 @@ export function makeBearer(signIn) {
   return bearer;
 }
 
-// ─── Credential changes ──────────────────────────────────────────────────────
+// --- Credential changes ------------------------------------------------------
 // Each client registers what to forget when its integration's settings change
 // (Admin → Integrations): tokens, cached lists, what the old key could do.
 // lib/settings.js calls integrationChanged(id) after every save that changed something.

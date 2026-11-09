@@ -1,6 +1,6 @@
 -- A field job is no longer a single date with one lump "total hours". Real camera
 -- jobs run across several days: cable pulled Monday, cameras hung Tuesday, NVR
--- configured Friday — with different crews, different parts, and sometimes a
+-- configured Friday - with different crews, different parts, and sometimes a
 -- different labor rate (a Saturday emergency call) on each day.
 --
 -- This migration introduces DAYS as the middle layer:
@@ -13,7 +13,7 @@
 --
 -- Each day maps 1:1 onto a Portal work_order_section on import (a section already
 -- carries its own work_date/hours/description), so the multi-day record survives
--- the bridge intact. Labor RATES stay entirely in the Portal — the field app
+-- the bridge intact. Labor RATES stay entirely in the Portal - the field app
 -- captures what happened, the office decides what it's worth.
 --
 -- The old `field_work_orders.work_date` / `.hours` / `.description` columns are
@@ -41,7 +41,7 @@ CREATE INDEX IF NOT EXISTS idx_fwo_days_wo ON field_work_order_days(work_order_i
 ALTER TABLE field_work_order_technicians
   ADD COLUMN IF NOT EXISTS day_id UUID REFERENCES field_work_order_days(id) ON DELETE CASCADE,
   -- Hours THIS technician worked THIS day. NULL/blank counts as 0; a day's total
-  -- is always the sum of its technicians (never stored — always computed).
+  -- is always the sum of its technicians (never stored - always computed).
   ADD COLUMN IF NOT EXISTS hours  NUMERIC(6, 2);
 
 ALTER TABLE field_work_order_items
@@ -54,7 +54,7 @@ CREATE INDEX IF NOT EXISTS idx_fwo_tech_day     ON field_work_order_technicians(
 CREATE INDEX IF NOT EXISTS idx_fwo_items_day    ON field_work_order_items(day_id);
 CREATE INDEX IF NOT EXISTS idx_fwo_services_day ON field_work_order_services(day_id);
 
--- ─── Backfill: every existing job becomes a one-day job ───────────────────────
+-- --- Backfill: every existing job becomes a one-day job -----------------------
 
 INSERT INTO field_work_order_days (work_order_id, sort_order, work_date, description)
 SELECT wo.id, 10, COALESCE(wo.work_date, CURRENT_DATE), wo.description
@@ -87,7 +87,7 @@ UPDATE field_work_order_technicians t
    AND t.hours IS NULL
    AND (SELECT COUNT(*) FROM field_work_order_technicians t2 WHERE t2.work_order_id = wo.id) = 1;
 
--- With two or more technicians (or none) the split is unknowable — splitting it
+-- With two or more technicians (or none) the split is unknowable - splitting it
 -- evenly would invent a record. Preserve the legacy total in the day's notes so
 -- whoever finishes the job can enter the real breakdown.
 UPDATE field_work_order_days d

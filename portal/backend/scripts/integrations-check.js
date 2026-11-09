@@ -1,6 +1,9 @@
 #!/usr/bin/env node
-// Check the outside-system keys in .env — Dell, ScreenConnect, UniFi, TD SYNNEX, Auvik,
-// ThreatLocker, Outlook — without touching the database or changing anything anywhere.
+// Check the configured integrations (Dell, ScreenConnect, UniFi, TD SYNNEX, Auvik,
+// ThreatLocker, Outlook) using the settings saved in Admin → Integrations, or .env values
+// for an integration that has never been saved. Read-only.
+//
+// In Docker:  docker compose exec portal-api node scripts/integrations-check.js
 //
 //   node scripts/integrations-check.js              → every configured integration
 //   node scripts/integrations-check.js JDJFX53      → also look up that Dell service tag
@@ -21,6 +24,10 @@ import * as tl from '../src/lib/threatlocker-client.js';
 import { orgOf } from '../src/lib/threatlocker.js';
 import * as outlook from '../src/lib/outlook-client.js';
 import { normalizeEvents } from '../src/lib/outlook.js';
+import { loadIntegrations } from '../src/lib/settings.js';
+import { pool } from '../src/db/index.js';
+
+await loadIntegrations({ persist: false });
 
 const args = process.argv.slice(2);
 const raw = args.includes('--raw');
@@ -72,7 +79,7 @@ await step('Auvik', auvik.isAuvikConfigured(), async () => {
     console.log(`   sample: ${sample.name} (${sample.type}) in ${sample.tenant_name} — Web UI link: ${link}`);
     console.log('   ↳ compare with the address Auvik opens for that device (Remote Management → Remote Browser → 443); they should match.');
   }
-  // One site only — asking for every tenant at once is refused for any the user can't see.
+  // One site only - asking for every tenant at once is refused for any the user can't see.
   if (raw && sample) showRaw('device', (await auvik._raw.get(`${apiBase(auvik.region())}/inventory/device/info?tenants=${sample.tenant_id}`))?.data?.[0]);
   return `${tenants.length} sites, ${devices.length} devices`;
 });
@@ -95,4 +102,5 @@ await step('Outlook calendar', outlook.isOutlookConfigured(), async () => {
   return `calendar found — ${events.length} events in the next two weeks`;
 });
 
+await pool.end();
 process.exit(failed ? 1 : 0);

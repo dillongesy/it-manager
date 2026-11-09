@@ -180,7 +180,7 @@ export function WorkOrders() {
     });
   };
 
-  // Endless scroll across every filter combination — status, search, technician and
+  // Endless scroll across every filter combination - status, search, technician and
   // sort all go to the server, and the list pages through the FULL result rather
   // than stopping at the API's first page.
   const woQuery = useInfiniteList({

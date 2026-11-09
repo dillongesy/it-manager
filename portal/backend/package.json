@@ -1,6 +1,8 @@
 {
   "name": "it-manager-portal-backend",
   "version": "1.0.0",
+  "description": "IT Manager Portal API",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "node --watch src/server.js",

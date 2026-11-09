@@ -1,6 +1,6 @@
 import api from './client.js';
 
-// Shared inventory — served by the Portal backend, which bridges to the Field App.
+// Shared inventory - served by the Portal backend, which bridges to the Field App.
 export const inventoryApi = {
   status:     ()         => api.get('/inventory/status'),
   list:       (params)   => api.get('/inventory', { params }),

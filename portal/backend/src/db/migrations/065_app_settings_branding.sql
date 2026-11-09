@@ -1,8 +1,8 @@
--- Migration 065 — in-app configuration (replaces the per-integration .env variables)
+-- Migration 065 - in-app configuration (replaces the per-integration .env variables)
 --
 -- app_settings     key/value JSON. Keys used:
 --                    'branding'            company / product names, colors, print header
---                    'integration:<id>'    { enabled, values } — secret values are AES-256-GCM
+--                    'integration:<id>'    { enabled, values } - secret values are AES-256-GCM
 --                                          encrypted with the master ENCRYPTION_KEY
 --                    'system'              setup + recovery-secret reveal timestamps
 -- branding_assets  uploaded images (logo, full logo, favicon, login background),

@@ -8,7 +8,7 @@ import { remoteId, remoteBrowserUrl, tenantUrl, deviceOf, tenantOf, matchAuvik }
 import { orgOf, computerOf, threatlockerProducts, packageOf, rowsOf } from '../../src/lib/threatlocker.js';
 import { planSeatSync, findSeatCharge, newSeatCharge, findCatalogService } from '../../src/lib/seat-sync.js';
 
-// ─── Auvik ───────────────────────────────────────────────────────────────────
+// --- Auvik -------------------------------------------------------------------
 
 test('the Remote Browser address is the one Auvik itself opens', () => {
   assert.equal(remoteBrowserUrl({ domainPrefix: 'example42', deviceId: '1234567890123456789', port: 443, region: 'us6' }),
@@ -53,7 +53,7 @@ test('Auvik matching: serial anywhere, IP / name only inside the customer\'s own
 });
 
 
-// ─── ThreatLocker ─────────────────────────────────────────────────────────────
+// --- ThreatLocker -------------------------------------------------------------
 
 // maintenanceCapabilities exactly as ThreatLocker returns them (seen live 2026-10-30).
 const COMPLETE = { applicationControl: true, networkControl: true, storageControl: true, detect: true, elevation: true, tamper: true, elevationLearning: false };
@@ -96,7 +96,7 @@ test('a live ThreatLocker org: the MSP\'s own org is recognised, catalog product
   assert.deepEqual(rowsOf({ data: [1, 2] }), [1, 2]);
 });
 
-// ─── Seat sync ───────────────────────────────────────────────────────────────
+// --- Seat sync ---------------------------------------------------------------
 
 const CATALOG = [
   { id: 'sc', name: 'ThreatLocker Complete (Monthly)', unit_price: '6.00', recurrence: 'monthly' },

@@ -1,6 +1,6 @@
 // Client-side mirror of the backend's day/hours rules (lib/work-order-logic.js).
 // A job is a list of days; a day's hours is ALWAYS the sum of its technicians'
-// hours, and a blank counts as 0 — so a tech can capture the crew now and fill in
+// hours, and a blank counts as 0 - so a tech can capture the crew now and fill in
 // the split later without the form fighting them.
 
 export function parseHours(v) {
@@ -35,7 +35,7 @@ export function hoursByTechnician(days) {
   return [...totals.values()];
 }
 
-// ─── Dates ──────────────────────────────────────────────────────────────────────
+// --- Dates ----------------------------------------------------------------------
 // Job dates are plain calendar days ('YYYY-MM-DD'). `new Date('2026-07-20')` parses
 // as UTC midnight and renders as the 19th anywhere west of Greenwich, so build the
 // Date from its parts instead.
@@ -52,7 +52,7 @@ function localDate(value) {
   return new Date(y, m - 1, d);
 }
 
-/** "Mon, Jul 20" — short enough for a day header on a phone. */
+/** "Mon, Jul 20" - short enough for a day header on a phone. */
 export function formatDayDate(value) {
   const d = localDate(value);
   if (!d) return 'No date';
@@ -79,7 +79,7 @@ export function nextDay(value) {
   return toDateInput(d.toLocaleDateString('sv'));
 }
 
-// ─── Day construction ───────────────────────────────────────────────────────────
+// --- Day construction -----------------------------------------------------------
 
 export const blankDay = (work_date = todayInput()) => ({
   key: `new-${Math.random().toString(36).slice(2)}`,
@@ -93,7 +93,7 @@ export const blankDay = (work_date = todayInput()) => ({
 
 /**
  * The next day of a multi-day job is nearly always the same crew back on site the
- * following day, so prefill both — with hours cleared, since those are what's
+ * following day, so prefill both - with hours cleared, since those are what's
  * actually new.
  */
 export function dayAfter(prev) {

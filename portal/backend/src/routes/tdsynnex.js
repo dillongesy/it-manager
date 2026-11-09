@@ -11,9 +11,9 @@ import { saveLink, linksFor, customersLinkedTo } from '../lib/integration-links.
 
 // TD SYNNEX Microsoft subscriptions → a customer's Billing tab.
 //
-//   GET  /api/tdsynnex/customers                                   — TD SYNNEX end customers
-//   GET  /api/customers/:customerId/tdsynnex/preview?customerNo=    — what an import would do
-//   POST /api/customers/:customerId/tdsynnex/import                 — { customerNo, keys, location_id }
+//   GET  /api/tdsynnex/customers                                   - TD SYNNEX end customers
+//   GET  /api/customers/:customerId/tdsynnex/preview?customerNo=    - what an import would do
+//   POST /api/customers/:customerId/tdsynnex/import                 - { customerNo, keys, location_id }
 //
 // Read-only against TD SYNNEX. Mapping and merge rules: lib/tdsynnex.js.
 

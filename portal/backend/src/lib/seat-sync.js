@@ -1,5 +1,5 @@
-// Seat counts from a security vendor (ThreatLocker for now) → the customer's Billing
-// tab. Pure functions only, unit-tested.
+// Seat counts from a security vendor (currently ThreatLocker) → the customer's Billing
+// tab. Pure functions only.
 //
 // Each vendor account boils down to "products": { key, name, units, unit_label,
 // frequency, term_end, status, active }. Each product updates the Billing-tab charge it
@@ -39,7 +39,7 @@ export function findSeatCharge(provider, product, charges, claimed = new Set(), 
 
 /**
  * The Services catalog entry a product is: the one whose name contains the product's (or
- * vice versa) — "ThreatLocker Complete (Monthly)" for "ThreatLocker Complete". When several
+ * vice versa) - "ThreatLocker Complete (Monthly)" for "ThreatLocker Complete". When several
  * match ("… (Monthly)" and "… (Annual)"), the one on the product's cadence wins.
  */
 export function findCatalogService(product, catalog) {
@@ -66,7 +66,7 @@ const priceOf = (v) => (v == null || v === '' ? null : Number(v));
  *   - the charge is linked to its Services entry when it isn't linked to one yet (so a
  *     Services price change rolls down to it, like a charge picked off the catalog)
  *   - a blank price is filled from the Services entry; a different price is the biller's
- *     and only changes when they ask (`useCatalogPrice`) — `price_option` says so
+ *     and only changes when they ask (`useCatalogPrice`) - `price_option` says so
  * @returns {{ updates, changes: [{ field, from, to, mode }], price_option }}
  */
 export function planSeatCharge(charge, product, service = null, { useCatalogPrice = false } = {}) {
@@ -132,8 +132,8 @@ export function newSeatCharge(provider, product, catalog, category) {
 
 /**
  * The whole plan for one customer. A product with 0 seats (e.g. no Protect computers in the
- * picked orgs) only touches a charge an earlier sync linked to it — never a charge matched by
- * name, which may belong to an org that just isn't picked — and that drop to 0 is flagged
+ * picked orgs) only touches a charge an earlier sync linked to it - never a charge matched by
+ * name, which may belong to an org that just isn't picked - and that drop to 0 is flagged
  * (`to_zero`) so it isn't pre-ticked.
  */
 export function planSeatSync(provider, products, charges, catalog, category, { useCatalogPrice = false } = {}) {

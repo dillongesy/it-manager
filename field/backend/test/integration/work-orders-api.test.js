@@ -130,7 +130,7 @@ if (!enabled) {
     assert.equal(wo.days[0].items.length, 1);
     assert.equal(Number(wo.days[0].items[0].quantity), 3);
 
-    // The day's hours — and the job's — are the SUM of the technicians, never a
+    // The day's hours - and the job's - are the SUM of the technicians, never a
     // separately-entered figure that could disagree with them.
     assert.equal(Number(wo.days[0].hours), 4);
     assert.equal(Number(wo.hours), 4);

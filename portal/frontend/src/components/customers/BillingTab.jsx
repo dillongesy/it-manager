@@ -29,11 +29,11 @@ const RECURRENCE_TO_FREQ = { monthly: 'monthly', quarterly: 'quarterly', semiann
 // The frequency dropdown, as { value, label } for the shared cadence control.
 const FREQ_OPTIONS = FREQUENCIES.map(v => ({ value: v, label: FREQ_LABEL[v] }));
 
-// Category / unit-label pickers come from components/ui/catalogSuggest.jsx — they
+// Category / unit-label pickers come from components/ui/catalogSuggest.jsx - they
 // suggest values already entered on any service or any customer's charges (our own
 // dropdown, not a native <datalist>, which Chrome overlays its autofill on).
 
-// ─── Add / Edit form ──────────────────────────────────────────────────────────
+// --- Add / Edit form ----------------------------------------------------------
 
 function ChargeForm({ customerId, charge, locations, companyName, defaultLocationId, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -43,7 +43,7 @@ function ChargeForm({ customerId, charge, locations, companyName, defaultLocatio
     unit_price:    charge?.unit_price    ?? '',
     unit_label:    charge?.unit_label    ?? '',
     frequency:     charge?.frequency     ?? 'monthly',
-    // How many periods between bills — 3 for a domain bought three years at a time.
+    // How many periods between bills - 3 for a domain bought three years at a time.
     interval_count: charge?.interval_count ?? 1,
     billing_month: charge?.billing_month ?? new Date().getMonth() + 1,
     // A multi-year charge also needs a year: "November" alone can't say whether the
@@ -61,7 +61,7 @@ function ChargeForm({ customerId, charge, locations, companyName, defaultLocatio
   const [error,  setError]  = useState('');
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
 
-  // Service-catalog autocomplete on the description field — lets the biller pull a
+  // Service-catalog autocomplete on the description field - lets the biller pull a
   // service straight from the Services page (prefills name/price/frequency) so the only
   // thing left to set is the quantity (seats). Free-typing still works normally.
   const [matches, setMatches] = useState([]);
@@ -97,7 +97,7 @@ function ChargeForm({ customerId, charge, locations, companyName, defaultLocatio
     setMatches([]); setShowMatches(false);
   };
 
-  // Typing over the description breaks the link — the charge is no longer "the M365
+  // Typing over the description breaks the link - the charge is no longer "the M365
   // service", it's whatever was typed, and shouldn't follow that service's price.
   const onDescriptionChange = (v) => {
     setForm(f => ({ ...f, description: v, service_catalog_id: v === linkedName ? f.service_catalog_id : '' }));
@@ -223,7 +223,7 @@ function ChargeForm({ customerId, charge, locations, companyName, defaultLocatio
                 {MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
               </select>
             </div>
-            {/* Only a multi-year cycle needs a year to count from — every other
+            {/* Only a multi-year cycle needs a year to count from - every other
                 cadence repeats within a single year, so the month places it. */}
             {multiYear && (
               <div>
@@ -272,7 +272,7 @@ function ChargeForm({ customerId, charge, locations, companyName, defaultLocatio
   );
 }
 
-// ─── Charge card ──────────────────────────────────────────────────────────────
+// --- Charge card --------------------------------------------------------------
 
 function ChargeCard({ charge, locations, companyName, onEdit, onDelete }) {
   const due = nextDueFor(charge);
@@ -320,7 +320,7 @@ function ChargeCard({ charge, locations, companyName, onEdit, onDelete }) {
                 <CalendarClock size={12} /> Next: {nextDueLabel(due)}
               </span>
             )}
-            {/* Annualized equivalent — shown for anything that doesn't already bill
+            {/* Annualized equivalent - shown for anything that doesn't already bill
                 once a year, so a multi-year charge reads "$60/3yr · $20.00/yr". */}
             {timesPerYear !== 1 && parseFloat(charge.amount) > 0 && (
               <span className="text-gray-600">{money(parseFloat(charge.amount) * timesPerYear)}/yr</span>
@@ -367,7 +367,7 @@ function ChargeCard({ charge, locations, companyName, onEdit, onDelete }) {
   );
 }
 
-// ─── Main tab ─────────────────────────────────────────────────────────────────
+// --- Main tab -----------------------------------------------------------------
 
 export function BillingTab({ customerId, locations = [], companyName }) {
   const [modal, setModal] = useState(null);

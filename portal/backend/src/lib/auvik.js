@@ -1,12 +1,12 @@
 // Auvik → a "Web UI" button on a customer's network gear: Auvik's Remote Browser, which
 // reaches a printer's / switch's own web page through the Auvik collector on site.
-// Pure functions only (no I/O), unit-tested.
+// Pure functions only (no I/O).
 //
 // The remote-browser address is stable and behind the Auvik login:
 //   https://{tenant domainPrefix}-{device id}-{port}.{region}.my.auvik.com/
-// e.g. https://example42-1234567890123456789-443.us6.my.auvik.com/ — opened without an
-// Auvik session it bounces through Auvik's sign-in and back (checked 2026-10-26), so a
-// tech signed in to Auvik in that browser lands straight on the device.
+// e.g. https://example42-1234567890123456789-443.us6.my.auvik.com/. Without an Auvik
+// session the address redirects through Auvik's sign-in and back, so a technician
+// signed in to Auvik in that browser lands directly on the device.
 //
 // API (Basic auth: Auvik username + API key):
 //   GET https://auvikapi.{region}.my.auvik.com/v1/tenants          → [{ id, attributes: { domainPrefix, tenantType } }]
@@ -78,16 +78,16 @@ const companyKey = (v) => norm(v).replace(/[^a-z0-9 ]/g, ' ')
   .replace(/\b(inc|llc|ltd|co|corp|corporation|company|pc|pllc|the)\b/g, ' ').replace(/\s+/g, ' ').trim();
 const serialKey = (v) => norm(v).replace(/[^a-z0-9]/g, '');
 
-// Network gear and the like — what a web interface is useful for. Computers are reached
+// Network gear and the like - what a web interface is useful for. Computers are reached
 // through ScreenConnect instead.
 const WEB_TYPES = new Set(['printer', 'switch', 'firewall', 'nas', 'network', 'other']);
 
 /**
  * Which Auvik device each Portal device is.
- *   1. serial number — unique across every Auvik device
- *   2. IP address, then name — only inside this customer's Auvik site(s): learned from the
+ *   1. serial number - unique across every Auvik device
+ *   2. IP address, then name - only inside this customer's Auvik site(s): learned from the
  *      serial matches, or a site named like the customer (or like its linked ConnectWise
- *      company — Auvik sites come from ConnectWise). Private IPs repeat across customers, so
+ *      company - Auvik sites come from ConnectWise). Private IPs repeat across customers, so
  *      an address alone is never trusted outside the customer's own site.
  * @param siteNames names the customer is known by (Portal name, ConnectWise company/site)
  * @returns Map deviceId → { device, reason }

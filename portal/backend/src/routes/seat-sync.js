@@ -10,11 +10,11 @@ import { saveLink, linksFor, customersLinkedTo } from '../lib/integration-links.
 
 // Seat counts from ThreatLocker → a customer's Billing tab.
 //
-//   GET  /api/seat-sync/:provider/accounts                          — the vendor's customers
+//   GET  /api/seat-sync/:provider/accounts                          - the vendor's customers
 //   GET  /api/customers/:customerId/seat-sync/:provider/preview?account=<id>[,<id>…]
-//   POST /api/customers/:customerId/seat-sync/:provider/apply       — { account, keys, location_id, use_catalog_price }
+//   POST /api/customers/:customerId/seat-sync/:provider/apply       - { account, keys, location_id, use_catalog_price }
 //
-// `account` may name several vendor accounts — one Portal customer can be two ThreatLocker
+// `account` may name several vendor accounts - one Portal customer can be two ThreatLocker
 // orgs (e.g. "NORTHWIND-C" for its Complete computers, "NORTHWIND-P" for Protect); seats are added
 // up across them and each one is linked to the customer.
 // Read-only against the vendors. Planning rules: lib/seat-sync.js (seats / term / status
@@ -35,7 +35,7 @@ const PROVIDERS = {
     Err: tl.ThreatLockerError,
     notConfigured: 'ThreatLocker is not configured. An admin can set it up in Admin → Integrations.',
     async accounts(refresh) {
-      // The list includes the MSP's own (parent, "MSP") organization — not a customer.
+      // The list includes the MSP's own (parent, "MSP") organization - not a customer.
       return (await tl.organizations({ refresh })).map(orgOf).filter(o => o.id && o.name && !o.is_msp && o.id !== config.threatlocker.organizationId)
         .map(o => ({ id: o.id, name: o.name, detail: [o.bundles.join(', '), o.computer_count != null ? `${o.computer_count} computers` : null, o.billing].filter(Boolean).join(' · ') }));
     },

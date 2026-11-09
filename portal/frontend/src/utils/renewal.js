@@ -3,7 +3,7 @@
 // Auto-renewing subscriptions store an anchor expiration date + interval ('monthly' |
 // 'annually'). The next renewal is computed on the fly: roll the anchor forward by whole
 // intervals until it lands on or after today. All math is from the ORIGINAL anchor
-// (anchor + k intervals), with the day clamped to the target month's length — so a
+// (anchor + k intervals), with the day clamped to the target month's length - so a
 // Jan-31 anchor yields Feb-28, Mar-31, Apr-30… (no drift) and a Feb-29 annual anchor
 // lands on Feb-28 in common years.
 
@@ -43,7 +43,7 @@ function addYears(date, n) {
 // The next renewal Date on or after today, for an auto-renewing license. Returns null if
 // the anchor is unparseable. A future anchor is returned unchanged.
 //
-// `count` is how many intervals pass between renewals — 1 for a plain annual
+// `count` is how many intervals pass between renewals - 1 for a plain annual
 // subscription, 3 for a domain registered three years at a time. Steps are whole
 // multiples of (count × interval) from the ORIGINAL anchor, so a three-year cycle keeps
 // landing on the same month/day every third year.

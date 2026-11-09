@@ -22,9 +22,9 @@ const INTERVAL_OPTS = [
   { value: 'annually', label: 'Annually' },
 ];
 
-// ─── Expiration / renewal badge ───────────────────────────────────────────────
+// --- Expiration / renewal badge -----------------------------------------------
 
-// Auto-renewing subscriptions show their computed next renewal (neutral/blue — no
+// Auto-renewing subscriptions show their computed next renewal (neutral/blue - no
 // action needed); manual licenses show their expiration date color-coded by urgency.
 function ExpirationBadge({ license }) {
   if (license.auto_renew) {
@@ -55,7 +55,7 @@ function ExpirationBadge({ license }) {
   );
 }
 
-// ─── Add / Edit form ──────────────────────────────────────────────────────────
+// --- Add / Edit form ----------------------------------------------------------
 
 const blankKey = () => ({ _localId: Math.random(), id: null, title: '', key: '' });
 
@@ -68,7 +68,7 @@ function LicenseForm({ customerId, license, locations, companyName, defaultLocat
     renewal_date:     toDateInput(license?.renewal_date),
     auto_renew:       license?.auto_renew     ?? false,
     renewal_interval: license?.renewal_interval ?? 'monthly',
-    // How many intervals between renewals — 3 for a domain bought three years at a
+    // How many intervals between renewals - 3 for a domain bought three years at a
     // time. Only meaningful on an annual interval; 1 is the ordinary subscription.
     renewal_interval_count: license?.renewal_interval_count ?? 1,
     payment_method:   license?.payment_method ?? '',
@@ -111,7 +111,7 @@ function LicenseForm({ customerId, license, locations, companyName, defaultLocat
   };
 
   const isEditing = !!license;
-  // "each month" / "each year" / "every 3 years" — the anchor date rolls forward by
+  // "each month" / "each year" / "every 3 years" - the anchor date rolls forward by
   // whole intervals, so a multi-year term never needs re-keying either.
   const rollsForward = needsYearAnchor(form.renewal_interval, form.renewal_interval_count)
     ? `every ${form.renewal_interval_count} years`
@@ -272,7 +272,7 @@ function LicenseForm({ customerId, license, locations, companyName, defaultLocat
   );
 }
 
-// ─── Main tab ─────────────────────────────────────────────────────────────────
+// --- Main tab -----------------------------------------------------------------
 
 export function LicensingTab({ customerId, locations = [], companyName }) {
   const [modal, setModal] = useState(null);

@@ -2,15 +2,27 @@ import { Router } from 'express';
 import { query, getClient } from '../db/index.js';
 import { requireService } from '../middleware/requireService.js';
 import { logAudit } from '../middleware/audit.js';
+import { directorySize, UPLOADS_ROOT } from '../lib/storage.js';
 
 // Platform endpoints on the one-way bridge (Portal → Field only, service token).
-//   GET  /api/service/health           — bridge check for the Portal's Admin → System
-//   PUT  /api/service/branding         — the Portal pushes a full copy of its branding
-//   POST /api/service/bootstrap-admin  — setup wizard: first Field admin (same login)
+//   GET  /api/service/health           - bridge check for the Portal's Admin → System
+//   PUT  /api/service/branding         - the Portal pushes a full copy of its branding
+//   POST /api/service/bootstrap-admin  - setup wizard: first Field admin (same login)
+//   GET  /api/service/storage          - database and uploaded-file sizes, in bytes
 const router = Router();
 router.use(requireService);
 
 router.get('/health', (_req, res) => res.json({ ok: true }));
+
+router.get('/storage', async (_req, res, next) => {
+  try {
+    const [{ rows }, files] = await Promise.all([
+      query('SELECT pg_database_size(current_database())::bigint AS bytes'),
+      directorySize(UPLOADS_ROOT),
+    ]);
+    res.json({ database: Number(rows[0].bytes), files });
+  } catch (err) { next(err); }
+});
 
 const KINDS = new Set(['logo', 'logo_full', 'favicon', 'login_background']);
 const MIMES = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/x-icon', 'image/svg+xml']);

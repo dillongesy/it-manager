@@ -103,7 +103,7 @@ export function Customers() {
   };
 
   // Pages through the whole customer list rather than relying on one oversized
-  // request — the first page paints immediately and the rest follows as you scroll.
+  // request - the first page paints immediately and the rest follows as you scroll.
   const customerQuery = useInfiniteList({
     queryKey: ['customers', 'list', search, sort],
     fetchPage: ({ limit, offset }) => customersApi.list({

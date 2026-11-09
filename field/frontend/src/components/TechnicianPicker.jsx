@@ -3,12 +3,12 @@ import { usersApi } from '../api/users.js';
 import { fmtHours, parseHours } from '../utils/jobDays.js';
 
 /**
- * Dual-mode technician picker — the office can do BOTH:
+ * Dual-mode technician picker - the office can do BOTH:
  *  1. Pick from a dropdown of real user accounts (links user_id, fills initials/name).
  *  2. Free-type initials (and optional name) like they write on paper now.
  *
  * With `withHours` each technician also carries the hours THEY worked on THIS day
- * (the day's total is the sum — see utils/jobDays.js). Rows are full-width with a
+ * (the day's total is the sum - see utils/jobDays.js). Rows are full-width with a
  * big hours field so they're easy to hit on a phone; without hours they collapse
  * back to compact chips.
  *

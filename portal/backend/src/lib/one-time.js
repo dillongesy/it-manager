@@ -1,9 +1,9 @@
 // One-time material written by the init container into the REVEAL_DIR volume
 // (the only volume the Portal API can write to besides uploads):
 //
-//   setup_code   — proves the person running the setup wizard has shell access to
+//   setup_code   - proves the person running the setup wizard has shell access to
 //                  the host (install.sh prints it). Shredded when setup completes.
-//   bundle.json  — the recovery secrets (master encryption key, DB passwords, …).
+//   bundle.json  - the recovery secrets (master encryption key, DB passwords, …).
 //                  Shredded the instant it is read. After that, no API route can
 //                  produce it again: the only copies left are the read-only secret
 //                  files mounted into each container, which no route exposes.

@@ -11,7 +11,7 @@ import { formatDate } from '../../utils/date.js';
 
 // "Import from ConnectWise" on a customer's Devices tab.
 //   1. pick a ConnectWise RMM Company → Site
-//   2. tick machines (or Select all) — each row previews what will happen: a new
+//   2. tick machines (or Select all) - each row previews what will happen: a new
 //      device, an update to a device already on file (and exactly which fields), or
 //      nothing because it's already up to date
 //   3. import → summary
@@ -148,7 +148,7 @@ export function ConnectWiseImport({ customerId, locations, companyName, defaultL
   // Also replace values ConnectWise reports differently (off = only fill blanks and add new things).
   const [takeNewer, setTakeNewer] = useState(false);
 
-  // The site(s) this customer is linked to — recorded by every import, for everyone.
+  // The site(s) this customer is linked to - recorded by every import, for everyone.
   const linksQ = useQuery({
     queryKey: ['integration-links', customerId, 'connectwise'],
     queryFn: () => integrationsApi.links(customerId, 'connectwise').then(r => r.data.links),

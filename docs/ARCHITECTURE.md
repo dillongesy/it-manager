@@ -19,13 +19,13 @@ Docker puts two containers in contact only when they share a network. The full m
 
 | from \ to | edge | portal-web | portal-api | portal-db | field-web | field-api | field-db | internet |
 |---|---|---|---|---|---|---|---|---|
-| **edge** | — | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ✅ (ACME) |
-| **portal-web** | — | — | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **portal-api** | ❌ | ❌ | — | ✅ | ❌ | ✅ `/api/service/*` only | ❌ | ✅ (integrations) |
-| **portal-db** | ❌ | ❌ | ❌ | — | ❌ | ❌ | ❌ | ❌ |
-| **field-web** | ❌ | ❌ | ❌ | ❌ | — | ✅ (refuses `/api/service`) | ❌ | ❌ |
-| **field-api** | ❌ | ❌ | ❌ (it binds only portal_app) | ❌ | ❌ | — | ✅ | ❌ |
-| **field-db** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | — | ❌ |
+| **edge** | — | Yes | No | No | Yes | No | No | Yes (ACME) |
+| **portal-web** | — | — | Yes | No | No | No | No | No |
+| **portal-api** | No | No | — | Yes | No | Yes `/api/service/*` only | No | Yes (integrations) |
+| **portal-db** | No | No | No | — | No | No | No | No |
+| **field-web** | No | No | No | No | — | Yes (refuses `/api/service`) | No | No |
+| **field-api** | No | No | No (it binds only portal_app) | No | No | — | Yes | No |
+| **field-db** | No | No | No | No | No | No | — | No |
 
 The three layers of bridge protection, applied in order:
 1. **Network.** Only portal-api and field-api share the `bridge` network.
@@ -72,6 +72,23 @@ as the credentials vault). On start-up and after each save, the values are copie
 the in-memory `config` object that the integration clients already read at call time,
 which is why a change takes effect without a restart. An integration that has never been
 saved is seeded once from its legacy `.env` variable if one is present.
+
+## Billing rates
+
+The default hourly rates live in `app_settings` under `billing:default_rates`. A new
+customer gets a copy in `customer_billing_rates`, in order. A new work order uses the
+customer's rate named like the first default rate, falling back to the customer's first
+rate. When an admin re-prices a default rate, existing customers can optionally be moved
+to the new price, but only where their rate still has the old price.
+
+## Storage monitoring
+
+portal-api measures the filesystem behind its uploads volume with `statfs`. That is the
+filesystem holding all Docker data, so its free space is what the whole stack runs on.
+Database sizes come from `pg_database_size`, and file sizes from walking each uploads
+directory. field-api reports its own figures over the bridge (`GET /api/service/storage`).
+A snapshot goes into `storage_snapshots` every 6 hours (kept for 400 days). The
+days-until-full forecast is a least-squares trend of used space over the last 30 days.
 
 ## Branding
 

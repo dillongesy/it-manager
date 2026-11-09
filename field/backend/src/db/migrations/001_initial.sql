@@ -1,8 +1,8 @@
--- Field App — Initial Schema
+-- Field App - Initial Schema
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- ─── Users ────────────────────────────────────────────────────────────────────
+-- --- Users --------------------------------------------------------------------
 
 CREATE TABLE users (
   id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -30,7 +30,7 @@ CREATE TABLE refresh_tokens (
 CREATE INDEX idx_refresh_tokens_user   ON refresh_tokens(user_id);
 CREATE INDEX idx_refresh_tokens_hash   ON refresh_tokens(token_hash) WHERE NOT is_revoked;
 
--- ─── Inventory ────────────────────────────────────────────────────────────────
+-- --- Inventory ----------------------------------------------------------------
 
 CREATE TABLE inventory_items (
   id                    UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -78,7 +78,7 @@ CREATE TABLE inventory_transactions (
 CREATE INDEX idx_inv_tx_item    ON inventory_transactions(item_id);
 CREATE INDEX idx_inv_tx_created ON inventory_transactions(created_at DESC);
 
--- ─── Field Work Orders ────────────────────────────────────────────────────────
+-- --- Field Work Orders --------------------------------------------------------
 
 CREATE TABLE field_work_orders (
   id               UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -118,7 +118,7 @@ CREATE TABLE field_work_order_items (
   created_at        TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
 
--- ─── Photos ───────────────────────────────────────────────────────────────────
+-- --- Photos -------------------------------------------------------------------
 
 CREATE TABLE field_photos (
   id               UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -137,7 +137,7 @@ CREATE TABLE field_photos (
 CREATE INDEX idx_photos_wo       ON field_photos(work_order_id);
 CREATE INDEX idx_photos_customer ON field_photos(customer_name, customer_address);
 
--- ─── Schema migrations tracking ───────────────────────────────────────────────
+-- --- Schema migrations tracking -----------------------------------------------
 
 CREATE TABLE IF NOT EXISTS schema_migrations (
   version    VARCHAR(255) PRIMARY KEY,

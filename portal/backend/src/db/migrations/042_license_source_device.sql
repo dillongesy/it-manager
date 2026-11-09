@@ -1,4 +1,4 @@
--- Portal — auto-license linked to a device's license-expiry
+-- Portal - auto-license linked to a device's license-expiry
 -- Migration 042
 --
 -- When a device (e.g. a firewall) has a License Expires date, the Portal auto-creates a

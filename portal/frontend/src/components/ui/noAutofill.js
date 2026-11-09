@@ -3,7 +3,7 @@
 // them. autoComplete="off" alone is widely ignored by Chrome's address/phone
 // heuristics, so we also send an unrecognised token plus the manager-ignore hints.
 // Chrome ignores autoComplete="off" for its address/payment SAVE prompt, but it
-// honours an *unrecognised* token — so we send a nonsense value. Combined with the
+// honours an *unrecognised* token - so we send a nonsense value. Combined with the
 // password-manager ignore hints this stops both autofill and the "save address?"
 // bar. (Pair with autoComplete="off" on the <form> too.)
 export const noAutofill = {

@@ -1,9 +1,8 @@
 import { ShoppingCart } from 'lucide-react';
 import { OrderLog } from '../components/inventory/OrderLog.jsx';
 
-// Purchase orders — used to live as a sub-tab of Inventory ("Order Log"); now its own
-// sidebar page so it gets used. Inventory orders can be received straight into shared
-// stock from here (see OrderLog → "Add to inventory").
+// Purchase orders. Inventory orders can be received into shared stock from here
+// (OrderLog → "Add to inventory").
 export function Orders() {
   return (
     <div className="p-4 sm:p-6 max-w-5xl mx-auto">

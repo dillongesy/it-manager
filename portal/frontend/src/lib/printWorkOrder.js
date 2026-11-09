@@ -4,7 +4,7 @@
 // flag, follow-up notes, and internal notes never appear on the customer copy.
 
 import { cadenceLabel, cadenceUnit } from '../utils/cadence.js';
-import { printBrandHeader, printBrandFooter } from './printBranding.js';
+import { printBrandHeader, printBrandFooter, printBrandVars } from './printBranding.js';
 
 export const money = (v) => `$${parseFloat(v || 0).toFixed(2)}`;
 
@@ -44,7 +44,7 @@ function sectionHtml(s, index, defaultRateLabel) {
   const rateLabel = s.effective_rate_label || defaultRateLabel || '';
   const hours = s.hours != null ? parseFloat(s.hours) : 0;
 
-  // Meta grid — always rendered with consistent column positions.
+  // Meta grid - always rendered with consistent column positions.
   const hoursCell = String(hours);
   const laborCell = money(s.labor_total);
 
@@ -113,7 +113,7 @@ export const WO_PRINT_STYLES = `
   .brand small { display:block; font-size: 11px; color:#555; font-weight: 400; letter-spacing: .03em; }
   .brand-block { display:flex; align-items:center; gap:12px; }
   .logo { height: 56px; width:auto; border-radius:4px; }
-  .top { display:flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #CC0000; padding-bottom: 12px; margin-bottom: 16px; }
+  .top { display:flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--print-brand); padding-bottom: 12px; margin-bottom: 16px; }
   .wo-no { text-align: right; }
   .wo-no .num { font-size: 18px; font-weight: 700; }
   /* A voided WO must never print looking like a live invoice. */
@@ -141,10 +141,10 @@ export const WO_PRINT_STYLES = `
   .proposals-block { margin-top: 12px; margin-bottom: 16px; page-break-inside: avoid; }
   .proposals-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #888; margin-bottom: 6px; }
   .proposal-card { border: 1px solid #ddd; border-radius: 6px; padding: 10px 14px; margin-bottom: 8px; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-  .proposal-card-label { font-size: 11px; font-weight: 700; color: #CC0000; white-space: nowrap; min-width: 72px; }
+  .proposal-card-label { font-size: 11px; font-weight: 700; color: var(--print-brand); white-space: nowrap; min-width: 72px; }
   .proposal-card-name { font-size: 12px; color: #1a1a1a; flex: 1; }
   .proposal-card-price { font-size: 12px; font-weight: 600; color: #1a1a1a; white-space: nowrap; }
-  /* EVERY attached proposal starts on a fresh page — this used to be .first-proposal,
+  /* EVERY attached proposal starts on a fresh page - this used to be .first-proposal,
      so proposals 2, 3… ran straight on from the previous one's last page. */
   .proposal-section { page-break-before: always; break-before: page; }
   .proposal-header { font-size: 11px; color: #888; border-bottom: 1px solid #eee; padding-bottom: 4px; margin-bottom: 8px; }
@@ -187,7 +187,7 @@ export function renderWorkOrderBody(wo, proposalImages = []) {
       </tbody>
     </table>` : '';
 
-  // Proposals summary cards — shown inline after sections, before totals.
+  // Proposals summary cards - shown inline after sections, before totals.
   const woProposals = wo.wo_proposals ?? [];
   const proposalsSummaryHtml = woProposals.length ? `
     <div class="proposals-block">
@@ -238,7 +238,7 @@ export function renderWorkOrderBody(wo, proposalImages = []) {
 // proposalImages: array of { name: string, pages: string[] } where pages are JPEG data URLs.
 // Pre-render proposal PDFs to images (via pdfToImages util) before calling this function.
 // options.autoPrint (default true): when false, the document just opens in a new tab
-// (no automatic print dialog) — used for the Billing Queue "open invoice" button.
+// (no automatic print dialog) - used for the Billing Queue "open invoice" button.
 // Opening the print dialog the moment the document loads raced the proposal pages:
 // they are large data: URLs, and a dialog opened before they decode prints blank (or
 // omits them entirely). This waits for every image to settle first, with a ceiling so
@@ -264,7 +264,7 @@ export function printWorkOrder(wo, proposalImages = [], { autoPrint = true } = {
   const woNum = `WO-${String(wo.number).padStart(5, '0')}`;
   const html = `<!doctype html>
 <html><head><meta charset="utf-8"><title>${woNum} — ${esc(wo.customer_name)}</title>
-<style>${WO_PRINT_STYLES}</style></head>
+<style>${printBrandVars()}${WO_PRINT_STYLES}</style></head>
 <body>
   ${renderWorkOrderBody(wo, proposalImages)}
   ${autoPrint ? PRINT_WHEN_READY : ''}

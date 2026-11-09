@@ -7,16 +7,16 @@
 import { WO_PRINT_STYLES, renderWorkOrderBody, esc, money, fmtDate } from './printWorkOrder.js';
 import { WO_STATUS_LABEL as STATUS_LABEL } from '../utils/woStatus.js';
 import { cadenceLabel } from '../utils/cadence.js';
-import { printBrandHeader } from './printBranding.js';
+import { printBrandHeader, printBrandVars } from './printBranding.js';
 const MONTHS = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const EXPORT_STYLES = `
-  .export-head { border-bottom: 2px solid #CC0000; padding-bottom: 12px; margin-bottom: 20px; }
+  .export-head { border-bottom: 2px solid var(--print-brand); padding-bottom: 12px; margin-bottom: 20px; }
   .export-head .brand-block { display:flex; align-items:center; gap:12px; }
   .export-head h1 { margin: 10px 0 2px; font-size: 22px; color: #1a1a1a; }
   .export-head .sub { color: #666; font-size: 12px; }
   .doc-section { margin-bottom: 22px; page-break-inside: avoid; }
-  .doc-section h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: #CC0000; border-bottom: 1px solid #eee; padding-bottom: 5px; margin: 0 0 10px; }
+  .doc-section h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--print-brand); border-bottom: 1px solid #eee; padding-bottom: 5px; margin: 0 0 10px; }
   .kv { display: grid; grid-template-columns: 180px 1fr; gap: 3px 12px; font-size: 12.5px; }
   .kv .k { color: #888; }
   .subhead { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color:#888; margin: 12px 0 5px; }
@@ -29,7 +29,7 @@ const EXPORT_STYLES = `
   .empty { color: #999; font-size: 12px; font-style: italic; }
   .wo-appended { page-break-before: always; }
   .append-intro { page-break-before: always; margin-bottom: 4px; }
-  .append-intro h2 { font-size: 15px; color:#CC0000; border-bottom: 2px solid #CC0000; padding-bottom: 6px; }
+  .append-intro h2 { font-size: 15px; color: var(--print-brand); border-bottom: 2px solid var(--print-brand); padding-bottom: 6px; }
 `;
 
 function overviewSection(customer) {
@@ -193,7 +193,7 @@ export function printCustomerExport(data) {
 
   const html = `<!doctype html>
 <html><head><meta charset="utf-8"><title>${esc(customer.name)} — Customer Export</title>
-<style>${WO_PRINT_STYLES}${EXPORT_STYLES}</style></head>
+<style>${printBrandVars()}${WO_PRINT_STYLES}${EXPORT_STYLES}</style></head>
 <body>
   <div class="export-head">
     ${printBrandHeader()}

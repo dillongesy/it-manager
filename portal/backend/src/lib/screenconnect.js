@@ -1,5 +1,5 @@
 // ScreenConnect sessions → the Remote button on Portal devices. Pure functions only
-// (no I/O), unit-tested.
+// (no I/O).
 //
 // Each machine with the ScreenConnect agent is an "Access" session. The RESTful API
 // Manager returns sessions with the machine's own report in GuestInfo (MachineName,
@@ -37,7 +37,7 @@ export function sessionOf(raw) {
 
 /**
  * The link ScreenConnect's own Join button opens. With command 'JoinWithOptions' it opens
- * the Join-with-options dialog instead — the way into Backstage, which has no link of its own.
+ * the Join-with-options dialog instead - the way into Backstage, which has no link of its own.
  */
 export function joinUrl(baseUrl, group, sessionId, command = 'Join') {
   return `${str(baseUrl).replace(/\/+$/, '')}/Host#Access/${encodeURIComponent(group || 'All Machines')}//${encodeURIComponent(sessionId)}/${command}`;
@@ -51,9 +51,9 @@ const COMPUTER_TYPES = new Set(['workstation', 'server', 'other']);
 
 /**
  * Which ScreenConnect session each Portal device is.
- *   1. serial number / service tag — unique across every session
- *   2. MAC address                 — unique across every session
- *   3. computer name               — only among sessions of THIS customer's ScreenConnect
+ *   1. serial number / service tag - unique across every session
+ *   2. MAC address                 - unique across every session
+ *   3. computer name               - only among sessions of THIS customer's ScreenConnect
  *      company (learned from the serial/MAC matches, or a company whose name matches
  *      the customer's), and only when exactly one session has that name. A name like
  *      "FRONTDESK" exists at several customers; guessing would open another customer's PC.

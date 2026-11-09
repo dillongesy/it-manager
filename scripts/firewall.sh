@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ──────────────────────────────────────────────────────────────────────────────
+# ------------------------------------------------------------------------------
 # Host firewall for IT Manager (called by install.sh; safe to re-run).
 #
 # Two layers, because Docker-published ports never pass through ufw's INPUT chain:
@@ -19,7 +19,7 @@
 #
 # Env: EXT_IF, LAN_CIDR, FIELD_PORT, FIELD_PUBLIC (yes/no), MODE (lan/domain),
 #      SSH_FROM (default: LAN_CIDR; set "any" to allow SSH from anywhere)
-# ──────────────────────────────────────────────────────────────────────────────
+# ------------------------------------------------------------------------------
 set -euo pipefail
 
 : "${EXT_IF:?}"; : "${LAN_CIDR:?}"; : "${FIELD_PORT:=8443}"; : "${FIELD_PUBLIC:=no}"; : "${MODE:=lan}"
@@ -28,7 +28,7 @@ SSH_FROM="${SSH_FROM:-$LAN_CIDR}"
 [ "$(id -u)" -eq 0 ] || { echo "Run as root." >&2; exit 1; }
 command -v ufw >/dev/null || { apt-get update -qq && apt-get install -y -qq ufw >/dev/null; }
 
-# ── Containers (DOCKER-USER via ufw after.rules) ──────────────────────────────
+# -- Containers (DOCKER-USER via ufw after.rules) ------------------------------
 # Written BEFORE any ufw command: `ufw default …` rewrites the rules files and
 # crashes (UnicodeEncodeError) on any non-ASCII byte in them, so the block must be
 # plain ASCII and an older block with a non-ASCII marker must be gone first.
@@ -62,7 +62,7 @@ cp -n "$AFTER" "$AFTER.it-manager.bak" 2>/dev/null || true
 sed -i '/# BEGIN IT-MANAGER DOCKER-USER/,/# END IT-MANAGER DOCKER-USER/d' "$AFTER"
 printf '\n%s\n' "$BLOCK" >> "$AFTER"
 
-# ── Host (ufw) ────────────────────────────────────────────────────────────────
+# -- Host (ufw) ----------------------------------------------------------------
 ufw --force default deny incoming >/dev/null
 ufw --force default allow outgoing >/dev/null
 if [ "$SSH_FROM" = "any" ]; then

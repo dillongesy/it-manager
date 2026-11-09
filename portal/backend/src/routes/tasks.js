@@ -8,23 +8,23 @@ import { coerceTask, applyStatusRules, changeEvents, summarize, reorderRanks, ST
 import { addTaskToOutlook, removeTaskFromOutlook, syncTaskEvent, dropDeletedTaskEvent } from '../lib/task-outlook.js';
 import { OutlookError } from '../lib/outlook-client.js';
 
-// Tasks — the internal task list (migration 061; replaced the Backlog and customer To-Dos).
+// Tasks: the internal task list (migration 061), optionally linked to a customer.
 //
-//   GET    /api/tasks                       — list (filters below), X-Total-Count
-//   GET    /api/tasks/summary               — the Overview: totals, workload, overdue, idle
-//   GET    /api/tasks/:id                   — one task with its full notes and history
-//   POST   /api/tasks                       — create
-//   PATCH  /api/tasks/:id                   — edit (status / schedule / assignee changes go in the history)
-//   POST   /api/tasks/reorder               — { ids } queue order
-//   POST   /api/tasks/:id/comments          — { body }
-//   DELETE /api/tasks/:id/comments/:eventId — the author (or an admin) only
-//   POST   /api/tasks/:id/work-orders       — { work_order_id } record "added to WO-…" in the history
-//   POST   /api/tasks/:id/outlook           — "Add to Outlook": put it on the shared calendar (needs a date)
-//   DELETE /api/tasks/:id/outlook           — take it off the calendar
+//   GET    /api/tasks                       - list (filters below), X-Total-Count
+//   GET    /api/tasks/summary               - the Overview: totals, workload, overdue, idle
+//   GET    /api/tasks/:id                   - one task with its full notes and history
+//   POST   /api/tasks                       - create
+//   PATCH  /api/tasks/:id                   - edit (status / schedule / assignee changes go in the history)
+//   POST   /api/tasks/reorder               - { ids } queue order
+//   POST   /api/tasks/:id/comments          - { body }
+//   DELETE /api/tasks/:id/comments/:eventId - the author (or an admin) only
+//   POST   /api/tasks/:id/work-orders       - { work_order_id } record "added to WO-…" in the history
+//   POST   /api/tasks/:id/outlook           - "Add to Outlook": put it on the shared calendar (needs a date)
+//   DELETE /api/tasks/:id/outlook           - take it off the calendar
 //   DELETE /api/tasks/:id
 //
 // A task on Outlook keeps its event in step (lib/task-outlook.js): edits rewrite it, clearing the
-// date or deleting the task removes it. An Outlook failure never blocks the task change — it
+// date or deleting the task removes it. An Outlook failure never blocks the task change - it
 // comes back as outlook_warning.
 //
 // Rules (status implications, flags, workload): lib/tasks.js.
@@ -170,7 +170,7 @@ router.get('/', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// GET /api/tasks/summary — every active task plus the last two weeks' finished ones, summarized.
+// GET /api/tasks/summary - every active task plus the last two weeks' finished ones, summarized.
 router.get('/summary', requireAuth, async (req, res, next) => {
   try {
     const [{ rows: tasks }, { rows: users }] = await Promise.all([
@@ -181,7 +181,7 @@ router.get('/summary', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// POST /api/tasks/reorder — { ids } in their new queue order.
+// POST /api/tasks/reorder - { ids } in their new queue order.
 router.post('/reorder', requireAuth, async (req, res, next) => {
   try {
     const ids = Array.isArray(req.body?.ids) ? req.body.ids.filter(uuidLike) : [];
@@ -299,7 +299,7 @@ router.delete('/:id/comments/:eventId', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// POST /api/tasks/:id/work-orders — record that the task went into a work order (the work
+// POST /api/tasks/:id/work-orders - record that the task went into a work order (the work
 // order itself is created / extended by the work-orders routes).
 router.post('/:id/work-orders', requireAuth, async (req, res, next) => {
   try {
@@ -314,7 +314,7 @@ router.post('/:id/work-orders', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// POST /api/tasks/:id/outlook — put the task on the shared Outlook calendar (or refresh its event).
+// POST /api/tasks/:id/outlook - put the task on the shared Outlook calendar (or refresh its event).
 router.post('/:id/outlook', requireAuth, async (req, res, next) => {
   try {
     if (!uuidLike(req.params.id)) return res.status(404).json({ error: 'Task not found.' });
@@ -333,7 +333,7 @@ router.post('/:id/outlook', requireAuth, async (req, res, next) => {
   }
 });
 
-// DELETE /api/tasks/:id/outlook — take it off the calendar.
+// DELETE /api/tasks/:id/outlook - take it off the calendar.
 router.delete('/:id/outlook', requireAuth, async (req, res, next) => {
   try {
     if (!uuidLike(req.params.id)) return res.status(404).json({ error: 'Task not found.' });

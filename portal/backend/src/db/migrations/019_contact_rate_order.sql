@@ -1,4 +1,4 @@
--- Portal — manual ordering for contacts and billing rates
+-- Portal - manual ordering for contacts and billing rates
 -- Migration 019
 --
 -- Contacts and billing rates are per-customer; give each a sort_order so they can

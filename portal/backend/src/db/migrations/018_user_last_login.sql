@@ -1,4 +1,4 @@
--- Portal — per-user last-login tracking
+-- Portal - per-user last-login tracking
 -- Migration 018
 
 ALTER TABLE users

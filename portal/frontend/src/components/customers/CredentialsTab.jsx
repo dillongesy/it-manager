@@ -14,7 +14,7 @@ import { SearchInput } from '../ui/SearchInput.jsx';
 import { matchesQuery } from '../../utils/search.js';
 import { sortByName, isSortedByName } from '../../utils/sort.js';
 
-// ─── Credential form ──────────────────────────────────────────────────────────
+// --- Credential form ----------------------------------------------------------
 
 function CredForm({ customerId, cred, existingCategories, defaultCategory, locations, companyName, defaultLocationId, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -118,7 +118,7 @@ function CredForm({ customerId, cred, existingCategories, defaultCategory, locat
           onChange={set('extra_notes')} />
       </div>
 
-      {/* Custom fields — FQDN, customer ID, support #, DB password, security Qs, etc.
+      {/* Custom fields - FQDN, customer ID, support #, DB password, security Qs, etc.
           Tick "secret" to encrypt + mask. They display inline with the entry. */}
       <div className="border-t border-surface-600 pt-3">
         <div className="flex items-center justify-between mb-2">
@@ -179,7 +179,7 @@ function CredForm({ customerId, cred, existingCategories, defaultCategory, locat
   );
 }
 
-// ─── One credential row ─────────────────────────────────────────────────────--
+// --- One credential row -------------------------------------------------------
 
 function CredRow({ c, customerId, locations, companyName, showOffice, isFirst, isLast, onEdit, onDelete, onMove }) {
   return (
@@ -202,7 +202,7 @@ function CredRow({ c, customerId, locations, companyName, showOffice, isFirst, i
           {c.extra_notes && <p className="text-gray-500 text-xs mt-0.5">{c.extra_notes}</p>}
         </div>
 
-        {/* Middle: values — username, password, then any custom fields, all aligned.
+        {/* Middle: values - username, password, then any custom fields, all aligned.
             Flexes to use available width so long usernames stay on one line; wraps
             only when there genuinely isn't room. */}
         <div className="flex-1 min-w-[18rem] max-w-2xl space-y-1.5">
@@ -279,7 +279,7 @@ function CopyBtn({ text }) {
   );
 }
 
-// ─── Section ─────────────────────────────────────────────────────────────────--
+// --- Section -------------------------------------------------------------------
 
 function Section({ category, creds, allSectionCreds, customerId, existingCategories, ownCategories, locations, companyName, showOffice, defaultLocationId, isFirst, isLast, dragHandle, onMutate }) {
   const [open, setOpen]   = useState(true);
@@ -312,8 +312,8 @@ function Section({ category, creds, allSectionCreds, customerId, existingCategor
   const move = async (id, direction) => { await customersApi.credentials.move(customerId, id, direction); onMutate(); };
   const moveSection = async (direction) => { await customersApi.credentials.moveSection(customerId, category, direction); onMutate(); };
 
-  // Sort A–Z persists like a drag-reorder. It always sorts the WHOLE section —
-  // not just the rows surviving the search/office filter — so a filtered view
+  // Sort A–Z persists like a drag-reorder. It always sorts the WHOLE section -
+  // not just the rows surviving the search/office filter - so a filtered view
   // can't shuffle hidden entries to the bottom.
   const credLabel  = (c) => c.label;
   const alphaSorted = isSortedByName(allSectionCreds, credLabel);
@@ -430,7 +430,7 @@ function Section({ category, creds, allSectionCreds, customerId, existingCategor
   );
 }
 
-// ─── Main tab ─────────────────────────────────────────────────────────────────
+// --- Main tab -----------------------------------------------------------------
 
 export function CredentialsTab({ customerId, locations = [], companyName }) {
   const [addModal, setAddModal] = useState(false);
@@ -442,7 +442,7 @@ export function CredentialsTab({ customerId, locations = [], companyName }) {
     queryFn: () => customersApi.credentials.list(customerId).then(r => r.data),
   });
 
-  // Section names used by ANY customer — fed into the section combobox so existing
+  // Section names used by ANY customer - fed into the section combobox so existing
   // sections (e.g. "NAS") autocomplete across customers.
   const { data: globalSections = [] } = useQuery({
     queryKey: ['credential-section-suggestions'],
@@ -462,7 +462,7 @@ export function CredentialsTab({ customerId, locations = [], companyName }) {
     const key = c.category || 'General';
     (groups[key] = groups[key] || []).push(c);
   }
-  // Unfiltered per-section groups — what "Sort A–Z" reorders (the visible groups
+  // Unfiltered per-section groups - what "Sort A–Z" reorders (the visible groups
   // above may be a filtered subset).
   const allGroups = {};
   for (const c of allCreds) {
@@ -471,7 +471,7 @@ export function CredentialsTab({ customerId, locations = [], companyName }) {
   }
   const orderedCats = sections.map(s => s.category).filter(cat => groups[cat]);
   for (const k of Object.keys(groups)) if (!orderedCats.includes(k)) orderedCats.push(k);
-  // Every section this customer has, filtered out or not — renaming onto one merges.
+  // Every section this customer has, filtered out or not - renaming onto one merges.
   const ownCategories = [...new Set([...sections.map(s => s.category), ...Object.keys(allGroups)])];
 
   // Combobox options: this customer's sections first, then any others company-wide

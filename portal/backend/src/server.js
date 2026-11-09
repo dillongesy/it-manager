@@ -3,6 +3,7 @@ import { pool } from './db/index.js';
 import app from './app.js';
 import { loadIntegrations } from './lib/settings.js';
 import { pushBrandingWithRetry } from './lib/branding-sync.js';
+import { startStorageMonitor } from './lib/storage.js';
 
 async function start() {
   try {
@@ -26,6 +27,8 @@ async function start() {
 
   // Keep the Field App's copy of the branding current (it may still be booting).
   pushBrandingWithRetry().catch(() => {});
+
+  startStorageMonitor();
 
   process.on('SIGTERM', () => {
     server.close(() => {

@@ -18,7 +18,7 @@ function normalize(body) {
   const recurrence = billing_type === 'recurring'
     ? (RECURRENCES.includes(body.recurrence) ? body.recurrence : 'monthly')
     : null;
-  // How many periods between bills — 3 for something sold three years at a time.
+  // How many periods between bills - 3 for something sold three years at a time.
   // Forced back to 1 for one-time services and any non-annual period.
   const recurrence_count = billing_type === 'recurring'
     ? coerceIntervalCount(body.recurrence_count, recurrence)
@@ -27,9 +27,9 @@ function normalize(body) {
   return { billing_type, recurrence, recurrence_count, unit_price };
 }
 
-// GET /api/service-catalog?q=&includeInactive=1 — list (active only by default),
+// GET /api/service-catalog?q=&includeInactive=1 - list (active only by default),
 // name-matched when ?q is given. Used both by the Services page and the WO autocomplete.
-// Each row carries `linked_charge_count` — how many ACTIVE customer recurring charges
+// Each row carries `linked_charge_count` - how many ACTIVE customer recurring charges
 // are tied to it, i.e. how many billing lines a price change would move.
 router.get('/', requireAuth, async (req, res, next) => {
   try {
@@ -49,7 +49,7 @@ router.get('/', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// GET /api/service-catalog/suggestions?field=category|unit_label&q= — distinct values
+// GET /api/service-catalog/suggestions?field=category|unit_label&q= - distinct values
 // already entered ANYWHERE (catalog services + customer recurring charges), so a
 // category typed once on a customer suggests itself on the Services page and vice
 // versa. Keeps naming consistent instead of "Antivirus"/"anti-virus"/"AV" drift.
@@ -94,7 +94,7 @@ router.post('/', requireAuth, async (req, res, next) => {
 // PATCH /api/service-catalog/:id
 // Body may include `propagate_price` (default TRUE): when the unit price changes,
 // every ACTIVE customer recurring charge linked to this service is re-priced in the
-// same transaction — that's the whole point of the link. Pass propagate_price:false
+// same transaction - that's the whole point of the link. Pass propagate_price:false
 // to change the catalog price for FUTURE customers only. Response carries
 // `price_sync: { updated, skipped, from, to }` so the UI can report what moved.
 router.patch('/:id', requireAuth, async (req, res, next) => {

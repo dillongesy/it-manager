@@ -6,7 +6,7 @@
 // forward by whole intervals until it lands on or after `from` (today).
 //
 // All math is done from the ORIGINAL anchor (anchor + k intervals), never by
-// iterating off the previous result — so a Jan-31 anchor yields Feb-28, Mar-31,
+// iterating off the previous result - so a Jan-31 anchor yields Feb-28, Mar-31,
 // Apr-30… instead of drifting to the 28th forever. Day-of-month is clamped to the
 // target month's length, which also makes a Feb-29 annual anchor land on Feb-28 in
 // common years.
@@ -54,7 +54,7 @@ function addYears(date, n) {
 // license. Returns a Date, or null if the anchor can't be parsed. A future anchor is
 // returned unchanged (the subscription hasn't reached its first renewal yet).
 //
-// `count` is how many intervals pass between renewals — 1 for a plain annual
+// `count` is how many intervals pass between renewals - 1 for a plain annual
 // subscription, 3 for a domain registered three years at a time. Steps are always
 // whole multiples of (count × interval) measured from the ORIGINAL anchor, so a
 // three-year cycle lands on the same month/day every third year with no drift.

@@ -1,5 +1,5 @@
 // The shared Outlook calendar on the Tasks schedule. The Portal shows its events beside the
-// tasks and can edit them (time, title, location, notes, who it's for) — but never turns an
+// tasks and can edit them (time, title, location, notes, who it's for) - but never turns an
 // event into a task. Separately, "Add to Outlook" puts a task on the calendar as an all-day
 // event the Portal keeps in step with the task.
 //
@@ -38,7 +38,7 @@ const norm = (s) => clean(s).toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g,
 /**
  * Which techs a piece of text names: "Dana @ Northwind", "Riley off". A full name always counts;
  * a first name counts when no other tech shares it and it's at least 3 letters (so "Al" never
- * matches "AL"). Initials are never used — "IT", "PC" and "DG" are too easy to hit by accident.
+ * matches "AL"). Initials are never used - "IT", "PC" and "DG" are too easy to hit by accident.
  * Ordered by where the name first appears, so the first person mentioned colours the event.
  */
 export function matchTechs(text, users) {
@@ -101,7 +101,7 @@ export function normalizeEvent(raw, users = []) {
 
 export const normalizeEvents = (list, users) => (list ?? []).map(e => normalizeEvent(e, users)).filter(Boolean);
 
-// ── Writing ──────────────────────────────────────────────────────────────────────────────
+// -- Writing ------------------------------------------------------------------------------
 
 // Graph wants Windows time-zone names. The usual US zones; anything else is passed as given.
 const WINDOWS_ZONES = {
@@ -150,11 +150,11 @@ function eventWall(raw, which, zone) {
   return raw.isAllDay ? `${iso.slice(0, 10)}T00:00:00` : wallClock(iso, zone);
 }
 
-// ── Repeating events ──
+// -- Repeating events --
 // The Portal's repeat settings ⇄ Graph's recurrence:
 //   { freq: 'daily' | 'weekly' | 'monthly' | 'yearly', interval (1–99),
 //     days: ['monday', …]          (weekly; "every weekday" is weekly Mon–Fri)
-//     monthly: 'day' | 'weekday'   (on day 4 / on the first Wednesday — from the start date)
+//     monthly: 'day' | 'weekday'   (on day 4 / on the first Wednesday - from the start date)
 //     end: 'never' | 'date' | 'count', until: 'YYYY-MM-DD', count }
 export const WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
 const NTH = ['first', 'second', 'third', 'fourth', 'last'];
@@ -229,11 +229,11 @@ export function endSeriesBefore(master, occurrence, zone) {
 /**
  * The Graph PATCH for an edit made in the Portal. Only the fields sent are changed.
  *   title, location, notes, show_as
- *   assign_to         — a user id, or null for nobody (sets the categories)
- *   reminder_minutes  — minutes before the start, or null for no reminder
+ *   assign_to         - a user id, or null for nobody (sets the categories)
+ *   reminder_minutes  - minutes before the start, or null for no reminder
  *   one event:  all_day + start_date/end_date (inclusive) or start/end (ISO instants)
  *   a series:   start_time/end_time ("HH:MM", both), shift_days (move every event that many days
- *               — the pattern moves with it), repeat (new repeat settings)
+ *               - the pattern moves with it), repeat (new repeat settings)
  * `current` is the event (or series) as Graph has it: { categories, isAllDay, start, end, recurrence }.
  */
 export function eventPatch(input, current, { zone, users, series = false }) {

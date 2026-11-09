@@ -109,7 +109,7 @@ export const customersApi = {
   },
 
   export: {
-    // Provider handoff workbook (.xlsx) — admin-only, re-auth via password. Returns a blob.
+    // Provider handoff workbook (.xlsx) - admin-only, re-auth via password. Returns a blob.
     provider: (cid, password) =>
       api.post(`/customers/${cid}/export/provider`, { password }, { responseType: 'blob' }),
   },

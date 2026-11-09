@@ -9,7 +9,7 @@ const router = Router();
 
 const VALID_ROLES = ['admin', 'camera_tech', 'biller'];
 
-// GET /api/users — any authenticated user (powers the technician picker).
+// GET /api/users - any authenticated user (powers the technician picker).
 // ?active=true returns only active accounts.
 router.get('/', requireAuth, async (req, res, next) => {
   try {
@@ -24,7 +24,7 @@ router.get('/', requireAuth, async (req, res, next) => {
   }
 });
 
-// POST /api/users/me/password — change own password
+// POST /api/users/me/password - change own password
 router.post('/me/password', requireAuth, async (req, res, next) => {
   try {
     const { current_password, new_password } = req.body ?? {};
@@ -51,7 +51,7 @@ router.post('/me/password', requireAuth, async (req, res, next) => {
   }
 });
 
-// POST /api/users — admin only
+// POST /api/users - admin only
 router.post('/', requireAuth, requireRole('admin'), async (req, res, next) => {
   try {
     const { username, password, full_name, initials, role } = req.body ?? {};
@@ -88,7 +88,7 @@ router.post('/', requireAuth, requireRole('admin'), async (req, res, next) => {
   }
 });
 
-// PATCH /api/users/:id — admin only
+// PATCH /api/users/:id - admin only
 router.patch('/:id', requireAuth, requireRole('admin'), async (req, res, next) => {
   try {
     const { full_name, initials, role, is_active, password } = req.body ?? {};

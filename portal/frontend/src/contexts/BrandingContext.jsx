@@ -4,7 +4,7 @@ import api from '../api/client.js';
 import { applyBrandTheme, applyDocumentBranding } from '../lib/brandTheme.js';
 
 // Everything white-label: names, colors, contact details for the print header, and
-// uploaded images. Loaded once (public endpoint — works before sign-in) and
+// uploaded images. Loaded once (public endpoint - works before sign-in) and
 // re-fetched whenever Admin → Branding saves.
 
 export const BRANDING_DEFAULTS = {

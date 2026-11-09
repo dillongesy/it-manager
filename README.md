@@ -96,15 +96,18 @@ half-migrated database. To pin a version, set `IMAGE_TAG=1.4.0` in `.env`.
 
 ## 4. Admin area
 
-**Admin** (visible to admins only) replaces the old User Management page:
+**Admin** is visible to admins only:
 
 | Tab | What's there |
 |---|---|
 | **Users & roles** | Create, edit and deactivate users. Roles: Admin, Technician, Biller. You can't demote or deactivate the last active admin, or deactivate yourself. |
-| **Integrations** | ConnectWise RMM, Dell TechDirect, ScreenConnect, UniFi, TD SYNNEX, Auvik, Outlook and ThreatLocker. Each has an on/off switch and its settings (these used to be `.env` variables). Secrets are encrypted with the master key and never sent back to the browser. Changes apply immediately, with no restart. Integrations that are off are hidden from everyone. |
+| **Integrations** | ConnectWise RMM, Dell TechDirect, ScreenConnect, UniFi, TD SYNNEX, Auvik, Outlook and ThreatLocker. Each has an on/off switch and its settings. Secrets are encrypted with the master key and never sent back to the browser. Changes apply immediately, with no restart. Integrations that are off are hidden from everyone. |
+| **Billing** | The default hourly rates (initially Standard $90 and Tech $70) that every new customer starts with. Each customer's rates can still be changed on its Overview tab. Saving can also update existing customers who are still on the old price; negotiated prices are left alone. The first rate is the default for new work orders. |
 | **Branding** | Company name, app name, Field App name, primary and accent colors (live preview, contrast warning), print/PDF header (address, phone, email, website, footer), plus image uploads: square logo, full logo, browser-tab icon, login background. Changes push to the Field App automatically. |
 | **Security** | The one-time recovery-secrets reveal, and its status (who revealed them and when). |
-| **System** | Version, Field App bridge health, and "Create my Field App login" if the wizard couldn't. |
+| **System** | Version, Field App bridge health, storage (see below), and "Create my Field App login" if the wizard couldn't. |
+
+**Storage monitoring.** Admin → System shows disk capacity, the size of each database and of the uploaded files, the growth rate over the last 30 days, and the estimated date the disk fills up. Usage is recorded every 6 hours. Admins see a banner on every page when the disk is 80% full or expected to fill within 60 days, and a critical banner at 90% or 14 days.
 
 ## 5. Security model
 
@@ -219,5 +222,5 @@ deploy/edge/                Caddy reverse proxy + Caddyfile
 portal/{backend,frontend}   Portal API + web (each with its own Dockerfile)
 field/{backend,frontend}    Field API + web
 scripts/                    firewall, setup code, CA export, backup, import-existing
-docs/                       architecture/security, Field public-hosting plan, BACKLOG.md
+docs/                       architecture and security, Field public-hosting plan, roadmap
 ```

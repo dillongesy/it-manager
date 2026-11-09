@@ -8,7 +8,7 @@ const num = (v) => (v == null ? null : Number(v));
 
 export function Inventory() {
   const [sp] = useSearchParams();
-  // The Order Log used to be a tab here — old bookmarks land on its new page.
+  // Redirect the former ?tab=orders URL to the Orders page.
   if (sp.get('tab') === 'orders') return <Navigate to="/orders" replace />;
 
   return (
@@ -29,7 +29,7 @@ export function Inventory() {
   );
 }
 
-// ─── Inventory tab (existing content, unchanged) ─────────────────────────────
+// --- Inventory tab (existing content, unchanged) -----------------------------
 
 function InventoryTab() {
   const [items, setItems]           = useState([]);
@@ -151,7 +151,7 @@ function InventoryTab() {
   );
 }
 
-// ─── Create / edit form ──────────────────────────────────────────────────────
+// --- Create / edit form ------------------------------------------------------
 
 const BLANK = { name: '', description: '', category: '', manufacturer_barcode: '',
   unit: 'ea', low_stock_threshold: '5', cost_per_unit: '', notes: '' };
@@ -253,7 +253,7 @@ function ItemFormModal({ item, onClose, onSaved }) {
   );
 }
 
-// ─── Item detail (stock actions + ledger) ────────────────────────────────────
+// --- Item detail (stock actions + ledger) ------------------------------------
 
 function ItemModal({ itemId, onClose, onChanged }) {
   const [item, setItem]       = useState(null);

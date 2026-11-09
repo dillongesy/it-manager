@@ -47,7 +47,7 @@
   @apply inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium;
 }
 
-/* ─── Theme variables ────────────────────────────────────────────────────────
+/* --- Theme variables --------------------------------------------------------
    Space-separated RGB triplets consumed by tailwind.config.js via
    rgb(var(--x) / <alpha-value>). :root is the dark theme (default); adding the
    `.light` class to <html> swaps in the light theme. */
@@ -63,9 +63,9 @@
     --c-gray-100: 243 244 246;
     --c-gray-200: 229 231 235;
     --c-gray-300: 213 217 223;
-    --c-gray-400: 176 183 194; /* secondary text — brightened for contrast on dark */
-    --c-gray-500: 150 158 170; /* muted labels — brightened */
-    --c-gray-600: 124 133 145; /* faint helper text — was hard to read, brightened */
+    --c-gray-400: 176 183 194; /* secondary text */
+    --c-gray-500: 150 158 170; /* muted labels */
+    --c-gray-600: 124 133 145; /* helper text */
     --c-gray-700: 99 108 121;
 
     --c-amber-400: 251 191 36;
@@ -108,9 +108,9 @@
     --c-gray-100: 17 24 39;
     --c-gray-200: 31 41 55;
     --c-gray-300: 47 56 70;
-    --c-gray-400: 61 70 85; /* secondary text — darkened for contrast on white */
-    --c-gray-500: 82 91 105; /* muted labels — darkened */
-    --c-gray-600: 100 112 130; /* faint helper text — darkened so it doesn't blend in */
+    --c-gray-400: 61 70 85; /* secondary text */
+    --c-gray-500: 82 91 105; /* muted labels */
+    --c-gray-600: 100 112 130; /* helper text */
     --c-gray-700: 71 85 105;
 
     /* Status: -900 tint → pale background, -400/-300 → dark readable text/borders. */
@@ -135,7 +135,7 @@
     --scrollbar-thumb: #a1a1aa;
   }
 
-/* ─── Touch / phone adjustments ───────────────────────────────────────────────
+/* --- Touch / phone adjustments -----------------------------------------------
    Unlayered on purpose so they win over Tailwind utilities. Both are scoped to
    conditions a desktop mouse+monitor never meets, so the desktop UI is untouched. */
 
@@ -164,7 +164,7 @@
     box-sizing: border-box;
   }
 
-  /* Larger base text — easier on older eyes. All rem-based sizes (text-xs/sm/base)
+  /* Larger base text - easier on older eyes. All rem-based sizes (text-xs/sm/base)
      scale from here, so this lifts the whole UI a notch without per-element changes. */
   html {
     font-size: 17.5px;
@@ -185,7 +185,7 @@
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #CC0000;
+    background: rgb(var(--c-brand));
   }
 
   /* Number inputs (quantities, prices, hours…) are typed by hand. Hide the

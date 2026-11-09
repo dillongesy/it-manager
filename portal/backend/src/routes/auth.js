@@ -125,7 +125,7 @@ router.post('/refresh', async (req, res, next) => {
     const record = rows[0];
 
     if (!record || !record.is_active) {
-      // Possible token theft — revoke all tokens for this user if record found
+      // Possible token theft - revoke all tokens for this user if record found
       if (record) {
         await query('UPDATE refresh_tokens SET is_revoked = true WHERE user_id = $1', [record.user_id]);
       }

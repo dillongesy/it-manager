@@ -62,7 +62,7 @@ api.interceptors.response.use(
   }
 );
 
-// In-memory token store — never touches localStorage
+// In-memory token store - never touches localStorage
 export const tokenStore = {
   _token: null,
   get() { return this._token; },

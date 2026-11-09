@@ -1,4 +1,4 @@
-// ThreatLocker → seat counts for the Billing tab. Pure functions only, unit-tested.
+// ThreatLocker → seat counts for the Billing tab. Pure functions only.
 //
 // Portal API (spec: https://portalapi.<instance>.threatlocker.com/swagger/public/swagger.json):
 //   POST /portalapi/Organization/OrganizationGetChildOrganizationsByParameters
@@ -19,9 +19,9 @@ export function rowsOf(body) {
   return [];
 }
 
-// Live (2026-10-30, view-only API user): every org lists the full product catalog in
-// `products` with isEnabledProduct false, so only products flagged enabled count as bundles
-// — otherwise every line would be named after "Storage Control". billingMethod is "device".
+// Every organization lists the full product catalog in `products`, with isEnabledProduct
+// set on the ones it actually has, so only enabled products count as bundles.
+// billingMethod is "device" or "user".
 const BILLING = { device: 'per device', user: 'per user' };
 
 export function orgOf(raw) {
@@ -86,7 +86,7 @@ export function packageOf(computer) {
 /**
  * The customer's ThreatLocker org(s) → one seat line per package, adding up computers across
  * every org linked to the customer (a customer with both packages usually has two orgs, e.g.
- * "NORTHWIND-C" + "NORTHWIND-P"). Both packages are always returned — a 0 tells the planner there's
+ * "NORTHWIND-C" + "NORTHWIND-P"). Both packages are always returned - a 0 tells the planner there's
  * nothing to bill, so it can leave an unlinked charge alone (see lib/seat-sync.js).
  */
 export function threatlockerProducts(orgs, computers) {

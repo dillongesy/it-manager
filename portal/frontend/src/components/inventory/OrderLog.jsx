@@ -17,7 +17,7 @@ import { CustomerPicker } from '../ui/CustomerPicker.jsx';
 import { FileViewer } from '../ui/FileViewer.jsx';
 import { formatDate, toDateInput } from '../../utils/date.js';
 
-// ─── Constants & helpers ──────────────────────────────────────────────────────
+// --- Constants & helpers ------------------------------------------------------
 
 const STATUS_META = {
   placed:      { label: 'Placed',      cls: 'bg-blue-900/40 text-blue-300',   dot: 'bg-blue-400'   },
@@ -44,7 +44,7 @@ const fetchCustomerNames = async (q) => {
   return { data: data.map(c => c.name) };
 };
 
-// ─── Clickable status badge (order-level and per-item) ───────────────────────
+// --- Clickable status badge (order-level and per-item) -----------------------
 
 function StatusBadge({ value, onChange }) {
   const [open, setOpen] = useState(false);
@@ -82,14 +82,14 @@ function StatusBadge({ value, onChange }) {
   );
 }
 
-// ─── Multi-item row management ────────────────────────────────────────────────
+// --- Multi-item row management ------------------------------------------------
 
 // Desktop: one row per line. Phone: each line wraps into a small card (name, SKU, then
-// qty / price / total side by side) — six columns in 350px made every field a sliver.
+// qty / price / total side by side) - six columns in 350px made every field a sliver.
 const ITEM_COLS = 'grid-cols-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_5rem_6.5rem_6.5rem_1.75rem]';
 
 // Inventory receipt state carried on each line (migration 055). The server keeps it
-// only if the client sends it back, so an edit must round-trip it untouched —
+// only if the client sends it back, so an edit must round-trip it untouched -
 // dropping `added_at` would let the line be received into inventory a second time.
 const INVENTORY_KEYS = ['inventory_item_id', 'inventory_sku', 'inventory_name', 'added_qty', 'added_at'];
 const pickInventoryKeys = (it) =>
@@ -113,7 +113,7 @@ function itemsFromOrder(order) {
   }));
 }
 
-// ─── Order form (create / edit) ───────────────────────────────────────────────
+// --- Order form (create / edit) -----------------------------------------------
 
 const blankForm = () => ({
   status: 'placed', order_date: '', vendor: '', po_number: '', ordered_by: '',
@@ -168,7 +168,7 @@ function OrderForm({ order, onClose, onSaved }) {
     const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     setForm(f => ({
       ...f, [k]: val,
-      // Buying for stock is almost always restocking inventory — tick it along with
+      // Buying for stock is almost always restocking inventory - tick it along with
       // "For stock" (it can still be unticked on its own).
       ...(k === 'for_stock' && val ? { is_inventory_order: true } : {}),
     }));
@@ -297,11 +297,11 @@ function OrderForm({ order, onClose, onSaved }) {
         </select>
       </div>
 
-      {/* ── Line items ── */}
+      {/* -- Line items -- */}
       <div className="border-t border-surface-600 pt-3">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Items</p>
 
-        {/* Column headers (desktop only — on a phone each field carries its own label) */}
+        {/* Column headers (desktop only - on a phone each field carries its own label) */}
         <div className={`hidden sm:grid ${ITEM_COLS} gap-2 mb-1 px-0.5`}>
           <span className="text-xs text-gray-600">Item</span>
           <span className="text-xs text-gray-600">SKU / Part #</span>
@@ -417,7 +417,7 @@ function OrderForm({ order, onClose, onSaved }) {
         </div>
       </div>
 
-      {/* ── Attachments ── */}
+      {/* -- Attachments -- */}
       <div className="border-t border-surface-600 pt-3">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
           Attachments <span className="text-gray-600 font-normal normal-case">(POs, invoices, quotes)</span>
@@ -466,7 +466,7 @@ function OrderForm({ order, onClose, onSaved }) {
           placeholder="Tracking number, special instructions, follow-up notes…" />
       </div>
 
-      {/* Optional follow-up — new orders only (edit an existing order from its card). */}
+      {/* Optional follow-up - new orders only (edit an existing order from its card). */}
       {!order && (
         <div className="border-t border-surface-600 pt-3">
           <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -496,7 +496,7 @@ function OrderForm({ order, onClose, onSaved }) {
   );
 }
 
-// ─── Attachments section (always visible on card) ────────────────────────────
+// --- Attachments section (always visible on card) ----------------------------
 
 function AttachmentsSection({ orderId }) {
   const qc = useQueryClient();
@@ -598,9 +598,9 @@ function AttachmentsSection({ orderId }) {
   );
 }
 
-// ─── Order card ───────────────────────────────────────────────────────────────
+// --- Order card ---------------------------------------------------------------
 
-// ─── Follow-up (a task from an order) ─────────────────────────────────────────
+// --- Follow-up (a task from an order) -----------------------------------------
 
 const escapeHtml = (s) => String(s ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 
@@ -628,7 +628,7 @@ function orderSummaryHtml(order) {
   return parts.join('');
 }
 
-// ── Follow-up state + actions (shared by the modal and the New Order form) ──
+// -- Follow-up state + actions (shared by the modal and the New Order form) --
 
 const blankFollowup = () => ({
   enabled: false,          // used by the New Order form; the modal treats it as always on
@@ -806,7 +806,7 @@ function OrderFollowupModal({ order, onClose }) {
   );
 }
 
-// ─── Add to inventory (preview → run) ─────────────────────────────────────────
+// --- Add to inventory (preview → run) -----------------------------------------
 
 const LINE_STATE = {
   added:     { label: 'Already in inventory', cls: 'text-green-400' },
@@ -1012,7 +1012,7 @@ function OrderCard({ order, onEdit, onDelete, onFollowup, onAddToInventory }) {
             )}
           </div>
 
-          {/* Items list — each item has its own clickable status badge */}
+          {/* Items list - each item has its own clickable status badge */}
           {items.length > 0 && (
             <div className="mt-1.5 space-y-1 mb-1">
               {items.map((it, i) => (
@@ -1103,13 +1103,13 @@ function OrderCard({ order, onEdit, onDelete, onFollowup, onAddToInventory }) {
         </div>
       </div>
 
-      {/* Attachments — always visible */}
+      {/* Attachments - always visible */}
       <AttachmentsSection orderId={order.id} />
     </div>
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// --- Main component -----------------------------------------------------------
 
 export function OrderLog() {
   const [modal, setModal]         = useState(null);

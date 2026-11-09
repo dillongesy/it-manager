@@ -1,4 +1,4 @@
--- Portal — customer To-Dos become free-form (rich text, like Guides)
+-- Portal - customer To-Dos become free-form (rich text, like Guides)
 -- Migration 034
 --
 -- Each to-do gains a short `title` (the checklist line shown in lists) while `content`

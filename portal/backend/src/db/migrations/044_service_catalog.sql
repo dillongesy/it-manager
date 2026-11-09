@@ -1,4 +1,4 @@
--- Portal — service price catalog
+-- Portal - service price catalog
 -- Migration 043
 --
 -- A reusable list of services we sell repeatedly (ThreatLocker Complete/Protect,

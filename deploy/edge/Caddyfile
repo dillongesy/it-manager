@@ -1,4 +1,4 @@
-# Edge — the only container with published ports. Terminates TLS and forwards to
+# Edge - the only container with published ports. Terminates TLS and forwards to
 # the two web containers over separate internal networks (portal_edge / field_edge).
 # It cannot reach either API or database.
 #
@@ -6,7 +6,7 @@
 #   PORTAL_SITE            e.g. "https://192.168.50.10, https://portal.lan" or "portal.example.com"
 #   PORTAL_TLS             "tls internal" (self-signed, LAN) or "tls you@example.com" (Let's Encrypt)
 #   PORTAL_ALLOWED_RANGES  who may open the Portal at all (default: private_ranges = LAN only)
-#   FIELD_SITE / FIELD_TLS / FIELD_ALLOWED_RANGES   — the same for the Field App
+#   FIELD_SITE / FIELD_TLS / FIELD_ALLOWED_RANGES   - the same for the Field App
 #   DEFAULT_SNI            certificate for clients that send no server name: the
 #                          server's IP in LAN mode, the Portal hostname in domain mode
 {
@@ -48,7 +48,7 @@
 	{$FIELD_TLS}
 	@outside not remote_ip {$FIELD_ALLOWED_RANGES}
 	abort @outside
-	# The Portal↔Field bridge is internal-only — never served at the edge.
+	# The Portal↔Field bridge is internal-only - never served at the edge.
 	@bridge path /api/service /api/service/*
 	respond @bridge 404
 	import security_headers

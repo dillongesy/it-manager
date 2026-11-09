@@ -5,7 +5,7 @@ import { isAnnual, coerceIntervalCount, cadenceLabel, MAX_INTERVAL_COUNT } from 
 // customer's Billing tab and the Licensing tab so all three read and behave alike.
 //
 // The base cadence is a plain dropdown. Choosing a YEARLY one reveals an "every N
-// year(s)" box beside it — because "Annually" is just "every 1 year", making the
+// year(s)" box beside it - because "Annually" is just "every 1 year", making the
 // multi-year case a number rather than a separate mode or a fixed list of
 // biennial/triennial options. Anything but a yearly cadence forces the count back to
 // 1: "every 2 quarters" reads worse than "Semi-annual" and buys nothing.
@@ -50,7 +50,7 @@ export function CadenceSelect({ options, frequency, count, onChange, disabled = 
   );
 }
 
-// "Bills once every 3 years." — the plain-language echo under the control, so a
+// "Bills once every 3 years." - the plain-language echo under the control, so a
 // mistyped count is obvious before saving.
 export function CadenceHint({ frequency, count, prefix = 'Bills', suffix = '.' }) {
   const n = coerceIntervalCount(count, frequency);

@@ -13,13 +13,13 @@ import { StatusChips, TechChips, useTechs, useRefreshTasks } from '../components
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { techColors } from '../utils/tasks.js';
 
-// Tasks — the internal task list: back-burner work and projects (big and small) that don't
+// Tasks - the internal task list: back-burner work and projects (big and small) that don't
 // affect a customer's uptime. Replaced the Backlog page and the customer To-Dos.
-//   Schedule — the calendar (the default): tasks and the shared Outlook calendar, by day / week /
+//   Schedule - the calendar (the default): tasks and the shared Outlook calendar, by day / week /
 //              month / agenda, coloured by tech. Opens on Everyone, with its own tech filter, so
 //              the Queue's "my tasks" doesn't narrow it.
-//   Queue    — the ranked to-do list, filtered by tech / status / type (?view=queue)
-//   Overview — who's on what, what's overdue, what's been sitting (?view=overview)
+//   Queue    - the ranked to-do list, filtered by tech / status / type (?view=queue)
+//   Overview - who's on what, what's overdue, what's been sitting (?view=overview)
 // ?task=<id> opens a task over whichever view (global search and the dashboard link here).
 
 const TECH_KEY = 'app-tasks-tech';

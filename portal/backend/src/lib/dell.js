@@ -1,4 +1,4 @@
-// Dell warranty → Portal device fields. Pure functions only (no I/O), unit-tested.
+// Dell warranty → Portal device fields. Pure functions only (no I/O).
 //
 // Dell's TechDirect warranty API (v5 asset-entitlements) answers per service tag:
 //   { serviceTag, shipDate, productLineDescription, systemDescription, invalid,
@@ -25,8 +25,8 @@ export const tagOf = (device) => normalizeTag(device?.service_tag || device?.ser
 
 /**
  * An entitlement's end date as the calendar day Dell means. Dell stamps end dates at
- * the end of the local business day, in UTC — "2027-05-01T05:59:59Z" is April 30th in
- * the US — so step back 12 hours before taking the date: a stamp late in the UTC day
+ * the end of the local business day, in UTC - "2027-05-01T05:59:59Z" is April 30th in
+ * the US - so step back 12 hours before taking the date: a stamp late in the UTC day
  * stays on its own day, one in the small hours belongs to the day before. Doesn't
  * depend on the server's time zone.
  */

@@ -13,7 +13,7 @@ import {
   normalizeDays,
 } from '../../src/lib/work-order-logic.js';
 
-// ─── parseHours ────────────────────────────────────────────────────────────────
+// --- parseHours ----------------------------------------------------------------
 
 test('parseHours accepts numbers and numeric strings', () => {
   assert.equal(parseHours(4), 4);
@@ -43,7 +43,7 @@ test('parseHours clamps to the NUMERIC(6,2) range instead of erroring on insert'
   assert.equal(parseHours(999999), 9999.99);
 });
 
-// ─── Day + job totals ──────────────────────────────────────────────────────────
+// --- Day + job totals ----------------------------------------------------------
 
 test('dayHours sums the technicians on that day', () => {
   const day = { technicians: [{ hours: 4 }, { hours: 2.5 }, { hours: 1.25 }] };
@@ -87,7 +87,7 @@ test('hoursByTechnician falls back to a name when there are no initials', () => 
   assert.deepEqual(hoursByTechnician(days), [{ label: 'Contract Cabling Co', hours: 6 }]);
 });
 
-// ─── normalizeDay ──────────────────────────────────────────────────────────────
+// --- normalizeDay --------------------------------------------------------------
 
 test('normalizeDay keeps hours alongside each technician', () => {
   const day = normalizeDay({
@@ -138,7 +138,7 @@ test('normalizeDay keeps a day that only has a date — a placeholder for tomorr
   assert.equal(day.work_date, '2026-07-21');
 });
 
-// ─── normalizeDays ─────────────────────────────────────────────────────────────
+// --- normalizeDays -------------------------------------------------------------
 
 test('normalizeDays numbers sort_order in the submitted order', () => {
   const days = normalizeDays([

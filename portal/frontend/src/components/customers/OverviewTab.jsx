@@ -10,7 +10,7 @@ import { DragList } from '../ui/DragList.jsx';
 import { OfficeSelect, OfficeBadge } from '../ui/office.jsx';
 import api from '../../api/client.js';
 
-// ─── Inline editable field ────────────────────────────────────────────────────
+// --- Inline editable field ----------------------------------------------------
 
 function InlineField({ value, onSave, multiline, asLink, phone }) {
   const fmt = phone ? formatPhone : (v) => v ?? '';
@@ -72,7 +72,7 @@ function InlineField({ value, onSave, multiline, asLink, phone }) {
   );
 }
 
-// ─── Contact modal ────────────────────────────────────────────────────────────
+// --- Contact modal ------------------------------------------------------------
 
 function ContactModal({ customerId, contact, branches = [], companyName, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -172,7 +172,7 @@ function ContactModal({ customerId, contact, branches = [], companyName, onClose
   );
 }
 
-// ─── Billing rate modal (add + edit) ─────────────────────────────────────────
+// --- Billing rate modal (add + edit) -----------------------------------------
 
 function RateModal({ customerId, rate, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -237,7 +237,7 @@ function RateModal({ customerId, rate, onClose, onSaved }) {
   );
 }
 
-// ─── Branch office modal ──────────────────────────────────────────────────────
+// --- Branch office modal ------------------------------------------------------
 
 function BranchModal({ customerId, branch, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -350,7 +350,7 @@ function BranchModal({ customerId, branch, onClose, onSaved }) {
   );
 }
 
-// ─── Main tab ─────────────────────────────────────────────────────────────────
+// --- Main tab -----------------------------------------------------------------
 
 export function OverviewTab({ customer, onUpdate }) {
   const [contactModal, setContactModal] = useState(null);

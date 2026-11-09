@@ -13,7 +13,7 @@ function sanitize(row) {
 }
 
 // Each system carries its cameras inline. One extra query for the whole tab (rather
-// than one per system), and it keeps the client-side deep search working — a camera's
+// than one per system), and it keeps the client-side deep search working - a camera's
 // name/IP/MAC is part of its system's searchable text.
 router.get('/', requireAuth, async (req, res, next) => {
   try {

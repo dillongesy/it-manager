@@ -1,6 +1,5 @@
 // TD SYNNEX (StreamOne Stellr) Microsoft subscriptions → the customer's Billing tab.
-// Pure functions only (no I/O), unit-tested. Shapes are what api.us.tdsynnex.com returned
-// for a live MSP account (2026-10-26):
+// Pure functions only (no I/O). Response shapes from api.us.tdsynnex.com:
 //
 //   GET /api/v1/customers                     → { data: { total, records: [{ customerNo, companyName, city, state, status }] } }
 //   GET /api/v1/customers/{no}/subscriptions  → { data: [{ subscriptionId, productName, mfgPartNo, quantity,
@@ -160,15 +159,15 @@ export function findChargeMatch(sub, charges, claimed = new Set()) {
   return { charge: null };
 }
 
-// FILL   — only written when blank: names, prices and notes belong to the biller.
-// UPDATE — what TD SYNNEX knows better: seats, cadence, cost, MSRP, term, status.
+// FILL   - only written when blank: names, prices and notes belong to the biller.
+// UPDATE - what TD SYNNEX knows better: seats, cadence, cost, MSRP, term, status.
 export const CHARGE_FILL = ['description', 'category', 'unit_label', 'unit_price', 'notes'];
 export const CHARGE_UPDATE = ['quantity', 'frequency', 'billing_month', 'is_active', 'vendor_cost', 'vendor_msrp', 'term_end_date', 'external_status'];
 const MONEY = new Set(['unit_price', 'vendor_cost', 'vendor_msrp']);
 
 const show = (field, v) => {
   if (v == null || v === '') return '';
-  // Costs can carry fractions of a cent (11.723214) — up to 4 places, never fewer than 2.
+  // Costs can carry fractions of a cent (11.723214) - up to 4 places, never fewer than 2.
   if (MONEY.has(field)) return `$${Number(v).toFixed(4).replace(/(\.\d\d\d*?)0+$/, '$1')}`;
   if (field === 'is_active') return v ? 'active' : 'inactive';
   if (field === 'term_end_date') return dateText(v);

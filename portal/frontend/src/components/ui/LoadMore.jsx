@@ -6,7 +6,7 @@ import { Loader2 } from 'lucide-react';
  * scrolls into view, and always states where you are ("Showing 100 of 312").
  *
  * The explicit button stays for anyone who'd rather click, and is the fallback
- * where IntersectionObserver never fires — e.g. a short list inside a container
+ * where IntersectionObserver never fires - e.g. a short list inside a container
  * that doesn't scroll.
  */
 export function LoadMore({ query, loaded, total, noun = 'row', className = '' }) {

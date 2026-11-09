@@ -18,10 +18,10 @@ import { columnsFor, changesFor } from '../lib/sync-merge.js';
 
 // UniFi → a customer's Devices and Cameras tabs.
 //
-//   GET  /api/unifi/consoles                                 — every console the account sees
+//   GET  /api/unifi/consoles                                 - every console the account sees
 //   GET  /api/customers/:customerId/unifi/preview?hostId=&siteId=&cameraSystemId=
-//                                       — what an import of that console would do
-//   POST /api/customers/:customerId/unifi/import             — create new / update matched
+//                                       - what an import of that console would do
+//   POST /api/customers/:customerId/unifi/import             - create new / update matched
 //
 // Read-only against UniFi. Mapping and merge rules: lib/unifi.js.
 
@@ -38,8 +38,8 @@ function sendError(res, next, err) {
 const deviceName = (d) => d.label || d.computer_name || d.model || 'Unnamed device';
 const toDb = (v) => (Array.isArray(v) ? JSON.stringify(v) : v);
 
-// A matched record's preview: what the import adds (changes — applied), and what it keeps
-// that UniFi reports differently (differs — applied only with take_newer). lib/sync-merge.js
+// A matched record's preview: what the import adds (changes - applied), and what it keeps
+// that UniFi reports differently (differs - applied only with take_newer). lib/sync-merge.js
 const matched = (key, target, reason, plan) => ({
   action: plan.changes.length ? 'update' : 'unchanged', [key]: target, reason,
   changes: plan.changes, differs: plan.differs, updates: plan.updates, newer: plan.newer,
@@ -53,7 +53,7 @@ const settle = (preview, takeNewer) => {
 const SHARED_NOTE = 'This console is shared with your UniFi account rather than owned by it, so UniFi only provides its device list — '
   + 'WAN settings, VLANs, firewall rules and WiFi passwords need your account to own the console.';
 
-// ─── Global: consoles ─────────────────────────────────────────────────────────
+// --- Global: consoles ---------------------------------------------------------
 
 export const unifiRouter = Router();
 
@@ -77,7 +77,7 @@ unifiRouter.get('/consoles', requireAuth, async (req, res, next) => {
   } catch (err) { sendError(res, next, err); }
 });
 
-// ─── Per customer: preview + import ───────────────────────────────────────────
+// --- Per customer: preview + import -------------------------------------------
 
 async function loadCustomer(customerId) {
   const [{ rows: devices }, { rows: systems }, { rows: credentials }] = await Promise.all([
@@ -106,7 +106,7 @@ async function buildPlan(customerId, { hostId, siteId, cameraSystemId, refresh =
   const host = hostOf(rawHost);
   const all = ((groups.find(g => g.hostId === hostId)?.devices) ?? []).map(d => deviceOf(d, host));
 
-  // WAN / VLANs / firewall rules — only on consoles the account owns, running Network.
+  // WAN / VLANs / firewall rules - only on consoles the account owns, running Network.
   let net = null;
   let limited = null;
   if (!host.owner) limited = SHARED_NOTE;
@@ -124,7 +124,7 @@ async function buildPlan(customerId, { hostId, siteId, cameraSystemId, refresh =
   // A console hosting several Network sites (a self-hosted Cloud Key): only this site's gear.
   let gear = all.filter(d => d.portal_type);
   if (net?.sites?.length > 1 && net.device_macs.length) gear = gear.filter(d => net.device_macs.includes(d.serial));
-  // Each switch / AP's own LAN setting — DHCP or static (a gateway's is its WAN, so not shown).
+  // Each switch / AP's own LAN setting - DHCP or static (a gateway's is its WAN, so not shown).
   gear = gear.map(d => ({ ...d, ip_assignment: d.kind === 'gateway' ? null : (net?.device_ip_modes?.[d.serial] ?? null) }));
 
   const extras = net ? {
@@ -134,7 +134,7 @@ async function buildPlan(customerId, { hostId, siteId, cameraSystemId, refresh =
     firewall_rules: rulesFrom({ policies: net.policies, zones: net.zones, networks: net.networks, legacy: net.legacy, forwards: net.forwards }),
     vpns: vpnsFrom(net.networkconf, net.vpn_users),
   } : {};
-  // The WAN/VLAN/rules belong on the gateway — the console itself when it's the gateway.
+  // The WAN/VLAN/rules belong on the gateway - the console itself when it's the gateway.
   const gatewayKey = (gear.find(d => d.kind === 'gateway' && d.console) ?? gear.find(d => d.kind === 'gateway'))?.key;
 
   const claimed = new Set();
@@ -151,7 +151,7 @@ async function buildPlan(customerId, { hostId, siteId, cameraSystemId, refresh =
     return { ...dev, fields, preview, gateway: dev.key === gatewayKey };
   });
 
-  // Clients — printers, servers, other gear plugged into the network. Bloat (phones, TVs,
+  // Clients - printers, servers, other gear plugged into the network. Bloat (phones, TVs,
   // smart gadgets, cameras) and UniFi's own devices come back flagged hidden and can't be
   // imported; the rest share the devices' claimed set so nothing is matched twice.
   // One machine's wired and Wi-Fi entries are folded into one row first (groupClients),
@@ -257,7 +257,7 @@ async function buildPlan(customerId, { hostId, siteId, cameraSystemId, refresh =
 }
 
 // The preview without the internal `updates` maps (the client only needs the changes)
-// and — for WiFi — without the passwords.
+// and - for WiFi - without the passwords.
 const publicRow = ({ preview, secret, ...row }) => {
   if (!preview) return { ...row, preview: null };            // a hidden client — nothing to import
   const { updates, newer, ...shown } = preview;
@@ -326,12 +326,12 @@ customerUnifiRouter.post('/import', requireAuth, async (req, res, next) => {
     const audit = (action, entityType, entityId, entityName, changes) => logAudit({
       userId: req.user.sub, userName: req.user.fullName, action, entityType, entityId, entityName, changes, ipAddress: getClientIp(req) });
     const link = { unifi_host_id: hostId, unifi_synced_at: new Date() };
-    // Moving a matched record into the chosen office, when asked — recorded as a change like any other.
+    // Moving a matched record into the chosen office, when asked - recorded as a change like any other.
     const officeMove = (current) => (moveExisting && (current ?? null) !== locationId
       ? { set: { location_id: locationId }, change: { field: 'location_id', from: current ?? 'main office', to: locationId ?? 'main office', mode: 'update' } }
       : null);
 
-    // ── Devices, then the clients picked (both become Devices-tab records) ──
+    // -- Devices, then the clients picked (both become Devices-tab records) --
     const rows = [
       ...plan.devices.filter(r => deviceKeys.has(r.key)),
       ...(plan.clients ?? []).filter(r => clientKeys.has(r.key) && r.portal_type && r.preview),
@@ -386,7 +386,7 @@ customerUnifiRouter.post('/import', requireAuth, async (req, res, next) => {
       }
     }
 
-    // ── Cameras ──
+    // -- Cameras --
     const picked = plan.cameras ? plan.cameras.items.filter(c => cameraKeys.has(c.key)) : [];
     if (picked.length) {
       const sys = plan.cameras.system;
@@ -458,7 +458,7 @@ customerUnifiRouter.post('/import', requireAuth, async (req, res, next) => {
       }
     }
 
-    // ── WiFi networks + VPN keys → Credentials (secrets encrypted before they're stored) ──
+    // -- WiFi networks + VPN keys → Credentials (secrets encrypted before they're stored) --
     const pickedWifi = (plan.wifi ?? []).filter(w => wifiKeys.has(w.key));
     for (const section of new Set(pickedWifi.map(w => w.section || WIFI_SECTION))) await ensureSection(customerId, section);
     for (const w of pickedWifi) {
@@ -484,7 +484,7 @@ customerUnifiRouter.post('/import', requireAuth, async (req, res, next) => {
             `UPDATE customer_credentials SET ${cols.map((c, i) => `${c} = $${i + 3}`).join(', ')} WHERE id = $1 AND customer_id = $2`,
             [p.credential.id, customerId, ...cols.map(c => set[c])]);
           if (p.changes.length) {
-            // The audit says the password changed — never what it is.
+            // The audit says the password changed - never what it is.
             await audit('UPDATE', 'credential', p.credential.id, `${p.credential.name} — ${what} updated from UniFi`,
               Object.fromEntries(p.changes.map(c => [c.field, c.field === 'password' ? { changed: true } : { from: c.from, to: c.to }])));
             result.wifi.updated.push({ key: w.key, name: w.label, changes: p.changes });

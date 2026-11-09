@@ -1,5 +1,5 @@
-// Tasks (migration 061) — the internal task list that replaced the Backlog and customer
-// To-Dos. Pure functions only, unit-tested: what a request may set, what a status change
+// Tasks (migration 061): the internal task list, optionally linked to a customer.
+// Pure functions only: what a request may set, what a status change
 // implies, what changed (for the task's history), and the flags/summary behind the
 // Overview (overdue, sitting idle, workload per tech).
 
@@ -154,10 +154,10 @@ const parseDay = (v) => { const k = dateKey(v); return k ? new Date(+k.slice(0, 
 
 /**
  * The flags the lists and the Overview colour a task by.
- *   overdue  — active and past its due date
- *   due_soon — active and due within DUE_SOON_DAYS
- *   missed   — Scheduled for a day that's already gone
- *   idle     — active and untouched for IDLE_DAYS
+ *   overdue  - active and past its due date
+ *   due_soon - active and due within DUE_SOON_DAYS
+ *   missed   - Scheduled for a day that's already gone
+ *   idle     - active and untouched for IDLE_DAYS
  */
 export function taskFlags(task, today = new Date()) {
   const active = task.status !== 'done';
@@ -240,7 +240,7 @@ export function summarize(tasks, users = [], today = new Date()) {
 
 /**
  * New ranks for a reorder: the tasks keep the rank slots they already held (sorted), handed
- * out in the new order — so reordering one tech's queue never shuffles anyone else's.
+ * out in the new order - so reordering one tech's queue never shuffles anyone else's.
  */
 export function reorderRanks(ids, currentRanks) {
   const slots = ids.map(id => Number(currentRanks.get(id) ?? 0)).sort((a, b) => a - b);

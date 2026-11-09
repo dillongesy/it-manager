@@ -1,4 +1,4 @@
--- Portal — work orders become section-based
+-- Portal - work orders become section-based
 -- Migration 017
 --
 -- A work order now has one or more SECTIONS, each with its own date, technicians,

@@ -1,6 +1,7 @@
 {
   "name": "it-manager-field-frontend",
   "version": "1.0.0",
+  "description": "IT Manager Field App web client",
   "private": true,
   "type": "module",
   "scripts": {

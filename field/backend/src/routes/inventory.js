@@ -9,7 +9,7 @@ const SEARCH_COLUMNS = ['name', 'sku', 'manufacturer_barcode', 'description', 'c
 
 const router = Router();
 
-// ─── Auto-generate SKU ────────────────────────────────────────────────────
+// --- Auto-generate SKU ----------------------------------------------------
 
 async function nextSKU() {
   const { rows } = await query(
@@ -19,7 +19,7 @@ async function nextSKU() {
   return nextSku(rows[0]?.sku);
 }
 
-// ─── List ──────────────────────────────────────────────────────────────────────
+// --- List ----------------------------------------------------------------------
 
 router.get('/', requireAuth, async (req, res, next) => {
   try {
@@ -73,7 +73,7 @@ router.get('/:id', requireAuth, async (req, res, next) => {
          WHERE it.item_id=$1 ORDER BY it.created_at DESC LIMIT 30`,
         [req.params.id]
       ),
-      // Where this item is being used — the jobs that consumed it (#1: visibility).
+      // Where this item is being used - the jobs that consumed it (#1: visibility).
       query(
         `SELECT wo.id AS job_id, wo.number, wo.customer_name, wo.customer_address,
                 wo.work_date, wo.capture_status, wi.quantity
@@ -90,7 +90,7 @@ router.get('/:id', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ─── Create ───────────────────────────────────────────────────────────────────
+// --- Create -------------------------------------------------------------------
 
 router.post('/', requireAuth, async (req, res, next) => {
   try {
@@ -112,7 +112,7 @@ router.post('/', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ─── Update ───────────────────────────────────────────────────────────────────
+// --- Update -------------------------------------------------------------------
 
 router.patch('/:id', requireAuth, async (req, res, next) => {
   try {
@@ -135,7 +135,7 @@ router.patch('/:id', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ─── Transactions (receive / checkout / adjust) ───────────────────────────────
+// --- Transactions (receive / checkout / adjust) -------------------------------
 
 router.post('/:id/receive', requireAuth, async (req, res, next) => {
   const client = await getClient();
@@ -221,7 +221,7 @@ router.post('/:id/adjust', requireAuth, async (req, res, next) => {
   finally { client.release(); }
 });
 
-// ─── Delete ─────────────────────────────────────────────────────────────────
+// --- Delete -----------------------------------------------------------------
 // Remove an item from the system. To protect the immutable transactions ledger, an
 // item that has ANY ledger history is soft-deleted (is_active=false → hidden from all
 // lists/search/barcode/checkout); an item with no history (a genuine mistake) is hard-

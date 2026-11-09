@@ -1,4 +1,4 @@
--- Portal — link a customer's recurring charge back to the service catalog
+-- Portal - link a customer's recurring charge back to the service catalog
 -- Migration 051
 --
 -- A recurring charge created by picking a service off the Services catalog now
@@ -6,7 +6,7 @@
 -- change (e.g. Microsoft 365 goes up) roll out to every customer paying for it,
 -- instead of the biller hunting through 100 customers by hand.
 --
---   service_catalog_id — NULL for free-typed charges (unlinked, never auto-updated).
+--   service_catalog_id - NULL for free-typed charges (unlinked, never auto-updated).
 --                        ON DELETE SET NULL: deleting a catalog entry must not delete
 --                        anyone's billing record, it just unlinks it.
 

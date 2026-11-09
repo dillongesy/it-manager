@@ -1,10 +1,10 @@
 // Which Devices-tab type something is: workstation, server, firewall, switch, printer,
 // nas, network (routers, access points, controllers…) or other (TVs, phones, cameras,
-// UPSes, out-of-band cards — things on the network that aren't network gear).
-// Pure functions only, unit-tested.
+// UPSes, out-of-band cards - things on the network that aren't network gear).
+// Pure functions only.
 //
 // Evidence, strongest first:
-//   1. the outside system's own category — ConnectWise RMM's resourceType (PRINTER,
+//   1. the outside system's own category - ConnectWise RMM's resourceType (PRINTER,
 //      SWITCH, LAYER_3_SWITCH, FIREWALL, NETWORK_STORAGE, AUDIO/VISUAL, …). Discovered
 //      network gear all arrives with endpointType "NetworkDevice", so that alone says
 //      nothing about what the device is.
@@ -37,7 +37,7 @@ export function categoryType(category) {
   return null;
 }
 
-// ─── Brand / model catalog ────────────────────────────────────────────────────
+// --- Brand / model catalog ----------------------------------------------------
 // Tested against `${manufacturer} ${model} ${name}`, lower-cased. Kept specific: a word
 // like "Dell" or "HP" alone never decides, the product line does.
 
@@ -143,16 +143,16 @@ export function brandType({ manufacturer, model, name } = {}) {
 /**
  * The Devices-tab type for a device from an outside system.
  * @param d { category, hint, os, manufacturer, model, name }
- *   category — the system's own classification (ConnectWise resourceType)
- *   hint     — its endpoint type ("Desktop", "Server", "NetworkDevice", "Laptop"…)
- *   os       — the operating system, if it reports one (only agents do)
+ *   category - the system's own classification (ConnectWise resourceType)
+ *   hint     - its endpoint type ("Desktop", "Server", "NetworkDevice", "Laptop"…)
+ *   os       - the operating system, if it reports one (only agents do)
  */
 export function classifyDevice(d = {}) {
   const fromCategory = categoryType(d.category);
   const hint = `${norm(d.hint)} ${norm(d.os)}`;
   const brand = brandType(d);
 
-  // 1. The system classified network gear itself — trust it.
+  // 1. The system classified network gear itself - trust it.
   if (fromCategory && fromCategory !== 'server' && fromCategory !== 'workstation' && fromCategory !== 'network') return fromCategory;
 
   // 2. Older / other shapes name the kind in the endpoint type itself ("Network Switch",
@@ -162,7 +162,7 @@ export function classifyDevice(d = {}) {
   if (/printer/.test(hint)) return 'printer';
   if (/\bnas\b|storage/.test(hint)) return 'nas';
 
-  // 3. A machine with an agent / OS is a computer — unless it's a NAS that runs an OS.
+  // 3. A machine with an agent / OS is a computer - unless it's a NAS that runs an OS.
   const os = norm(d.os);
   const computer = fromCategory === 'server' || fromCategory === 'workstation'
     || /desktop|laptop|notebook|workstation|server/.test(norm(d.hint)) || (os && os !== 'unknown');

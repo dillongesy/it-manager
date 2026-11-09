@@ -24,7 +24,7 @@ const upload = multer({ storage, limits: { fileSize: 20 * 1024 * 1024 } });
 
 const router = Router();
 
-// GET — filter by customer or work order
+// GET - filter by customer or work order
 router.get('/', requireAuth, async (req, res, next) => {
   try {
     const { workOrderId, customerName, limit = 50, offset = 0 } = req.query;

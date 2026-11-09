@@ -1,9 +1,9 @@
--- Portal — Tasks: the Backlog and customer To-Dos become one internal task list
+-- Portal - Tasks: the Backlog and customer To-Dos become one internal task list
 -- Migration 061
 --
 -- A backlog item (an incoming request) and a customer to-do were the same thing kept in
 -- two places. Both become a `task`: the work that's on the back burner until there's time
--- — projects big and small that don't affect a customer's uptime. Internal only; customers
+-- - projects big and small that don't affect a customer's uptime. Internal only; customers
 -- never see it.
 --
 --   status:   open → scheduled → in_progress → waiting → done

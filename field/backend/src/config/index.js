@@ -33,7 +33,7 @@ export const config = {
   // static token (sent as X-Service-Token). Null = bridge disabled.
   serviceToken: process.env.SERVICE_TOKEN ?? null,
   // Defense in depth for the bridge: when set (Docker), /api/service/* only answers
-  // connections whose source address is inside this CIDR — the internal bridge
+  // connections whose source address is inside this CIDR - the internal bridge
   // network that only the Portal API shares. e.g. 172.29.7.0/24
   serviceAllowedCidr: process.env.SERVICE_ALLOWED_CIDR || null,
 };

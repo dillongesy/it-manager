@@ -1,4 +1,4 @@
--- Portal — record who placed each order-log entry
+-- Portal - record who placed each order-log entry
 -- Migration 037
 --
 -- `created_by` already tracks who entered the order in the portal; `ordered_by` is the

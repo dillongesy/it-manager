@@ -1,6 +1,7 @@
 {
   "name": "it-manager-field-backend",
   "version": "1.0.0",
+  "description": "IT Manager Field App API",
   "private": true,
   "type": "module",
   "scripts": {

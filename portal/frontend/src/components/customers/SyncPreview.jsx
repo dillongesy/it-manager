@@ -37,7 +37,7 @@ export function ActionChip({ action, count = 0, createLabel = 'New' }) {
 /**
  * "Updates <name> (matched by …) ▸ what changes · ▸ 2 kept as they are" plus the
  * expandable lists. With takeNewer the kept values are listed as changes instead.
- * @param source "ConnectWise" / "UniFi" — named in the kept-values list
+ * @param source "ConnectWise" / "UniFi" - named in the kept-values list
  */
 export function MatchLine({ preview, labels, noun = 'device', takeNewer = false, source = 'the source' }) {
   const [open, setOpen] = useState(false);
@@ -98,7 +98,7 @@ export function ChangeList({ changes, labels = {} }) {
   );
 }
 
-/** Values on file that the source reports differently — kept, shown side by side. */
+/** Values on file that the source reports differently - kept, shown side by side. */
 export function KeptList({ differs, labels = {}, source }) {
   return (
     <ul className="mt-1 space-y-1 text-xs">
@@ -116,7 +116,7 @@ export function KeptList({ differs, labels = {}, source }) {
 
 /**
  * The one choice about records already on file. Off (the default): only blanks are filled
- * and new items added — nothing typed in or imported earlier is replaced. On: values the
+ * and new items added - nothing typed in or imported earlier is replaced. On: values the
  * source reports differently replace what's there. Hidden when nothing differs.
  */
 export function NewerToggle({ source, count, checked, onChange }) {
@@ -146,7 +146,7 @@ export function ResultSection({ title, rows, className, render }) {
   );
 }
 
-/** "This isn't set up yet" — numbered steps and a Close button. */
+/** "This isn't set up yet" - numbered steps and a Close button. */
 export function SetupSteps({ title, steps, onClose }) {
   return (
     <div className="space-y-3 text-sm text-gray-400">
@@ -160,7 +160,7 @@ export function SetupSteps({ title, steps, onClose }) {
 export const Env = ({ children }) => <code className="text-accent">{children}</code>;
 
 /**
- * "Import into office" — the top of every import dialog for a customer with branch
+ * "Import into office" - the top of every import dialog for a customer with branch
  * offices. New records go to the chosen office; with "move" ticked, records already on
  * file (matched by the import) move there too. `elsewhere` counts matched records that
  * currently sit in a different office, so the tech sees what ticking it would do.

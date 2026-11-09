@@ -11,6 +11,7 @@ import { logAudit, getClientIp } from '../middleware/audit.js';
 import { fieldJobs, isFieldConfigured } from '../lib/field-client.js';
 import { sumDayHours, buildSectionNotes, splitTechnicians, jobDays } from '../lib/field-import.js';
 import { coerceIntervalCount } from '../lib/cadence.js';
+import { findDefaultRateId } from '../lib/billing-rates.js';
 
 const router = Router();
 
@@ -22,12 +23,12 @@ function customerDir(customerId) {
   return dir;
 }
 
-// GET /api/field-jobs/status — is the bridge wired up?
+// GET /api/field-jobs/status - is the bridge wired up?
 router.get('/status', requireAuth, (req, res) => {
   res.json({ configured: isFieldConfigured() });
 });
 
-// GET /api/field-jobs — pull "ready" captures from the Field App over the bridge.
+// GET /api/field-jobs - pull "ready" captures from the Field App over the bridge.
 router.get('/', requireAuth, async (req, res, next) => {
   try {
     const status = req.query.status || 'ready';
@@ -35,14 +36,14 @@ router.get('/', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// GET /api/field-jobs/:id — one full capture
+// GET /api/field-jobs/:id - one full capture
 router.get('/:id', requireAuth, async (req, res, next) => {
   try {
     res.json(await fieldJobs.get(req.params.id));
   } catch (err) { next(err); }
 });
 
-// GET /api/field-jobs/:id/photos/:photoId — pipe the photo bytes through to the
+// GET /api/field-jobs/:id/photos/:photoId - pipe the photo bytes through to the
 // browser (Portal fetches from Field over the LAN; client is auth'd via JWT).
 router.get('/:id/photos/:photoId', requireAuth, async (req, res, next) => {
   try {
@@ -52,7 +53,7 @@ router.get('/:id/photos/:photoId', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// POST /api/field-jobs/:id/promote — turn a captured field job into a real Portal
+// POST /api/field-jobs/:id/promote - turn a captured field job into a real Portal
 // work order, copy its photos into the customer's files, then mark the source
 // capture imported on the Field side. Body: { customer_id, location_id? }.
 router.post('/:id/promote', requireAuth, async (req, res, next) => {
@@ -76,14 +77,9 @@ router.post('/:id/promote', requireAuth, async (req, res, next) => {
     if (!cust[0]) { client.release(); return res.status(404).json({ error: 'Customer not found.' }); }
 
     await client.query('BEGIN');
-    // The customer's Standard rate becomes the work order's default; every imported
-    // section inherits it. The field app doesn't capture rates — the biller sets
-    // them per section here, using the section's rate-override dropdown.
-    const { rows: rateCheck } = await client.query(
-      `SELECT id FROM customer_billing_rates WHERE customer_id = $1 AND LOWER(label) = 'standard' LIMIT 1`,
-      [customer_id]
-    );
-    const defaultRateId = rateCheck[0]?.id ?? null;
+    // The customer's default rate becomes the work order's rate and every imported
+    // section inherits it. Field jobs carry no rates; the biller adjusts them per section.
+    const defaultRateId = await findDefaultRateId(client, customer_id);
 
     const days = jobDays(job);
 
@@ -123,8 +119,8 @@ router.post('/:id/promote', requireAuth, async (req, res, next) => {
 
       // Carry the day's crew onto the section. Anyone who resolves to a Portal user is
       // attached as that LINKED user (so they show as a selected technician rather than
-      // a duplicate free-text chip beside their own account); everyone else — subs, crew
-      // without a Portal login — stays free text. The importer is NOT auto-added; the
+      // a duplicate free-text chip beside their own account); everyone else - subs, crew
+      // without a Portal login - stays free text. The importer is NOT auto-added; the
       // actual field crew is who did the work.
       const { userIds, freeNames } = splitTechnicians(day, portalUsers);
       for (const userId of userIds) {
@@ -168,7 +164,7 @@ router.post('/:id/promote', requireAuth, async (req, res, next) => {
         const billing = sv.billing_type === 'recurring' ? 'recurring' : 'one_time';
         const recurrence = billing === 'recurring' ? (RECUR.includes(sv.recurrence) ? sv.recurrence : 'monthly') : null;
         // A multi-year cadence captured in the field ("every 3 years") carries over
-        // intact — otherwise it would silently land as plain "Annually" and print that
+        // intact - otherwise it would silently land as plain "Annually" and print that
         // way in the recurring summary on the customer's invoice.
         const recurrenceCount = billing === 'recurring' ? coerceIntervalCount(sv.recurrence_count, recurrence) : 1;
         await client.query(
@@ -187,7 +183,7 @@ router.post('/:id/promote', requireAuth, async (req, res, next) => {
   }
   client.release();
 
-  // ── Best-effort after the WO is committed: copy photos, then mark imported. ──
+  // -- Best-effort after the WO is committed: copy photos, then mark imported. --
   const warnings = [];
 
   for (const photo of job.photos || []) {

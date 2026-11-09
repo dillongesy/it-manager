@@ -65,7 +65,7 @@ router.post('/', requireAuth, async (req, res, next) => {
     const keysEnc = encryptKeys(license_keys);
     const autoRenew = !!auto_renew;
     const interval = autoRenew ? (renewal_interval || 'monthly') : null;
-    // How many intervals between renewals — 3 for a domain bought three years at a
+    // How many intervals between renewals - 3 for a domain bought three years at a
     // time. Forced to 1 for anything but an annual interval (see lib/cadence.js).
     const intervalCount = autoRenew ? coerceIntervalCount(renewal_interval_count, interval) : 1;
     const { rows } = await query(
@@ -112,15 +112,15 @@ router.patch('/:licenseId', requireAuth, async (req, res, next) => {
     for (const f of scalar) {
       if (req.body[f] !== undefined) updates[f] = req.body[f] || null;
     }
-    // Dates are validated, not passed straight through — an out-of-range year here
-    // used to reach Postgres and fail the whole PATCH (including a plain rename).
+    // Validate dates here so an out-of-range year returns a 400 instead of failing the
+    // whole update in Postgres.
     const dates = coerceDateFields(req.body, DATE_FIELDS);
     if (!dates.ok) return res.status(400).json({ error: dates.error });
     Object.assign(updates, dates.values);
     // auto_renew, the interval, and how many intervals apart the renewals sit all move
     // together: the interval only means anything while auto-renewing, and the count only
     // on an annual interval. So whenever any of the three is sent, all three are resolved
-    // from body-or-stored values — otherwise turning auto-renew off could leave an
+    // from body-or-stored values - otherwise turning auto-renew off could leave an
     // orphaned 'every 3 years' behind it.
     if (req.body.auto_renew !== undefined || req.body.renewal_interval !== undefined
         || req.body.renewal_interval_count !== undefined) {

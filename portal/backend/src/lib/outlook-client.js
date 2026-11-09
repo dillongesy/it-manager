@@ -2,7 +2,7 @@ import { config } from '../config/index.js';
 import { saidBy, fetchWithRetry, makeCache, makeBearer, onIntegrationChange } from './integration-util.js';
 
 /**
- * Thin client for one Outlook calendar through Microsoft Graph — the team's shared calendar,
+ * Thin client for one Outlook calendar through Microsoft Graph - the team's shared calendar,
  * which lives in its owner's mailbox (whoever sent the sharing invite). App-only sign-in
  * (client credentials), so nobody has to stay signed in on the server.
  *
@@ -122,7 +122,7 @@ async function calendar() {
 
 const LIST_FIELDS = 'id,subject,start,end,isAllDay,location,showAs,sensitivity,isCancelled,categories,type,seriesMasterId';
 
-/** Raw Graph events overlapping [startIso, endIso) — repeating events expanded into occurrences. */
+/** Raw Graph events overlapping [startIso, endIso) - repeating events expanded into occurrences. */
 export function calendarEvents(startIso, endIso, refresh = false) {
   return cache.get(`${startIso}|${endIso}`, refresh, async () => {
     let url = `${await calendar()}/calendarView?startDateTime=${encodeURIComponent(startIso)}&endDateTime=${encodeURIComponent(endIso)}`

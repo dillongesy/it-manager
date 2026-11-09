@@ -84,7 +84,7 @@
 }
 
 @utility h-app {
-  /* Full app height that tracks the *visible* viewport on mobile browsers — so the
+  /* Full app height that tracks the *visible* viewport on mobile browsers - so the
      bottom nav never hides behind the URL/toolbar as it shows and hides on scroll.
      100vh is the fallback for browsers without dynamic-viewport units. */
   height: 100vh;
@@ -117,7 +117,7 @@
   @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
 }
 
-/* ─── Theme variables ────────────────────────────────────────────────────────
+/* --- Theme variables --------------------------------------------------------
    Space-separated RGB triplets consumed by the @theme colors above via
    rgb(var(--x)); v4 layers on the /opacity modifier with color-mix() itself, so
    no <alpha-value> token is needed. :root holds the dark theme; the Field app

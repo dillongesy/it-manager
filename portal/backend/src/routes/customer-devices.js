@@ -9,7 +9,7 @@ import { cleanOtherMacs } from '../lib/device-macs.js';
 const router = Router({ mergeParams: true });
 
 export function sanitize(row) {
-  // Redact the scan-to-email password inside printer_options — expose only a flag.
+  // Redact the scan-to-email password inside printer_options - expose only a flag.
   let printer = row.printer_options;
   if (printer && typeof printer === 'object') {
     const { email_password_enc, ...rest } = printer;
@@ -28,7 +28,7 @@ export function sanitize(row) {
 }
 
 // Columns where the same value recurs across customers and a typo/casing slip is a
-// real risk — these get autocomplete suggestions. Unique-per-device fields
+// real risk - these get autocomplete suggestions. Unique-per-device fields
 // (service_tag, serial_number, ip_address, computer_name, label, assigned_to) are
 // deliberately excluded: suggesting them would be noise or just wrong.
 const SUGGESTABLE_COLUMNS = new Set([
@@ -242,7 +242,7 @@ router.post('/', requireAuth, async (req, res, next) => {
 
 router.patch('/:deviceId', requireAuth, async (req, res, next) => {
   try {
-    // Snapshot before — needed both for the audit diff and to keep the printer
+    // Snapshot before - needed both for the audit diff and to keep the printer
     // email password when the form leaves it blank.
     const { rows: before } = await query(
       'SELECT * FROM customer_devices WHERE id = $1 AND customer_id = $2',
@@ -271,7 +271,7 @@ router.patch('/:deviceId', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Reveal a single password field — audit logged
+// Reveal a single password field - audit logged
 router.post('/:deviceId/reveal', requireAuth, async (req, res, next) => {
   try {
     const { field } = req.body ?? {};
@@ -313,7 +313,7 @@ router.delete('/:deviceId', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Reorder devices within a type — body { ids: [deviceId, …] } in the new order.
+// Reorder devices within a type - body { ids: [deviceId, …] } in the new order.
 router.post('/reorder', requireAuth, async (req, res, next) => {
   try {
     const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
@@ -330,7 +330,7 @@ router.post('/reorder', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Reorder device-type groups — body { types: [device_type, …] } in the new order.
+// Reorder device-type groups - body { types: [device_type, …] } in the new order.
 router.post('/types/reorder', requireAuth, async (req, res, next) => {
   try {
     const types = Array.isArray(req.body?.types) ? req.body.types : [];

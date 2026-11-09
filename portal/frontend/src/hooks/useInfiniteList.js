@@ -1,18 +1,14 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 
-// Endless-scroll lists.
-//
-// List endpoints used to return a hard 50 rows with no indication more existed —
-// a work-order list just stopped, and looked complete. Routes now report the full
-// match count in `X-Total-Count`, and these helpers page through it: a first page
-// lands fast, the rest loads as you scroll, and the UI can always say how many
-// rows there really are.
+// Infinite-scroll lists. List endpoints report the total match count in
+// `X-Total-Count`; these helpers load the first page, fetch more as the user scrolls,
+// and expose the total for display.
 
 /** Rows per request. Big enough that most lists finish in one or two fetches. */
 export const PAGE_SIZE = 100;
 
 /**
- * The most rows one request can return — mirrors MAX_LIMIT in the backend's
+ * The most rows one request can return - mirrors MAX_LIMIT in the backend's
  * lib/pagination.js. Asking for more is silently clamped there, so unpaged views
  * (dashboard summaries) use this rather than an arbitrary large number.
  */
@@ -65,7 +61,7 @@ export function useInfiniteList({ queryKey, fetchPage, pageSize = PAGE_SIZE, ...
 
 /**
  * Fetch EVERY matching row by walking the pages. For exports and reports, where a
- * truncated result would be silently wrong — the per-request cap keeps any single
+ * truncated result would be silently wrong - the per-request cap keeps any single
  * query bounded, and this loops until the server says there's nothing left.
  *
  * `fetchPage({ limit, offset })` takes the same shape as `useInfiniteList`.
@@ -75,7 +71,7 @@ export async function fetchAllPages(fetchPage, { pageSize = PAGE_SIZE, maxRows =
   for (let offset = 0; offset < maxRows; offset += pageSize) {
     const { rows, total } = toPage(await fetchPage({ limit: pageSize, offset }));
     all.push(...rows);
-    // Stop on a short page as well as on the count — a server that doesn't report
+    // Stop on a short page as well as on the count - a server that doesn't report
     // a total still terminates instead of looping to maxRows.
     if (rows.length < pageSize || all.length >= total) break;
   }
@@ -83,7 +79,7 @@ export async function fetchAllPages(fetchPage, { pageSize = PAGE_SIZE, maxRows =
 }
 
 /**
- * Patch one row inside cached lists, whichever shape they're in — a plain array
+ * Patch one row inside cached lists, whichever shape they're in - a plain array
  * (`useQuery`) or paged (`useInfiniteQuery`). Used for optimistic toggles that
  * must survive across every cached filter variant of a list.
  */

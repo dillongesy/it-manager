@@ -1,6 +1,4 @@
-// Work-order status labels and badge colors — one source of truth, because these
-// maps were previously copy-pasted across six files and a new status meant six edits
-// (and a silent blank badge wherever one was missed).
+// Work-order status labels and badge colors, shared by every view that shows a status.
 //
 //   draft           → not yet submitted
 //   pending_billing → waiting on the biller

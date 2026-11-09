@@ -60,12 +60,10 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 
-// Brute-force protection on LOGIN only. The whole office shares one LAN/VPN IP,
-// so the limiter must NOT cover /refresh, /me, or /logout — every signed-in user
-// refreshes its token every ~15 min, and an IP-keyed limit across all of /auth
-// would lock everyone out once a handful of people are online (the cause of the
-// "multi-user auth breaks" bug). A generous per-IP login cap still blocks
-// password-guessing without hurting normal use.
+// Brute-force protection applies to login only. Office users typically share one
+// public or VPN address, and every signed-in client refreshes its token about every
+// 15 minutes, so an IP-keyed limit on /refresh, /me or /logout would lock out
+// legitimate users. A generous per-IP login limit still blocks password guessing.
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,

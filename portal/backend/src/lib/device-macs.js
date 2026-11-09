@@ -33,7 +33,7 @@ export const hasAnyMac = (device, macs) => {
 /**
  * Add MACs to a device without replacing any: the first one fills a blank mac_address,
  * the rest that aren't already known go on other_macs.
- * @param incoming [{ mac, note }] — strongest first (the address the source considers primary)
+ * @param incoming [{ mac, note }] - strongest first (the address the source considers primary)
  * @returns {{ mac_address?: string, other_macs?: object[], added: string[] }} only the columns that change
  */
 export function addMacs(device, incoming) {
@@ -59,8 +59,8 @@ export function addMacs(device, incoming) {
 /**
  * The address a source reports for the device's own main MAC, to compare with the IP on
  * file. When the source only saw the device's other card (Wi-Fi vs the network port)
- * there's nothing to compare — both addresses are right — so this returns null.
- * @param addresses [{ mac, ip, ip_assignment }] — what the source saw, strongest first
+ * there's nothing to compare - both addresses are right - so this returns null.
+ * @param addresses [{ mac, ip, ip_assignment }] - what the source saw, strongest first
  */
 export function addressFor(device, addresses) {
   const seen = (addresses ?? []).filter(a => str(a?.ip));

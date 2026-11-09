@@ -5,7 +5,7 @@ import { parsePaging, setTotalCount } from '../lib/pagination.js';
 
 const router = Router();
 
-// GET /api/audit — any signed-in user (read-only; all staff see the same screens)
+// GET /api/audit - any signed-in user (read-only; all staff see the same screens)
 router.get('/', requireAuth, async (req, res, next) => {
   try {
     const { userId, action, entityType } = req.query;

@@ -6,10 +6,11 @@ import { fieldInventory, isFieldConfigured } from '../lib/field-client.js';
 import { parsePaging, setTotalCount } from '../lib/pagination.js';
 import { coerceDateFields } from '../lib/dates.js';
 import { coerceIntervalCount } from '../lib/cadence.js';
+import { findDefaultRateId } from '../lib/billing-rates.js';
 
 const router = Router();
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// --- Helpers ------------------------------------------------------------------
 
 async function getFullWO(id) {
   const { rows } = await query(
@@ -162,7 +163,7 @@ async function requireDraft(client, woId, res) {
 
 // Apply a net shared-inventory change for one inventory item: positive `delta`
 // consumes stock (checkout), negative returns it. Best-effort over the one-way
-// bridge — returns a warning string on failure (never throws), since inventory
+// bridge - returns a warning string on failure (never throws), since inventory
 // lives in a separate DB and must not roll back the work-order write.
 async function adjustInventory(itemId, delta, actor, note) {
   if (!itemId || !delta || !isFieldConfigured()) return null;
@@ -176,8 +177,8 @@ async function adjustInventory(itemId, delta, actor, note) {
 }
 
 // Move EVERY inventory-linked part on a work order at once, in one direction:
-//   'return'  — put the parts back on the shelf (voiding a WO whose parts weren't used)
-//   'consume' — take them off the shelf again (un-voiding that same WO)
+//   'return'  - put the parts back on the shelf (voiding a WO whose parts weren't used)
+//   'consume' - take them off the shelf again (un-voiding that same WO)
 // Only lines actually linked to a shared-inventory item move; hand-typed parts were
 // never tracked in inventory, so there's nothing to give back for them.
 // Best-effort like every other bridge call: returns a single warning string (never
@@ -213,7 +214,7 @@ async function auditWO(req, woId, detail) {
   });
 }
 
-// ─── Work order list ──────────────────────────────────────────────────────────
+// --- Work order list ----------------------------------------------------------
 
 router.get('/', requireAuth, async (req, res, next) => {
   try {
@@ -223,7 +224,7 @@ router.get('/', requireAuth, async (req, res, next) => {
     // section override or the WO default; hardware_total = Σ(item totals).
     // The inner query produces all aliases; the outer SELECT * wraps it so ORDER BY
     // can reference those aliases (including arithmetic like labor_total + hardware_total)
-    // without ambiguity — PostgreSQL resolves aliases reliably in the outer scope.
+    // without ambiguity - PostgreSQL resolves aliases reliably in the outer scope.
     let inner = `
       SELECT wo.id, wo.number, wo.status, wo.work_date, wo.needs_followup, wo.created_at, wo.submitted_at,
              wo.printed_submitted,
@@ -278,13 +279,13 @@ router.get('/', requireAuth, async (req, res, next) => {
       // Use EXISTS so the main STRING_AGG join (which lists all techs) is unaffected.
       inner += ` AND EXISTS (SELECT 1 FROM work_order_technicians wt2 WHERE wt2.work_order_id = wo.id AND wt2.user_id = $${params.length})`;
     }
-    // Inclusive work_date range — used by the customer export's date filter (and its
+    // Inclusive work_date range - used by the customer export's date filter (and its
     // quick ranges). Either bound may be supplied independently.
     if (dateFrom) { params.push(dateFrom); inner += ` AND wo.work_date >= $${params.length}`; }
     if (dateTo)   { params.push(dateTo);   inner += ` AND wo.work_date <= $${params.length}`; }
     if (needsFollowup === '1' || needsFollowup === 'true') {
       // A WO needs follow-up if any of its sections is flagged. A voided WO is dead
-      // work — it must not keep nagging from the dashboard's follow-up list.
+      // work - it must not keep nagging from the dashboard's follow-up list.
       inner += ` AND wo.status <> 'voided'
                  AND EXISTS (SELECT 1 FROM work_order_sections s WHERE s.work_order_id = wo.id AND s.needs_followup = true)`;
     }
@@ -329,7 +330,7 @@ router.get('/stats', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// GET /api/work-orders/queue-summary — count + dollar total per billing status,
+// GET /api/work-orders/queue-summary - count + dollar total per billing status,
 // over EVERY matching work order. The Billing Queue's summary cards read these:
 // summing the rows the page happens to have loaded would understate the queue as
 // soon as it pages, and the money on that card has to be the real number.
@@ -373,13 +374,13 @@ router.get('/:id', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ─── Create (seeds one section) ────────────────────────────────────────────────
+// --- Create (seeds one section) ------------------------------------------------
 
 router.post('/', requireAuth, async (req, res, next) => {
   const client = await getClient();
   try {
     const { customer_id, description, internal_notes, location_id } = req.body ?? {};
-    // NB: no client.release() on these early returns — the `finally` below already
+    // NB: no client.release() on these early returns - the `finally` below already
     // releases, and releasing twice throws "Release called on client which has already
     // been released to the pool" from inside the finally, after the response is sent.
     if (!customer_id) return res.status(400).json({ error: 'customer_id is required.' });
@@ -388,11 +389,7 @@ router.post('/', requireAuth, async (req, res, next) => {
     const work_date = dates.values.work_date ?? null;
 
     await client.query('BEGIN');
-    const { rows: rateCheck } = await client.query(
-      `SELECT id FROM customer_billing_rates WHERE customer_id = $1 AND LOWER(label) = 'standard' LIMIT 1`,
-      [customer_id]
-    );
-    const defaultRateId = rateCheck[0]?.id ?? null;
+    const defaultRateId = await findDefaultRateId(client, customer_id);
 
     const { rows } = await client.query(
       `INSERT INTO work_orders (customer_id, work_date, billing_rate_id, location_id, created_by)
@@ -422,7 +419,7 @@ router.post('/', requireAuth, async (req, res, next) => {
   finally { client.release(); }
 });
 
-// ─── Update WO-level fields (date, default rate) — draft only ───────────────────
+// --- Update WO-level fields (date, default rate) - draft only -------------------
 
 router.patch('/:id', requireAuth, async (req, res, next) => {
   const client = await getClient();
@@ -447,7 +444,7 @@ router.patch('/:id', requireAuth, async (req, res, next) => {
   finally { client.release(); }
 });
 
-// ─── Sections ───────────────────────────────────────────────────────────────--
+// --- Sections -----------------------------------------------------------------
 
 router.post('/:id/sections', requireAuth, async (req, res, next) => {
   const client = await getClient();
@@ -558,11 +555,11 @@ router.delete('/:id/sections/:sectionId', requireAuth, async (req, res, next) =>
   finally { client.release(); }
 });
 
-// ─── Status transitions ───────────────────────────────────────────────────────
+// --- Status transitions -------------------------------------------------------
 
 // Move a WO between billing statuses. `setField` stamps a timestamp (forward moves);
-// `clearField` nulls one (backward "oops" reverts, so the WO looks un-invoiced/un-paid
-// again). Both are optional. The guard (WHERE status = from) makes double-clicks safe.
+// `clearField` nulls one (reversals, so the work order is no longer marked invoiced or
+// paid). Both are optional. The guard (WHERE status = from) makes double-clicks safe.
 async function transition(req, res, next, { from, to, setField = null, clearField = null, verb }) {
   try {
     const update = { status: to, updated_at: new Date() };
@@ -588,16 +585,16 @@ router.post('/:id/submit',  requireAuth, (req, res, next) => transition(req, res
 router.post('/:id/invoice', requireAuth, (req, res, next) => transition(req, res, next, { from: 'pending_billing', to: 'invoiced',        setField: 'invoiced_at',  verb: 'marked invoiced' }));
 router.post('/:id/pay',     requireAuth, (req, res, next) => transition(req, res, next, { from: 'invoiced',        to: 'paid',            setField: 'paid_at',      verb: 'marked paid' }));
 
-// Reverse transitions — undo an accidental/incorrect billing move. Each clears the
+// Reverse transitions - undo an accidental/incorrect billing move. Each clears the
 // timestamp it's undoing and is audited with an unmistakable verb.
 router.post('/:id/revert-invoice', requireAuth, (req, res, next) => transition(req, res, next, { from: 'invoiced', to: 'pending_billing', clearField: 'invoiced_at', verb: 'reverted invoiced → pending billing' }));
 router.post('/:id/revert-pay',     requireAuth, (req, res, next) => transition(req, res, next, { from: 'paid',     to: 'invoiced',        clearField: 'paid_at',     verb: 'reverted paid → invoiced' }));
 
-// ─── Void / un-void ───────────────────────────────────────────────────────────
+// --- Void / un-void -----------------------------------------------------------
 //
 // Voiding takes a work order OUT of the Billing Queue without destroying it: the WO
 // keeps its number, sections, parts and photos and stays on the Work Orders list as a
-// record. Only a Pending Billing WO can be voided — an invoiced one has to be walked
+// record. Only a Pending Billing WO can be voided - an invoiced one has to be walked
 // back with "Back to Pending" first, so a voided WO never carries a stale invoiced_at.
 //
 // The caller chooses what happens to the parts:
@@ -622,7 +619,7 @@ router.post('/:id/void', requireAuth, async (req, res, next) => {
     if (!rows[0]) return res.status(409).json({ error: "Only work orders in 'Pending Billing' can be voided." });
     const num = `WO-${String(rows[0].number).padStart(5, '0')}`;
 
-    // Give the parts back only after the status change committed — the shared
+    // Give the parts back only after the status change committed - the shared
     // inventory lives in the Field App's DB and can't participate in this transaction.
     const inventoryWarning = returnInventory
       ? await moveWholeWOInventory(req.params.id, 'return', req.user.fullName, `${num} voided — parts returned`)
@@ -640,14 +637,14 @@ router.post('/:id/void', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Undo a void — back to Pending Billing, the status it must have come from. If the
+// Undo a void - back to Pending Billing, the status it must have come from. If the
 // void put parts back on the shelf, this takes exactly those quantities off again, so
 // the two moves always net to zero. The `inventory_returned` flag is what keeps that
 // honest: it's cleared here, so a second un-void can't double-consume.
 router.post('/:id/unvoid', requireAuth, async (req, res, next) => {
   try {
     // RETURNING yields the NEW row, but what matters here is the OLD
-    // inventory_returned — did the void hand the parts back? Joining the pre-update
+    // inventory_returned - did the void hand the parts back? Joining the pre-update
     // row in via FROM reads it without a separate round trip losing atomicity.
     const { rows } = await query(
       `UPDATE work_orders wo
@@ -695,7 +692,7 @@ router.post('/:id/printed-submitted', requireAuth, async (req, res, next) => {
 });
 
 // Clear the follow-up flag on every section of a WO. Unlike section edits this is
-// allowed in ANY status — a follow-up can be completed long after the WO is invoiced
+// allowed in ANY status - a follow-up can be completed long after the WO is invoiced
 // or paid, so the flag must be clearable then too (otherwise it sticks forever).
 router.post('/:id/resolve-followup', requireAuth, async (req, res, next) => {
   try {
@@ -724,7 +721,7 @@ router.delete('/:id', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ─── Line items (scoped to a section) ──────────────────────────────────────────
+// --- Line items (scoped to a section) ------------------------------------------
 
 router.post('/:id/sections/:sectionId/items', requireAuth, async (req, res, next) => {
   const client = await getClient();
@@ -770,7 +767,7 @@ router.patch('/:id/items/:itemId', requireAuth, async (req, res, next) => {
     if (!before[0]) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'Item not found.' }); }
 
     // NB: work_order_items has no updated_at column (unlike work_order_sections),
-    // so don't seed one here — referencing it made every part edit fail.
+    // so don't seed one here - referencing it made every part edit fail.
     const updates = {};
     if (req.body.description !== undefined) updates.description = req.body.description;
     if (req.body.quantity    !== undefined) updates.quantity    = parseFloat(req.body.quantity) || 1;
@@ -843,7 +840,7 @@ router.delete('/:id/items/:itemId', requireAuth, async (req, res, next) => {
   finally { client.release(); }
 });
 
-// ─── Services (scoped to a section) ─────────────────────────────────────────────
+// --- Services (scoped to a section) ---------------------------------------------
 // Sibling to line items. One-time fees and recurring charges (365, backups, etc.).
 
 const RECURRENCES = ['monthly', 'quarterly', 'semiannual', 'annual'];
@@ -854,7 +851,7 @@ function normalizeService(body) {
   if (billing_type === 'recurring') {
     recurrence = RECURRENCES.includes(body.recurrence) ? body.recurrence : 'monthly';
   }
-  // How many periods between bills — 3 for something sold three years at a time.
+  // How many periods between bills - 3 for something sold three years at a time.
   // Forced back to 1 for one-time services and any non-annual period.
   const recurrence_count = billing_type === 'recurring'
     ? coerceIntervalCount(body.recurrence_count, recurrence)
@@ -936,7 +933,7 @@ router.delete('/:id/services/:serviceId', requireAuth, async (req, res, next) =>
   finally { client.release(); }
 });
 
-// ─── WO-level proposals ─────────────────────────────────────────────────────────
+// --- WO-level proposals ---------------------------------------------------------
 
 router.post('/:id/wo-proposals', requireAuth, async (req, res, next) => {
   const client = await getClient();

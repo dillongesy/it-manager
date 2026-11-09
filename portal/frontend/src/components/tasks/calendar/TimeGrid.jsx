@@ -7,7 +7,7 @@ import { DropZone, DRAG_TYPE, DRAG_EVENT } from './shared.jsx';
 
 // The day / week view: an all-day row over an hour-by-hour grid, like Outlook.
 //   Click an item to open it. Drag it to move it (to another time or day, into the all-day row,
-//   or — a task — onto "Not scheduled yet"); drag its bottom edge to change how long it is.
+//   or - a task - onto "Not scheduled yet"); drag its bottom edge to change how long it is.
 //   Drag across empty time to make something new there; a click makes an hour.
 //   Items from "Not scheduled yet" or the month view can be dropped onto a time.
 // On a touch screen dragging is off (the page scrolls instead): tap to open, tap empty time to add.

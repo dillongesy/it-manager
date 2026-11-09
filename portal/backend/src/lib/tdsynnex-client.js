@@ -7,7 +7,7 @@ import { makeCache, saidBy, fetchWithRetry, makeBearer, onIntegrationChange } fr
  *   POST https://sso.us.tdsynnex.com/oauth2/v1/token   { grant_type: client_credentials }  (2-hour token)
  *   GET  {api}/api/v1/customers                         paged: pageNo / pageSize, data.total
  *   GET  {api}/api/v1/customers/{customerNo}/subscriptions
- *   GET  {api}/api/v1/cloud/invoices                    paged — MSRP per subscription line
+ *   GET  {api}/api/v1/cloud/invoices                    paged - MSRP per subscription line
  *
  * Credentials come from EC Express → StreamOne → Integration → Developer API's → Developer
  * Portal → Client Credentials (PROD). Sandbox credentials only work against the sandbox

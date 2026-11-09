@@ -22,7 +22,7 @@ function ServiceForm({ service, onClose, onSaved }) {
     unit_price:   service?.unit_price != null ? String(service.unit_price) : '',
     billing_type: service?.billing_type ?? 'recurring',
     recurrence:   service?.recurrence   ?? 'monthly',
-    // How many periods between bills — 3 for something sold three years at a time
+    // How many periods between bills - 3 for something sold three years at a time
     // (a domain registration, a multi-year cert). 1 is the ordinary cadence.
     recurrence_count: service?.recurrence_count ?? 1,
     category:     service?.category      ?? '',

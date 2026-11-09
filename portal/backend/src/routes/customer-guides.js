@@ -49,7 +49,7 @@ router.patch('/:guideId', requireAuth, async (req, res, next) => {
     if (title !== undefined) updates.title = title.trim();
     if (content !== undefined) updates.content = content;
 
-    // Snapshot title only — guide content is large (can hold base64 images), so we
+    // Snapshot title only - guide content is large (can hold base64 images), so we
     // never store it in the audit diff; we just flag that it changed.
     const { rows: before } = await query('SELECT title, content FROM customer_guides WHERE id = $1 AND customer_id = $2', [req.params.guideId, req.params.customerId]);
     if (!before[0]) return res.status(404).json({ error: 'Guide not found.' });

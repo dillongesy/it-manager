@@ -1,6 +1,6 @@
 // Date-only field validation. The bug this prevents: an <input type="date"> accepts a
 // six-digit year, Postgres DATE stores it happily, and every later save of that record
-// dies with `time zone displacement out of range: "+020207-07"` — including a rename
+// dies with `time zone displacement out of range: "+020207-07"` - including a rename
 // that never touched the date.
 
 import { test } from 'node:test';

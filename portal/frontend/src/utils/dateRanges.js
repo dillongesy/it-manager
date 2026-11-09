@@ -3,7 +3,7 @@
 
 import { toDateInput } from './date.js';
 
-// These Dates are built from LOCAL components, so format them locally too —
+// These Dates are built from LOCAL components, so format them locally too -
 // toISOString() would shift them a day back in every US timezone.
 const iso = (d) => toDateInput(d);
 

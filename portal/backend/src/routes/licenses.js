@@ -5,11 +5,11 @@ import { nextRenewal, toDateStr } from '../lib/renewal.js';
 
 const router = Router();
 
-// These are "the soonest N" dashboard lists, so a cap is by design — but 200 was
+// These are "the soonest N" dashboard lists, so a cap is by design - but 200 was
 // low enough to hide real renewals once every customer has licenses.
 const clampLimit = (v) => Math.min(Math.max(parseInt(v, 10) || 200, 1), 1000);
 
-// GET /api/licenses/expiring?limit=50 — non-auto-renewing licenses with an expiration
+// GET /api/licenses/expiring?limit=50 - non-auto-renewing licenses with an expiration
 // date, soonest first. These are the ones someone has to manually renew, so they're the
 // urgent dashboard list. Auto-renewing subscriptions are excluded (see /renewals).
 router.get('/expiring', requireAuth, async (req, res, next) => {
@@ -33,7 +33,7 @@ router.get('/expiring', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// GET /api/licenses/renewals?limit=50 — auto-renewing subscriptions with their NEXT
+// GET /api/licenses/renewals?limit=50 - auto-renewing subscriptions with their NEXT
 // renewal date computed (rolled forward from the stored anchor by month/year), soonest
 // first. Lets the office see what charges are coming and on which card.
 router.get('/renewals', requireAuth, async (req, res, next) => {

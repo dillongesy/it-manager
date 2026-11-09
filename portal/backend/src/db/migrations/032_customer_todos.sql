@@ -1,4 +1,4 @@
--- Portal — per-customer To-Do lists
+-- Portal - per-customer To-Do lists
 -- Migration 032
 --
 -- A lightweight checklist attached to each customer (its own tab, like Guides).

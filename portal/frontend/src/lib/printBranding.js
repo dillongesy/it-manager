@@ -1,11 +1,17 @@
 // Branded header / footer for the print windows (work orders, customer exports).
 // The print window opens as about:blank, so image URLs must be absolute.
 import { getBranding } from '../contexts/BrandingContext.jsx';
+import { printableColor } from './brandTheme.js';
 
 const esc = (s) => String(s ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const abs = (url) => (url ? new URL(url, window.location.origin).href : null);
+
+/** CSS custom properties for print stylesheets: `--print-brand` is the primary brand color. */
+export function printBrandVars() {
+  return `:root { --print-brand: ${printableColor(getBranding().primaryColor)}; }`;
+}
 
 export function printBrandHeader() {
   const b = getBranding();

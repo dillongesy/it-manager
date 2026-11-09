@@ -1,4 +1,4 @@
--- Portal — printer scan/fax options
+-- Portal - printer scan/fax options
 -- Migration 020
 --
 -- Printer devices can capture scan-to-folder / scan-to-email / fax settings.

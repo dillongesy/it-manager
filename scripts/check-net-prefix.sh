@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ──────────────────────────────────────────────────────────────────────────────
+# ------------------------------------------------------------------------------
 # Check an internal subnet prefix (NET_PREFIX) before the stack uses it.
 #
 #   scripts/check-net-prefix.sh 172.29
@@ -12,13 +12,13 @@
 #
 # Exit codes: 0 = free, 1 = overlaps (listed on stdout), 2 = not a valid prefix.
 # Called by install.sh; safe to run by hand (read-only).
-# ──────────────────────────────────────────────────────────────────────────────
+# ------------------------------------------------------------------------------
 set -euo pipefail
 
 PROJECT=itmanager
 prefix="${1:-}"
 
-# ── Validate: two octets, inside a private (RFC 1918) block ───────────────────
+# -- Validate: two octets, inside a private (RFC 1918) block -------------------
 if ! [[ "$prefix" =~ ^([0-9]{1,3})\.([0-9]{1,3})$ ]]; then
   echo "Expected two numbers like 172.29 (got '${prefix}')."; exit 2
 fi
@@ -46,7 +46,7 @@ overlaps() {
   [ $(( start + size - 1 )) -ge "$LO" ] && [ "$start" -le "$HI" ]
 }
 
-# ── This stack's own subnets (ignored) ────────────────────────────────────────
+# -- This stack's own subnets (ignored) ----------------------------------------
 OWN=" "
 if command -v docker >/dev/null 2>&1; then
   for id in $(docker network ls -q --filter "label=com.docker.compose.project=$PROJECT" 2>/dev/null); do
@@ -57,7 +57,7 @@ is_own() { [[ "$OWN" == *" $1 "* ]]; }
 
 found=()
 
-# ── Host routes, every table ──────────────────────────────────────────────────
+# -- Host routes, every table --------------------------------------------------
 if command -v ip >/dev/null 2>&1; then
   while read -r line; do
     set -- $line
@@ -72,7 +72,7 @@ if command -v ip >/dev/null 2>&1; then
   done < <(ip -4 -o route show table all 2>/dev/null)
 fi
 
-# ── Other Docker networks (they reserve their subnet even with nothing attached) ─
+# -- Other Docker networks (they reserve their subnet even with nothing attached) -
 if command -v docker >/dev/null 2>&1; then
   while read -r name proj subnets; do
     [ "$proj" = "$PROJECT" ] && continue

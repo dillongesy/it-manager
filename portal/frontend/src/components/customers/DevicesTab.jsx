@@ -53,7 +53,7 @@ const MANAGED_OPTIONS = [
   { value: 'false', label: 'Unmanaged' },
 ];
 
-// ─── Per-type field registry ───────────────────────────────────────────────────
+// --- Per-type field registry ---------------------------------------------------
 // One source of truth so the FORM and the DISPLAY always show the same fields, in
 // the same order, for a given device type.
 
@@ -126,7 +126,7 @@ function DeviceIcon({ type, size = 16 }) {
   return <dt.icon size={size} className="text-gray-500" />;
 }
 
-// ─── Repeating-row editors (storage drives / NAS share paths) ──────────────────
+// --- Repeating-row editors (storage drives / NAS share paths) ------------------
 
 function RowListEditor({ rows, onChange, columns, addLabel }) {
   const update = (i, key, val) => onChange(rows.map((r, idx) => idx === i ? { ...r, [key]: val } : r));
@@ -160,7 +160,7 @@ function RowListEditor({ rows, onChange, columns, addLabel }) {
   );
 }
 
-// ─── VLAN editor (firewall/switch) ─────────────────────────────────────────────
+// --- VLAN editor (firewall/switch) ---------------------------------------------
 // Each VLAN carries network details plus a nested list of static devices.
 
 const VLAN_FIELDS = [
@@ -251,10 +251,10 @@ function VlanEditor({ vlans, onChange }) {
   );
 }
 
-// ─── Firewall rules editor (plain english) ─────────────────────────────────────
+// --- Firewall rules editor (plain english) -------------------------------------
 
-// ─── VPN editor (firewall) ─────────────────────────────────────────────────────
-// Documents a firewall's VPNs — settings and who uses them, never the keys (a site-to-site
+// --- VPN editor (firewall) -----------------------------------------------------
+// Documents a firewall's VPNs - settings and who uses them, never the keys (a site-to-site
 // key lives in Credentials). The UniFi import fills these; anything typed here survives it.
 
 const VPN_FIELDS = [
@@ -330,7 +330,7 @@ function RulesEditor({ rules, onChange }) {
   );
 }
 
-// ─── Autocomplete input ─────────────────────────────────────────────────────--
+// --- Autocomplete input -------------------------------------------------------
 // Free-typed text field that suggests values entered for the same field on other
 // customers/devices (server-side distinct match). You can always type a new value;
 // the dropdown just helps keep recurring values (e.g. "SonicWall") consistent.
@@ -380,7 +380,7 @@ function AutocompleteInput({ customerId, field, deviceType, value, onChange, pla
   );
 }
 
-// ─── Form ──────────────────────────────────────────────────────────────────────
+// --- Form ----------------------------------------------------------------------
 
 function DeviceForm({ customerId, device, locations, companyName, defaultLocationId, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -412,7 +412,7 @@ function DeviceForm({ customerId, device, locations, companyName, defaultLocatio
       : (device ? [] : [{ label: 'C:', size: '' }])
   );
   const [shares, setShares] = useState(device?.share_paths ?? []);
-  // A device's other network cards (Wi-Fi vs the network port) — [{ mac, note }].
+  // A device's other network cards (Wi-Fi vs the network port) - [{ mac, note }].
   const [otherMacs, setOtherMacs] = useState(device?.other_macs ?? []);
   // IP lists stored as ["10.0.0.1", …]; edited as [{ ip }] rows for the editor.
   const [internalIps, setInternalIps] = useState((device?.internal_ips ?? []).map(ip => ({ ip })));
@@ -753,7 +753,7 @@ function DeviceForm({ customerId, device, locations, companyName, defaultLocatio
         </div>
       )}
 
-      {/* Notable apps — only for computers */}
+      {/* Notable apps - only for computers */}
       {hasDrives(type) && (
         <div>
           <label className="block text-xs font-medium text-gray-400 mb-1">Notable Apps</label>
@@ -776,7 +776,7 @@ function DeviceForm({ customerId, device, locations, companyName, defaultLocatio
   );
 }
 
-// ─── Display ─────────────────────────────────────────────────────────────────--
+// --- Display -------------------------------------------------------------------
 
 function fmt(key, value) {
   if (value == null || value === '') return null;
@@ -789,7 +789,7 @@ function fmt(key, value) {
 
 // A management/driver link plus a one-click Copy button. Some firewall admin pages
 // silently drop a clicked cross-site navigation (they answer only a pasted/bookmarked
-// URL), so Copy → paste is the reliable path — the button makes that one click.
+// URL), so Copy → paste is the reliable path - the button makes that one click.
 function LinkField({ href }) {
   const [copied, setCopied] = useState(false);
   const url = externalHref(href);
@@ -807,7 +807,7 @@ function LinkField({ href }) {
   );
 }
 
-// Opens the machine in ScreenConnect — the same Join link ScreenConnect's own button uses.
+// Opens the machine in ScreenConnect - the same Join link ScreenConnect's own button uses.
 // Two ways in: Remote joins the session; Backstage opens ScreenConnect's Join-with-options
 // dialog, where Backstage is picked (ScreenConnect has no link straight into Backstage).
 function RemoteButton({ remote }) {
@@ -831,7 +831,7 @@ function RemoteButton({ remote }) {
   );
 }
 
-// The device's own web page through Auvik's Remote Browser — HTTPS, HTTP or another port.
+// The device's own web page through Auvik's Remote Browser - HTTPS, HTTP or another port.
 function WebUiButton({ web }) {
   const otherPort = () => {
     const port = window.prompt('Which port does the device\'s web page use?', '8443');
@@ -1056,7 +1056,7 @@ function DeviceCard({ device: d, customerId, locations, companyName, remote, web
         </div>
       )}
 
-      {/* Local accounts — read-only, kept current by the ConnectWise import. */}
+      {/* Local accounts - read-only, kept current by the ConnectWise import. */}
       {Array.isArray(d.local_accounts) && d.local_accounts.length > 0 && (
         <div className="mt-3 text-xs">
           <span className="text-gray-600">Local accounts: </span>
@@ -1135,9 +1135,9 @@ function DeviceCard({ device: d, customerId, locations, companyName, remote, web
   );
 }
 
-// ─── Tab ─────────────────────────────────────────────────────────────────────--
+// --- Tab -----------------------------------------------------------------------
 
-// Group heading for a device type — singular for a group of one, correctly
+// Group heading for a device type - singular for a group of one, correctly
 // pluralized otherwise ("Switch" → "Switches", not "Switchs"). "NAS" reads badly
 // pluralized on its own, so it borrows "device" as its noun.
 const typeLabel = (t, count = 2) => {
@@ -1147,7 +1147,7 @@ const typeLabel = (t, count = 2) => {
   return pluralize(dt.label, count);
 };
 
-// ─── Sort menu ───────────────────────────────────────────────────────────────
+// --- Sort menu ---------------------------------------------------------------
 // Each device-type group's "Sort ▾" offers the keys that make sense for that type and
 // that at least one of its devices actually has (no "IP address" on a group with no IPs).
 // Blanks sink to the bottom and ties fall back to the name, so a sort is always stable.
@@ -1193,14 +1193,14 @@ export function DevicesTab({ customerId, locations = [], companyName }) {
     queryKey: ['customers', customerId, 'devices'],
     queryFn: () => customersApi.devices.list(customerId).then(r => r.data),
   });
-  // Remote (ScreenConnect) buttons — matched server-side; never blocks the tab.
+  // Remote (ScreenConnect) buttons - matched server-side; never blocks the tab.
   const { data: remote, error: remoteError, refetch: refetchRemote } = useQuery({
     queryKey: ['customers', customerId, 'remote-links'],
     queryFn: () => integrationsApi.remoteLinks(customerId).then(r => r.data),
     staleTime: 2 * 60_000,
     retry: false,
   });
-  // Web UI (Auvik Remote Browser) buttons — matched server-side; never blocks the tab.
+  // Web UI (Auvik Remote Browser) buttons - matched server-side; never blocks the tab.
   const { data: web, refetch: refetchWeb } = useQuery({
     queryKey: ['customers', customerId, 'auvik-links'],
     queryFn: () => integrationsApi.webLinks(customerId).then(r => r.data),
@@ -1222,7 +1222,7 @@ export function DevicesTab({ customerId, locations = [], companyName }) {
   // Group devices by type, then order the groups by the server's type order.
   const groups = {};
   for (const d of devices) (groups[d.device_type] = groups[d.device_type] || []).push(d);
-  // Unfiltered per-type groups — what "Sort A–Z" reorders, so sorting while a
+  // Unfiltered per-type groups - what "Sort A–Z" reorders, so sorting while a
   // search/office filter is on doesn't shuffle the hidden devices to the bottom.
   const allGroups = {};
   for (const d of allDevices) (allGroups[d.device_type] = allGroups[d.device_type] || []).push(d);

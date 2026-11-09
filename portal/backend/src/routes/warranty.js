@@ -7,8 +7,8 @@ import { warrantyPlan, tagOf, isDell } from '../lib/dell.js';
 
 // Dell warranty check for a customer's devices.
 //
-//   GET  /api/customers/:customerId/warranty/dell        — every Dell device + what Dell says
-//   POST /api/customers/:customerId/warranty/dell/apply  — { device_ids } write the dates
+//   GET  /api/customers/:customerId/warranty/dell        - every Dell device + what Dell says
+//   POST /api/customers/:customerId/warranty/dell/apply  - { device_ids } write the dates
 //
 // Read-only against Dell. The ConnectWise import also fills warranties as it goes
 // (routes/connectwise.js); this is for devices entered by hand or imported earlier.

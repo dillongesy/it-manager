@@ -3,13 +3,13 @@ import { X, Download } from 'lucide-react';
 import { customersApi } from '../../api/customers.js';
 
 // Full-screen viewer for images and PDFs. The file endpoint needs a Bearer token,
-// so a plain <img>/<iframe src> would 401 — we fetch the bytes as a blob and use an
+// so a plain <img>/<iframe src> would 401 - we fetch the bytes as a blob and use an
 // object URL. Anything that isn't an image/PDF just offers a download.
 //
 // Props:
 //   customerId  – required when fetchFn/downloadFn are NOT provided (customer files)
-//   fetchFn     – optional (file) => Promise<{data:Blob}>  — overrides customersApi view
-//   downloadFn  – optional (file) => Promise<{data:Blob}>  — overrides customersApi download
+//   fetchFn     – optional (file) => Promise<{data:Blob}>  - overrides customersApi view
+//   downloadFn  – optional (file) => Promise<{data:Blob}>  - overrides customersApi download
 export function FileViewer({ customerId, file, onClose, fetchFn, downloadFn }) {
   const [url, setUrl] = useState(null);
   const [failed, setFailed] = useState(false);

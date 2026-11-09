@@ -6,10 +6,10 @@ import { useState, useEffect, useRef } from 'react';
  * Props:
  *   value       – controlled value (string)
  *   onChange    – called with the new string value (not a synthetic event)
- *   fetch       – (query: string) => Promise<string[]>  — called on each keystroke
+ *   fetch       – (query: string) => Promise<string[]>  - called on each keystroke
  *   placeholder, className, autoFocus, disabled – forwarded to the <input>
  *   minChars    – minimum chars before fetching (default 1). Pass 0 to also fetch on
- *                 focus with an empty box — i.e. "show me what's been entered before".
+ *                 focus with an empty box - i.e. "show me what's been entered before".
  *   inputProps  – extra attributes spread onto the <input> (e.g. noAutofill, name)
  */
 export function SuggestInput({

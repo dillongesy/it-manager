@@ -1,6 +1,6 @@
 import { FileManager } from './FileManager.jsx';
 
-// General attachments — diagrams, floor plans, exports, photos, etc.
+// General attachments - diagrams, floor plans, exports, photos, etc.
 // Proposals & contracts live in their own tab (ProposalsTab).
 export function FilesTab({ customerId, locations, companyName }) {
   return (

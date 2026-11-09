@@ -16,7 +16,7 @@ import { sortByName, isSortedByName } from '../../utils/sort.js';
 import { formatDate, toDateInput } from '../../utils/date.js';
 import { useIntegrations } from '../../hooks/useIntegrations.js';
 
-// ─── Camera system form ───────────────────────────────────────────────────────
+// --- Camera system form -------------------------------------------------------
 
 function CameraForm({ customerId, camera, locations, companyName, defaultLocationId, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -142,7 +142,7 @@ function CameraForm({ customerId, camera, locations, companyName, defaultLocatio
   );
 }
 
-// ─── Shared access user form ──────────────────────────────────────────────────
+// --- Shared access user form --------------------------------------------------
 
 function SharedUserForm({ customerId, cameraId, entry, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -209,7 +209,7 @@ function SharedUserForm({ customerId, cameraId, entry, onClose, onSaved }) {
   );
 }
 
-// ─── Shared users list (inline in camera card) ────────────────────────────────
+// --- Shared users list (inline in camera card) --------------------------------
 
 function SharedAccessSection({ customerId, cameraId }) {
   const [modal, setModal] = useState(null);
@@ -294,7 +294,7 @@ function SharedAccessSection({ customerId, cameraId }) {
   );
 }
 
-// ─── Individual camera form ───────────────────────────────────────────────────
+// --- Individual camera form ---------------------------------------------------
 
 const CAMERA_TYPES = ['', 'Dome', 'Bullet', 'Turret', 'PTZ', 'Fisheye', 'Multi-sensor', 'Other'];
 
@@ -440,10 +440,10 @@ function CameraDeviceForm({ customerId, systemId, cam, onClose, onSaved }) {
   );
 }
 
-// ─── Cameras list (inline in the system card) ─────────────────────────────────
+// --- Cameras list (inline in the system card) ---------------------------------
 
 function CameraRow({ cam, customerId, systemId, onEdit, onDelete }) {
-  // Compact spec line — only the fields that are actually filled in.
+  // Compact spec line - only the fields that are actually filled in.
   const specs = [
     cam.camera_type,
     cam.resolution,
@@ -506,7 +506,7 @@ function CameraRow({ cam, customerId, systemId, onEdit, onDelete }) {
 
 function CamerasSection({ customerId, system, onMutate }) {
   const [modal, setModal] = useState(null);
-  // Cameras ride along on the system row (see the cameras route) — no extra fetch.
+  // Cameras ride along on the system row (see the cameras route) - no extra fetch.
   const cams = system.cameras ?? [];
 
   const remove = async (cam) => {
@@ -580,7 +580,7 @@ function CamerasSection({ customerId, system, onMutate }) {
   );
 }
 
-// ─── Main tab ─────────────────────────────────────────────────────────────────
+// --- Main tab -----------------------------------------------------------------
 
 export function CamerasTab({ customerId, locations = [], companyName }) {
   const [modal, setModal] = useState(null);
@@ -681,7 +681,7 @@ export function CamerasTab({ customerId, locations = [], companyName }) {
                 </div>
               </div>
 
-              {/* Additional logins — customer, monitoring company, owner… */}
+              {/* Additional logins - customer, monitoring company, owner… */}
               <SharedAccessSection customerId={customerId} cameraId={c.id} />
 
               {/* The individual cameras on this system */}

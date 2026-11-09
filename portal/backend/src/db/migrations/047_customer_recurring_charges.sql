@@ -1,18 +1,18 @@
--- Portal — customer recurring billing tracker
+-- Portal - customer recurring billing tracker
 -- Migration 047
 --
 -- A standalone, per-customer list of standing recurring charges the biller tracks
--- (e.g. "M365 Business Standard — annually in November", "Antivirus — monthly",
--- "Backups — quarterly"). Purely a tracking aid: nothing here auto-generates work
+-- (e.g. "M365 Business Standard - annually in November", "Antivirus - monthly",
+-- "Backups - quarterly"). Purely a tracking aid: nothing here auto-generates work
 -- orders or invoices. Branch-aware like the other customer sub-records (NULL = main).
 --
---   frequency     — 'monthly' | 'quarterly' | 'semiannual' | 'annually'
---   billing_month — 1..12, the anchor month for periodic charges (quarterly/semiannual/
+--   frequency     - 'monthly' | 'quarterly' | 'semiannual' | 'annually'
+--   billing_month - 1..12, the anchor month for periodic charges (quarterly/semiannual/
 --                   annually). NULL for monthly (bills every month). The app computes
 --                   the next-due month on the fly by rolling this anchor forward.
---   amount        — what we bill the customer per occurrence
---   category      — free-text grouping (Antivirus / Backup / Microsoft 365 / Other)
---   is_active     — inactive charges are kept for history but excluded from totals
+--   amount        - what we bill the customer per occurrence
+--   category      - free-text grouping (Antivirus / Backup / Microsoft 365 / Other)
+--   is_active     - inactive charges are kept for history but excluded from totals
 
 CREATE TABLE IF NOT EXISTS customer_recurring_charges (
   id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),

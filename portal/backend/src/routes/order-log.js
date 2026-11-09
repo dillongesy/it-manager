@@ -50,7 +50,7 @@ function processItems(rawItems) {
       const obj = { item_name: item.item_name?.trim() ?? '', sku: item.sku || null, quantity: qty, unit_cost: up, total_cost: tp };
       if (item.status && VALID_STATUSES.includes(item.status)) obj.status = item.status;
       // Inventory link/receipt state rides along on the line (see migration 055). It must
-      // survive an ordinary edit — dropping added_at would let the line be received twice.
+      // survive an ordinary edit - dropping added_at would let the line be received twice.
       for (const k of INVENTORY_LINE_KEYS) {
         if (item[k] != null && item[k] !== '') obj[k] = item[k];
       }
@@ -59,7 +59,7 @@ function processItems(rawItems) {
     .filter(item => item.item_name);
 }
 
-// ─── Suggestions (autocomplete) ───────────────────────────────────────────────
+// --- Suggestions (autocomplete) -----------------------------------------------
 
 router.get('/suggestions', requireAuth, async (req, res, next) => {
   try {
@@ -67,7 +67,7 @@ router.get('/suggestions', requireAuth, async (req, res, next) => {
     const like = `%${q}%`;
     let rows;
     if (JSONB_SUGGEST.includes(field)) {
-      // Query within the items JSONB array. field is whitelisted — safe to interpolate.
+      // Query within the items JSONB array. field is whitelisted - safe to interpolate.
       ({ rows } = await query(
         `SELECT DISTINCT item->>'${field}' AS value
          FROM order_log, jsonb_array_elements(items) AS item
@@ -91,7 +91,7 @@ router.get('/suggestions', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ─── Orders CRUD ─────────────────────────────────────────────────────────────
+// --- Orders CRUD -------------------------------------------------------------
 
 router.get('/', requireAuth, async (req, res, next) => {
   try {
@@ -257,16 +257,16 @@ router.delete('/:id', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ─── Add to inventory ─────────────────────────────────────────────────────────
+// --- Add to inventory ---------------------------------------------------------
 //
-// Receive an order's lines into shared (Field App) inventory — but only the lines
+// Receive an order's lines into shared (Field App) inventory - but only the lines
 // that MATCH an existing inventory item (see lib/order-inventory.js). Two steps so
 // nothing moves stock by surprise: GET the plan (preview), then POST to run it with
 // any manual links/skips the user chose in the preview.
 
 const BRIDGE_OFF = 'The Field App bridge is not configured.';
 
-// Every active item — matching against a partial page would miss real matches.
+// Every active item - matching against a partial page would miss real matches.
 const loadInventory = () => fieldInventory.list({ limit: 10000 });
 
 // GET /:id/inventory-plan
@@ -371,7 +371,7 @@ router.post('/:id/add-to-inventory', requireAuth, async (req, res, next) => {
   }
 });
 
-// ─── Attachments ──────────────────────────────────────────────────────────────
+// --- Attachments --------------------------------------------------------------
 
 router.get('/:id/attachments', requireAuth, async (req, res, next) => {
   try {

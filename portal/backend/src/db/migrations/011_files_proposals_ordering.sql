@@ -1,7 +1,7 @@
--- Portal — files/proposals split, free-form categories, ordering
+-- Portal - files/proposals split, free-form categories, ordering
 -- Migration 011
 
--- ─── Files: split "proposals/contracts" into their own tab ─────────────────────
+-- --- Files: split "proposals/contracts" into their own tab ---------------------
 -- One table backs both the Files tab and the Proposals tab, distinguished by kind.
 -- 'file' = general attachments (diagrams, floor plans, exports …)
 -- 'proposal' = business proposals & contracts (mostly PDFs)
@@ -19,7 +19,7 @@ WHERE category IN ('proposal', 'contract');
 UPDATE customer_files SET category = NULL
 WHERE category IN ('proposal', 'contract');
 
--- ─── Credential ordering ───────────────────────────────────────────────────────
+-- --- Credential ordering -------------------------------------------------------
 -- sort_order already exists on customer_credentials (migration 002). Seed it from
 -- current display order so the new manual up/down reordering has a stable basis.
 WITH ordered AS (

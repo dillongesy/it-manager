@@ -67,7 +67,7 @@ export function layoutDay(items) {
   return out;
 }
 
-// ── Repeat settings (backend lib/outlook.js toGraphRecurrence / recurrenceSpec) ──
+// -- Repeat settings (backend lib/outlook.js toGraphRecurrence / recurrenceSpec) --
 
 export const DOW = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 export const DOW_SHORT = { sunday: 'Sun', monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu', friday: 'Fri', saturday: 'Sat' };

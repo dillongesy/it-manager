@@ -1,4 +1,4 @@
-# Field web — static React build served by unprivileged nginx, which also
+# Field web - static React build served by unprivileged nginx, which also
 # proxies /api to the Field API on the internal app network.
 FROM node:24-alpine AS build
 WORKDIR /src

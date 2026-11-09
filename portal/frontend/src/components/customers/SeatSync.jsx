@@ -8,9 +8,9 @@ import { money } from '../../utils/recurring.js';
 import { ActionChip, MatchLine, ResultSection, SetupSteps, Env, OfficeTarget } from './SyncPreview.jsx';
 
 // "Sync seats" on a customer's Billing tab, from ThreatLocker. Generic over providers
-// (backend routes/seat-sync.js). Pick the vendor customer(s) — one Portal customer can be
+// (backend routes/seat-sync.js). Pick the vendor customer(s) - one Portal customer can be
 // several ThreatLocker orgs, e.g. "NORTHWIND-C" + "NORTHWIND-P", and the linked ones open straight
-// away — then each product (ThreatLocker Complete / Protect) shows the Billing-tab charge it
+// away - then each product (ThreatLocker Complete / Protect) shows the Billing-tab charge it
 // updates or creates. Prices come from the Services tab: charges are linked to their Services
 // entry, and a different existing price only changes when "Use the Services price" is ticked.
 // Rules: backend lib/seat-sync.js.

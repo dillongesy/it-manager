@@ -6,15 +6,16 @@ import {
   Sun, Moon, ListChecks, Smartphone, Tags, ShoppingCart, Menu
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { StorageAlert } from './admin/Storage.jsx';
 import { useTheme } from '../contexts/ThemeContext.jsx';
 import api from '../api/client.js';
 import { GlobalSearch } from './GlobalSearch.jsx';
 import { Logo } from './ui/Logo.jsx';
 import { useBranding } from '../contexts/BrandingContext.jsx';
 
-// ─── Nav config ───────────────────────────────────────────────────────────────
+// --- Nav config ---------------------------------------------------------------
 // Everyone (admin/technician/biller) sees the same things. The only role-gated
-// item is Admin (users & roles, integrations, branding, security) — see navItems below.
+// item is Admin (users & roles, integrations, branding, security) - see navItems below.
 
 const BASE_NAV = [
   { to: '/',            label: 'Dashboard',     icon: LayoutDashboard, exact: true },
@@ -29,7 +30,7 @@ const BASE_NAV = [
   { to: '/audit',       label: 'Audit Log',     icon: Shield },
 ];
 
-// ─── Change password modal ────────────────────────────────────────────────────
+// --- Change password modal ----------------------------------------------------
 
 function ChangePasswordModal({ onClose }) {
   const [form, setForm]     = useState({ current: '', next: '', confirm: '' });
@@ -117,7 +118,7 @@ function ChangePasswordModal({ onClose }) {
   );
 }
 
-// ─── Layout ───────────────────────────────────────────────────────────────────
+// --- Layout -------------------------------------------------------------------
 
 export function Layout({ children }) {
   const branding = useBranding();
@@ -168,7 +169,7 @@ export function Layout({ children }) {
         <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={() => setNavOpen(false)} aria-hidden="true" />
       )}
 
-      {/* Sidebar — static column at lg+, slide-in drawer below */}
+      {/* Sidebar - static column at lg+, slide-in drawer below */}
       <aside className={`w-64 lg:w-56 flex flex-col bg-surface-800 border-r border-surface-600 shrink-0
         fixed inset-y-0 left-0 z-50 transition-transform duration-200 lg:static lg:z-auto lg:translate-x-0
         ${navOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}
@@ -272,6 +273,7 @@ export function Layout({ children }) {
           </button>
         </header>
         <main className="flex-1 min-w-0 overflow-y-auto" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <StorageAlert enabled={user?.role === 'admin'} />
           {children}
         </main>
       </div>

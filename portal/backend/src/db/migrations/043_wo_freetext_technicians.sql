@@ -6,6 +6,6 @@
 ALTER TABLE work_order_technicians
   ADD COLUMN IF NOT EXISTS name VARCHAR(120);
 
--- user_id becomes optional — NULL means a free-typed technician (name is set).
+-- user_id becomes optional - NULL means a free-typed technician (name is set).
 ALTER TABLE work_order_technicians
   ALTER COLUMN user_id DROP NOT NULL;

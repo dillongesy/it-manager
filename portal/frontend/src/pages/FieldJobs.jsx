@@ -132,7 +132,7 @@ function JobCard({ job, onPromote }) {
 }
 
 /**
- * One field day as it will land in the work order — its date, the per-technician
+ * One field day as it will land in the work order - its date, the per-technician
  * hours (which the Portal keeps as a section total plus a note), and its parts and
  * services. Every section imports on the work order's default rate; the biller
  * adjusts it per section afterwards.
@@ -208,7 +208,7 @@ function PromoteModal({ job, onClose, onDone }) {
     queryFn: () => fieldJobsApi.get(job.id).then(r => r.data),
   });
 
-  // Pre-006 captures arrive without a `days` array — fold them into one day so the
+  // Pre-006 captures arrive without a `days` array - fold them into one day so the
   // preview only handles one shape (the backend importer does the same).
   const days = full?.days?.length
     ? full.days

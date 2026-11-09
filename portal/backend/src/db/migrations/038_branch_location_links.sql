@@ -1,10 +1,10 @@
--- Portal — branch-awareness for per-customer records
+-- Portal - branch-awareness for per-customer records
 -- Migration 038
 --
 -- Customers with multiple offices can now assign each device, credential, camera
 -- system, file/proposal, license, and contact to a specific office. NULL = the main
 -- office (whose details live on the customers row), matching the work_order.location_id
--- convention. Single-office customers are unaffected — everything stays NULL.
+-- convention. Single-office customers are unaffected - everything stays NULL.
 
 ALTER TABLE customer_devices        ADD COLUMN IF NOT EXISTS location_id UUID REFERENCES customer_locations(id) ON DELETE SET NULL;
 ALTER TABLE customer_credentials    ADD COLUMN IF NOT EXISTS location_id UUID REFERENCES customer_locations(id) ON DELETE SET NULL;

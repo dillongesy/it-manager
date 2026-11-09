@@ -9,7 +9,7 @@ import { timeLabel, parseHm, lengthLabel, taskMinutes } from '../../utils/calend
 
 // Small pieces shared by the task list, calendar, overview, detail and dashboard.
 
-/** Active technicians (everyone but billers) — the people tasks get assigned to. */
+/** Active technicians (everyone but billers) - the people tasks get assigned to. */
 export function useTechs() {
   const { data = [] } = useQuery({
     queryKey: ['users', 'techs'],

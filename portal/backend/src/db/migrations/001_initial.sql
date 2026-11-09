@@ -1,9 +1,9 @@
--- Portal — Initial Schema
+-- Portal - Initial Schema
 -- Migration 001
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- ─── Users ───────────────────────────────────────────────────────────────────
+-- --- Users -------------------------------------------------------------------
 
 CREATE TABLE users (
   id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -31,7 +31,7 @@ CREATE TABLE refresh_tokens (
 CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);
 CREATE INDEX idx_refresh_tokens_hash    ON refresh_tokens(token_hash) WHERE NOT is_revoked;
 
--- ─── Customers ───────────────────────────────────────────────────────────────
+-- --- Customers ---------------------------------------------------------------
 
 CREATE TABLE customers (
   id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -81,7 +81,7 @@ CREATE TABLE customer_locations (
   created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
--- ─── Customer Billing Rates ───────────────────────────────────────────────────
+-- --- Customer Billing Rates ---------------------------------------------------
 
 CREATE TABLE customer_billing_rates (
   id          UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -92,7 +92,7 @@ CREATE TABLE customer_billing_rates (
   created_at  TIMESTAMPTZ    NOT NULL DEFAULT NOW()
 );
 
--- ─── Work Orders ─────────────────────────────────────────────────────────────
+-- --- Work Orders -------------------------------------------------------------
 
 CREATE TABLE work_orders (
   id              UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -101,7 +101,7 @@ CREATE TABLE work_orders (
   status          VARCHAR(20)  NOT NULL DEFAULT 'draft',
   work_date       DATE         NOT NULL DEFAULT CURRENT_DATE,
   description     TEXT,
-  -- Internal fields — never shown on customer PDF
+  -- Internal fields - never shown on customer PDF
   internal_notes  TEXT,
   travel_minutes  INTEGER,
   is_remote       BOOLEAN      NOT NULL DEFAULT false,
@@ -144,7 +144,7 @@ CREATE TABLE work_order_items (
   created_at    TIMESTAMPTZ    NOT NULL DEFAULT NOW()
 );
 
--- ─── Audit Log ───────────────────────────────────────────────────────────────
+-- --- Audit Log ---------------------------------------------------------------
 
 CREATE TABLE audit_log (
   id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -164,7 +164,7 @@ CREATE INDEX idx_audit_log_user       ON audit_log(user_id);
 CREATE INDEX idx_audit_log_entity     ON audit_log(entity_type, entity_id);
 CREATE INDEX idx_audit_log_created    ON audit_log(created_at DESC);
 
--- ─── Migration tracking ───────────────────────────────────────────────────────
+-- --- Migration tracking -------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS schema_migrations (
   version     VARCHAR(20) PRIMARY KEY,

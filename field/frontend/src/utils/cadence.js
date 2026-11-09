@@ -5,7 +5,7 @@
 // periods pass between bills. Count 1 is the ordinary case and the default, so nothing
 // captured before this existed changes.
 //
-// Only a YEARLY period may carry a count above 1 — "every 3 years" for a domain
+// Only a YEARLY period may carry a count above 1 - "every 3 years" for a domain
 // registration or a multi-year cert. The Portal enforces the same rule, so whatever is
 // captured here survives the import to a real work order unchanged.
 

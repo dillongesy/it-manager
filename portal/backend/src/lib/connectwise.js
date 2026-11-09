@@ -1,9 +1,9 @@
-// ConnectWise RMM → Portal device mapping. Pure functions only (no I/O), unit-tested.
+// ConnectWise RMM → Portal device mapping. Pure functions only (no I/O).
 //
 // ConnectWise publishes the platform API's response schemas only behind a partner
 // login, and field names differ between endpoints and API versions (friendlyName vs
 // name, os.name vs operatingSystem, …). So every value is read from the first of
-// several known names that's present — the same approach other integrations with this
+// several known names that's present - the same approach other integrations with this
 // API take. scripts/connectwise-probe.js prints a real response when a name needs adding.
 
 import { coerceDate } from './dates.js';
@@ -41,7 +41,7 @@ export function text(obj, ...paths) {
   return str(v);
 }
 
-// ─── Value cleanup ────────────────────────────────────────────────────────────
+// --- Value cleanup ------------------------------------------------------------
 
 const JUNK = /^(to be filled.*|default string|system serial number|system product name|system manufacturer|none|n\/a|not (specified|available|applicable)|chassis serial number|o\.?e\.?m\.?|0+|x+|1234567890?|123456789|unknown)$/i;
 const isJunk = (v) => !str(v) || JUNK.test(str(v));
@@ -132,7 +132,7 @@ export function firstIpv4(v) {
   return priv ?? usable[0] ?? '';
 }
 
-// ─── Company / site ───────────────────────────────────────────────────────────
+// --- Company / site -----------------------------------------------------------
 
 export const companyOf = (c) => ({
   id:   text(c, 'id', 'companyId', 'clientId', 'companyID'),
@@ -148,7 +148,7 @@ export const siteOf = (s) => ({
 const byName = (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true });
 export const sortByName = (list) => [...list].sort(byName);
 
-// ─── Endpoint → normalized machine ────────────────────────────────────────────
+// --- Endpoint → normalized machine --------------------------------------------
 
 // Where a device fact might live in a list row or a details response. Names confirmed
 // on a real tenant: summary { endpointID, deviceName, friendlyName, resourceType,
@@ -197,7 +197,7 @@ function onlineFrom(v) {
   return null;
 }
 
-// Strip a "DOMAIN\user" prefix — the Portal's "assigned to" is a person, not an account.
+// Strip a "DOMAIN\user" prefix - the Portal's "assigned to" is a person, not an account.
 const bareUser = (u) => str(u).split('\\').pop();
 
 /**
@@ -228,7 +228,7 @@ export function normalizeEndpoint(raw, context = {}) {
     private_ip:   firstIpv4(text(e, ...F.ip)),
     public_ip:    firstIpv4(text(e, ...F.publicIp)),
     mac:          formatMac(text(e, ...F.mac)),
-    // Every network card's MAC (v1 asset inventory) — only used to recognise a device
+    // Every network card's MAC (v1 asset inventory) - only used to recognise a device
     // UniFi or a tech recorded by its other card (Wi-Fi vs the network port).
     macs:         [...new Set([formatMac(text(e, ...F.mac)), ...(Array.isArray(e.networks) ? e.networks.map(n => formatMac(n?.macAddress)) : [])].filter(Boolean))],
     logged_on_user: bareUser(text(e, ...F.user)),
@@ -256,7 +256,7 @@ export function flatten(obj) {
 }
 
 /**
- * A device as the client returns it — { summary, v2, v1 } — flattened into one record.
+ * A device as the client returns it - { summary, v2, v1 } - flattened into one record.
  * Later sources win: the v1 details (hardware) over the summary, and the v2 details
  * (current IP / MAC) over both. A plain object is treated as a summary.
  */
@@ -322,7 +322,7 @@ export const accountsText = (accounts) => (accounts ?? []).map(a => a.username +
 
 /**
  * Real file shares → the Portal's share_paths [{ path, note }]. Hidden/admin shares
- * (C$, ADMIN$, IPC$, print$ — anything ending in $, or typed Admin/IPC) are skipped.
+ * (C$, ADMIN$, IPC$, print$ - anything ending in $, or typed Admin/IPC) are skipped.
  * path = the UNC path people type ("\\PC-NAME\Scans"); note = the local folder and who
  * can reach it.
  */
@@ -400,10 +400,10 @@ export function drivesFrom(storages) {
 }
 export const drivesText = (drives) => (drives ?? []).map(d => [d.label, d.size].filter(Boolean).join(' ')).join(' · ');
 
-// ─── Machine → Portal device fields ───────────────────────────────────────────
+// --- Machine → Portal device fields -------------------------------------------
 
 // ConnectWise's own category first, then the agent/OS, then the make / model / name
-// (lib/device-type.js) — so an HP LaserJet or an Aruba switch isn't filed as "Network"
+// (lib/device-type.js) - so an HP LaserJet or an Aruba switch isn't filed as "Network"
 // just because ConnectWise calls every discovered device a "NetworkDevice".
 export function deviceTypeFor(m) {
   return classifyDevice({
@@ -441,18 +441,18 @@ export function deviceFieldsFromMachine(m) {
   };
 }
 
-// How an import treats a device that already exists in the Portal — the same rules as
+// How an import treats a device that already exists in the Portal - the same rules as
 // UniFi (lib/sync-merge.js), so the two never fight over a record:
-//   FILL     — only written when the Portal field is empty. People curate these by hand
+//   FILL     - only written when the Portal field is empty. People curate these by hand
 //              ("Reception PC", "Front desk", a nicer model name).
-//   REPORTED — facts the machine reports about itself (IP, OS, RAM…): filled when empty;
+//   REPORTED - facts the machine reports about itself (IP, OS, RAM…): filled when empty;
 //              a different value is kept and listed in the preview, and only replaced when
 //              the person ticks "Also replace values that changed" (take_newer).
-//   MAC      — added, never replaced: a MAC the device isn't known by fills a blank
+//   MAC      - added, never replaced: a MAC the device isn't known by fills a blank
 //              mac_address or joins other_macs.
-//   IP       — only compared when ConnectWise's primary card is the device's main MAC; an
+//   IP       - only compared when ConnectWise's primary card is the device's main MAC; an
 //              IP UniFi recorded for the Wi-Fi card is just as right.
-//   LISTS    — shares and local accounts are added to; replacing the accounts list with
+//   LISTS    - shares and local accounts are added to; replacing the accounts list with
 //              ConnectWise's is a take_newer change.
 export const FILL_ONLY = ['label', 'assigned_to', 'model', 'service_tag', 'serial_number', 'manufacturer', 'storage_drives', 'share_paths'];
 export const REPORTED = ['computer_name', 'ip_address', 'operating_system', 'processor', 'ram', 'local_accounts'];
@@ -469,11 +469,11 @@ const fieldText = (field, v) => {
 };
 
 // List-valued (JSONB) fields:
-//   storage_drives — filled when the device has none; also replaced when what's there is
+//   storage_drives - filled when the device has none; also replaced when what's there is
 //                    only bare sizes ("C: 500GB", what an older import wrote), so the
 //                    better "500GB SSD (model)" text lands.
-//   share_paths    — shares not on file yet are added (hand-written notes kept).
-//   local_accounts — accounts not on file yet are added; dropping ones ConnectWise no
+//   share_paths    - shares not on file yet are added (hand-written notes kept).
+//   local_accounts - accounts not on file yet are added; dropping ones ConnectWise no
 //                    longer lists is a take_newer change.
 const LIST_TEXT = { storage_drives: (v) => drivesText(v), share_paths: (v) => sharesText(v), local_accounts: (v) => accountsText(v) };
 const LIST_KEY = { share_paths: (x) => compact(x?.path), local_accounts: (x) => compact(x?.username) };
@@ -486,12 +486,12 @@ const sameSet = (a, b) => JSON.stringify(listOf(a).map(x => JSON.stringify(x)).s
 
 /**
  * What an import would do to an existing device.
- * @returns {{ updates, changes, newer, differs }} — see lib/sync-merge.js
+ * @returns {{ updates, changes, newer, differs }} - see lib/sync-merge.js
  */
 export function mergePlan(device, fields) {
   const p = planner();
   // Imports before the device-type fix filed printers, switches, TVs… under the catch-all
-  // "Network". Re-sort those — but only a device an import created and left as Network;
+  // "Network". Re-sort those - but only a device an import created and left as Network;
   // a type someone picked by hand is theirs.
   if (device?.rmm_endpoint_id && device.device_type === 'network' && fields.device_type && fields.device_type !== 'network') {
     p.apply('device_type', fields.device_type, TYPE_LABEL.network, TYPE_LABEL[fields.device_type] ?? fields.device_type);

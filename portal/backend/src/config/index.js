@@ -44,7 +44,7 @@ export const config = {
 
   encryptionKey: require_env('ENCRYPTION_KEY'),
 
-  // Shared-inventory bridge — the Portal reaches OUT to the Field App's service
+  // Shared-inventory bridge - the Portal reaches OUT to the Field App's service
   // API to read and consume shared stock. One-way: the Field App never calls back.
   // Both unset = inventory feature disabled (the UI shows it's not configured).
   fieldApi: {
@@ -52,7 +52,7 @@ export const config = {
     token: process.env.FIELD_API_TOKEN ?? null,
   },
 
-  // ConnectWise RMM (ConnectWise Platform / "Asio" API) — read-only machine import into a
+  // ConnectWise RMM (ConnectWise Platform / "Asio" API) - read-only machine import into a
   // customer's Devices tab. Credentials come from ConnectWise RMM → Integrations → API
   // Access. Outbound only: the Portal calls ConnectWise; nothing on the internet calls the
   // Portal. Client ID + secret unset = the import button explains how to configure it.
@@ -63,7 +63,7 @@ export const config = {
     baseUrl:      process.env.CONNECTWISE_BASE_URL ?? null,
   },
 
-  // Dell TechDirect warranty API — fills "Warranty Expires" on Dell machines from their
+  // Dell TechDirect warranty API - fills "Warranty Expires" on Dell machines from their
   // service tag. Read-only lookups. Unset = the warranty buttons explain how to set it up.
   dell: {
     clientId:     process.env.DELL_CLIENT_ID ?? null,
@@ -72,7 +72,7 @@ export const config = {
     baseUrl:      process.env.DELL_API_URL ?? null,
   },
 
-  // ScreenConnect (the instance bundled with ConnectWise RMM) — the Remote button on a
+  // ScreenConnect (the instance bundled with ConnectWise RMM) - the Remote button on a
   // device. Needs the RESTful API Manager extension; the Portal only ever calls its
   // session lookup, never the command methods the same secret could reach.
   screenConnect: {
@@ -80,27 +80,27 @@ export const config = {
     secret:      process.env.SCREENCONNECT_API_SECRET ?? null,
     // The session group in the join link (…/Host#Access/<group>//<session>/Join).
     group:       process.env.SCREENCONNECT_SESSION_GROUP || 'All Machines',
-    // The RESTful API Manager's extension ID — the same on every instance.
+    // The RESTful API Manager's extension ID - the same on every instance.
     extensionId: process.env.SCREENCONNECT_EXTENSION_ID || '2d558935-686a-4bd0-9991-07539f5fe749',
   },
 
-  // UniFi (api.ui.com) — device / network / camera import. One cloud API key; the
+  // UniFi (api.ui.com) - device / network / camera import. One cloud API key; the
   // Portal only sends GET requests, though the key itself could change things.
   unifi: {
     apiKey: process.env.UNIFI_API_KEY ?? null,
   },
 
-  // TD SYNNEX (StreamOne Stellr) — Microsoft 365 subscriptions → a customer's Billing tab.
+  // TD SYNNEX (StreamOne Stellr) - Microsoft 365 subscriptions → a customer's Billing tab.
   // OAuth2 client credentials from the Stellr Developer Portal. Read-only lookups.
-  // Sandbox and production credentials are separate — the URLs must match the key.
-  // Auvik — "Web UI" buttons (Remote Browser) on network gear. Read-only.
+  // Sandbox and production credentials are separate - the URLs must match the key.
+  // Auvik - "Web UI" buttons (Remote Browser) on network gear. Read-only.
   auvik: {
     username: process.env.AUVIK_USERNAME ?? null,
     apiKey:   process.env.AUVIK_API_KEY ?? null,
     region:   process.env.AUVIK_REGION || 'us1',
   },
 
-  // Outlook — the team's shared calendar on the Tasks schedule, via Microsoft Graph. The Portal
+  // Outlook - the team's shared calendar on the Tasks schedule, via Microsoft Graph. The Portal
   // shows and edits its events, and puts tasks on it on request ("Add to Outlook").
   outlook: {
     tenantId:     process.env.OUTLOOK_TENANT_ID ?? null,
@@ -113,7 +113,7 @@ export const config = {
     timeZone:     process.env.OUTLOOK_TIME_ZONE || 'America/Chicago',
   },
 
-  // ThreatLocker — computers per customer org → Billing-tab seat counts. Read-only.
+  // ThreatLocker - computers per customer org → Billing-tab seat counts. Read-only.
   threatlocker: {
     apiKey:         process.env.THREATLOCKER_API_KEY ?? null,
     instance:       process.env.THREATLOCKER_INSTANCE ?? null,

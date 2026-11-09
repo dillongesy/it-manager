@@ -10,7 +10,7 @@ function fmtWhen(ts) {
   return new Date(ts).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 }
 
-// ─── Activity history (admin) ──────────────────────────────────────────────────
+// --- Activity history (admin) --------------------------------------------------
 
 function ActivityView({ user }) {
   const [rows, setRows] = useState(null);
@@ -50,7 +50,7 @@ const ROLE_BADGE = {
   biller:     'bg-amber-900/40 text-amber-400',
 };
 
-// ─── User form (create + edit) ────────────────────────────────────────────────
+// --- User form (create + edit) ------------------------------------------------
 
 function UserForm({ user, onClose, onSaved }) {
   const isEdit = Boolean(user);
@@ -144,7 +144,7 @@ const ROLE_INFO = [
   { role: 'biller',     label: 'Biller',     text: 'The same screens as a technician, and works the Billing Queue.' },
 ];
 
-// ─── Users & roles section ────────────────────────────────────────────────────
+// --- Users & roles section ----------------------------------------------------
 
 export function UsersRoles() {
   const { user: me } = useAuth();

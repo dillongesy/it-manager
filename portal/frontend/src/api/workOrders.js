@@ -16,7 +16,7 @@ export const workOrdersApi = {
   pay:     (id)           => api.post(`/work-orders/${id}/pay`),
   revertInvoice: (id)     => api.post(`/work-orders/${id}/revert-invoice`),
   revertPay:     (id)     => api.post(`/work-orders/${id}/revert-pay`),
-  // Void a Pending Billing WO — out of the Billing Queue, kept on the Work Orders
+  // Void a Pending Billing WO - out of the Billing Queue, kept on the Work Orders
   // list. `return_inventory` decides whether its linked parts go back on the shelf.
   void:    (id, { return_inventory = false, reason = '' } = {}) =>
     api.post(`/work-orders/${id}/void`, { return_inventory, reason }),

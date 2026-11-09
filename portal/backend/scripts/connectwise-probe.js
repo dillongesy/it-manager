@@ -8,14 +8,21 @@
 // Read-only. Prints: sign-in result, companies, sites, which device-list request your
 // tenant accepts, one device exactly as ConnectWise returns it (list summary, v2
 // details, v1 details), and the fields the import would write. Use the output to
-// confirm/adjust the field names in src/lib/connectwise.js — ConnectWise only publishes
+// confirm/adjust the field names in src/lib/connectwise.js - ConnectWise only publishes
 // its response schemas behind a partner login.
 //
-// Never prints the client secret or the access token.
+// Never prints the client secret or the access token. Uses the settings saved in
+// Admin → Integrations (or .env for a never-saved integration).
+//
+// In Docker:  docker compose exec portal-api node scripts/connectwise-probe.js
 
 import * as cw from '../src/lib/connectwise-client.js';
 import { companyOf, siteOf, sortByName, normalizeEndpoint, flattenDevice, deviceFieldsFromMachine } from '../src/lib/connectwise.js';
 import { config } from '../src/config/index.js';
+import { loadIntegrations } from '../src/lib/settings.js';
+import { pool } from '../src/db/index.js';
+
+await loadIntegrations({ persist: false });
 
 const [companyArg, siteArg] = process.argv.slice(2).map(s => s.toLowerCase());
 const show = (label, v, max = 4000) => {
@@ -25,7 +32,7 @@ const show = (label, v, max = 4000) => {
 
 try {
   if (!cw.isConnectWiseConfigured()) {
-    console.error('CONNECTWISE_CLIENT_ID / CONNECTWISE_CLIENT_SECRET are not set in portal/backend/.env');
+    console.error('ConnectWise RMM is not configured (Admin → Integrations).');
     process.exit(1);
   }
   console.log(`Server: ${cw.baseUrlFor(config.connectWise.clientId, config.connectWise.baseUrl)}`);
@@ -69,5 +76,7 @@ try {
   }
 } catch (e) {
   console.error(`\n✗ ${e.message}`);
-  process.exit(1);
+  process.exitCode = 1;
+} finally {
+  await pool.end();
 }

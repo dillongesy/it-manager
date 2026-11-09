@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 
 // Integration tests boot the real Express app against a throwaway test database
-// and drive it over HTTP — exercising the actual routes, middleware, and SQL.
+// and drive it over HTTP - exercising the actual routes, middleware, and SQL.
 // They self-skip unless field/backend/.env.test exists (see .env.test.example).
 
 const envTestPath = fileURLToPath(new URL('../../.env.test', import.meta.url));
@@ -157,7 +157,7 @@ if (!enabled) {
     assert.equal(res.status, 404);
   });
 
-  // ─── Return (powers WO part edit/delete reconciliation) ──────────────────────
+  // --- Return (powers WO part edit/delete reconciliation) ----------------------
 
   test('return adds stock back and writes an IT-attributed return ledger row', async () => {
     const item = await makeItem({ quantity: 5 });

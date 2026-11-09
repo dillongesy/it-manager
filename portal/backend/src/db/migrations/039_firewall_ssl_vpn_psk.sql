@@ -1,4 +1,4 @@
--- Portal — firewall SSL VPN pre-shared key
+-- Portal - firewall SSL VPN pre-shared key
 -- Migration 039
 --
 -- Firewall devices can store an SSL VPN pre-shared key. It's a secret, so it's stored

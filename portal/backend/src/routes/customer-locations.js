@@ -3,7 +3,7 @@ import { query } from '../db/index.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { logAudit, getClientIp, diffChanges } from '../middleware/audit.js';
 
-// Branch offices — extra locations linked to a customer, each with its own
+// Branch offices - extra locations linked to a customer, each with its own
 // business name, address, phone, static WAN IP, firewall link, and notes.
 const router = Router({ mergeParams: true });
 

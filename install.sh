@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# ──────────────────────────────────────────────────────────────────────────────
-# IT Manager — one-time installer for a fresh Linux server (Debian / Ubuntu).
+# ------------------------------------------------------------------------------
+# IT Manager - one-time installer for a fresh Linux server (Debian / Ubuntu).
 #
 #   git clone <your repo> /opt/it-manager && cd /opt/it-manager && sudo ./install.sh
 #
@@ -14,7 +14,7 @@
 #
 # Afterwards, updating is just:  ./update.sh   (git pull + compose pull + up -d)
 # Re-running install.sh is safe; it keeps your existing data and secrets.
-# ──────────────────────────────────────────────────────────────────────────────
+# ------------------------------------------------------------------------------
 set -euo pipefail
 
 cd "$(dirname "$(readlink -f "$0")")"

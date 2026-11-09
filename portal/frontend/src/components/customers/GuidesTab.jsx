@@ -6,7 +6,7 @@ import { EmptyState } from '../ui/EmptyState.jsx';
 import { RichTextEditor } from '../ui/RichText.jsx';
 
 function GuideEditor({ customerId, guide, onBack }) {
-  // The list endpoint omits `content`, and Tiptap only reads content at init — so
+  // The list endpoint omits `content`, and Tiptap only reads content at init - so
   // when editing an existing guide we must fetch the full record first, otherwise
   // the editor starts blank and a save would wipe the guide.
   const editingId = guide?.id ?? null;

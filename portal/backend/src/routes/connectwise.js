@@ -15,12 +15,12 @@ import { saveLink } from '../lib/integration-links.js';
 
 // ConnectWise RMM → customer Devices tab import.
 //
-//   GET  /api/connectwise/status                                  — configured?
-//   GET  /api/connectwise/companies                               — RMM companies
-//   GET  /api/connectwise/companies/:companyId/sites              — a company's sites
+//   GET  /api/connectwise/status                                  - configured?
+//   GET  /api/connectwise/companies                               - RMM companies
+//   GET  /api/connectwise/companies/:companyId/sites              - a company's sites
 //   GET  /api/customers/:customerId/connectwise/machines?companyId=&siteId=
-//                                          — one site's devices + what an import would do
-//   POST /api/customers/:customerId/connectwise/import             — create new / update matched
+//                                          - one site's devices + what an import would do
+//   POST /api/customers/:customerId/connectwise/import             - create new / update matched
 //
 // Read-only against ConnectWise. See lib/connectwise.js for how a device maps onto
 // Portal fields and how it's matched to a device that's already on file.
@@ -75,7 +75,7 @@ async function addDellWarranty(machines) {
   }
 }
 
-// ─── Global: status, companies, sites ─────────────────────────────────────────
+// --- Global: status, companies, sites -----------------------------------------
 
 export const connectWiseRouter = Router();
 
@@ -99,7 +99,7 @@ connectWiseRouter.get('/companies/:companyId/sites', requireAuth, async (req, re
   } catch (err) { sendError(res, next, err); }
 });
 
-// ─── Per customer: preview + import ───────────────────────────────────────────
+// --- Per customer: preview + import -------------------------------------------
 
 export const customerConnectWiseRouter = Router({ mergeParams: true });
 
@@ -117,8 +117,8 @@ customerConnectWiseRouter.get('/machines', requireAuth, async (req, res, next) =
     machines.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true }));
     const warrantyNote = await addDellWarranty(machines);
 
-    // Preview in list order with a running "claimed" set — the same order the import
-    // walks — so two machines can't both appear to update one device.
+    // Preview in list order with a running "claimed" set - the same order the import
+    // walks - so two machines can't both appear to update one device.
     const claimed = new Set();
     const out = machines.map(m => {
       const match = findMatch(m, devices, claimed);

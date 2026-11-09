@@ -6,7 +6,7 @@ const router = Router();
 
 // GET /api/search?q=term
 // Searches across customers, work orders, tasks, devices, credentials, and files.
-// Credentials return only label/category — never passwords.
+// Credentials return only label/category - never passwords.
 router.get('/', requireAuth, async (req, res, next) => {
   try {
     const raw = req.query.q?.trim() ?? '';

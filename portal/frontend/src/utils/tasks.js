@@ -1,4 +1,4 @@
-// Tasks — labels, colours and the date flags the lists use. The rules themselves (what a
+// Tasks - labels, colours and the date flags the lists use. The rules themselves (what a
 // status change implies, the Overview numbers) live in backend lib/tasks.js; the flags are
 // mirrored here so a list can colour a row without a round trip.
 
@@ -41,7 +41,7 @@ const parseDay = (v) => {
 };
 const daysBetween = (a, b) => Math.round((localDay(b) - localDay(a)) / DAY);
 
-/** overdue / due soon / missed (scheduled day passed) / idle — same rules as the backend. */
+/** overdue / due soon / missed (scheduled day passed) / idle - same rules as the backend. */
 export function taskFlags(task, today = new Date()) {
   const active = task.status !== 'done';
   const due = parseDay(task.due_date);

@@ -1,6 +1,7 @@
 {
   "name": "it-manager-portal-frontend",
   "version": "1.0.0",
+  "description": "IT Manager Portal web client",
   "private": true,
   "type": "module",
   "scripts": {

@@ -19,9 +19,8 @@ function money(v) {
 }
 
 // Each action: { label, className, run(id), confirm?(wo) → string|null, open?(wo) }.
-// Returning a string from confirm() prompts before running (used for the "oops"
-// reversal moves). An action with open() hands the row off to a dialog instead of
-// firing an API call — voiding needs choices made before it happens.
+// Returning a string from confirm() prompts before running (used for reversals). An action with open() hands the row off to a dialog instead of
+// firing an API call - voiding needs choices made before it happens.
 function WORow({ wo, actions = [] }) {
   const navigate = useNavigate();
   const [acting, setActing] = useState(false);
@@ -44,7 +43,7 @@ function WORow({ wo, actions = [] }) {
   };
 
   // Open the simple/printable view in a new tab (no auto-print). Needs the full WO
-  // (sections, services, totals), which list rows don't carry — fetch it on demand.
+  // (sections, services, totals), which list rows don't carry - fetch it on demand.
   const openSimpleView = async (e) => {
     e.stopPropagation();
     setViewing(true);
@@ -161,8 +160,7 @@ export function BillingQueue() {
   const [voiding, setVoiding] = useState(null);   // WO row awaiting the void dialog
   const qc = useQueryClient();
 
-  // Each tab pages through its FULL queue rather than stopping at the API's first
-  // page — a billing queue that silently truncated was hiding real work.
+  // Each tab loads its full queue, not just the API's first page.
   const [paidSearch, setPaidSearch] = useState('');
 
   const pendingQuery = useInfiniteList({
@@ -175,7 +173,7 @@ export function BillingQueue() {
     fetchPage: ({ limit, offset }) => workOrdersApi.list({ status: 'invoiced', limit, offset }),
     staleTime: 15_000,
   });
-  // Paid invoices are an archive — searchable across customer, WO #, description, and parts.
+  // Paid invoices are an archive - searchable across customer, WO #, description, and parts.
   const paidQuery = useInfiniteList({
     queryKey: ['work-orders', 'queue', 'paid', paidSearch],
     fetchPage: ({ limit, offset }) =>
@@ -188,7 +186,7 @@ export function BillingQueue() {
   const paid = paidQuery.rows;
 
   // Counts and dollar totals for the summary cards come from the server across ALL
-  // matching work orders — summing only the loaded rows would understate the queue.
+  // matching work orders - summing only the loaded rows would understate the queue.
   const { data: summary, refetch: refetchSummary } = useQuery({
     queryKey: ['work-orders', 'queue-summary'],
     queryFn: () => workOrdersApi.queueSummary().then(r => r.data),
@@ -215,7 +213,7 @@ export function BillingQueue() {
     qc.invalidateQueries(['dashboard-stats']);
   };
 
-  // Reverse moves — recover from an accidental/incorrect transition.
+  // Reverse moves - recover from an accidental/incorrect transition.
   const revertToPending = async (id) => {
     await workOrdersApi.revertInvoice(id);
     refetchPending();
@@ -245,7 +243,7 @@ export function BillingQueue() {
       confirm: (wo) => `Move ${woNum(wo.number)} back to Invoiced? This undoes the paid status.` },
   ];
 
-  // Counts are the server-side totals, not "how many are loaded" — the badge has to
+  // Counts are the server-side totals, not "how many are loaded" - the badge has to
   // be the real size of the queue.
   const tabs = [
     { id: 'pending',  label: 'Pending Billing', count: pendingQuery.total },
@@ -366,7 +364,7 @@ export function BillingQueue() {
         )}
       </div>
 
-      {/* Voiding drops the WO out of this queue entirely — refresh the list and the
+      {/* Voiding drops the WO out of this queue entirely - refresh the list and the
           summary cards so the count and dollar total stop including it. */}
       {/* Mounted only while voiding, so each dialog starts with fresh choices. */}
       {voiding && <VoidWorkOrderModal

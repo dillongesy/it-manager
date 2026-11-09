@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getPublicBranding, getAsset, ASSET_KINDS } from '../lib/settings.js';
 
-// Public (no login) — the login page, browser tab and print header need branding
+// Public (no login) - the login page, browser tab and print header need branding
 // before anyone signs in. Nothing here is sensitive.
 //   GET /api/branding               → names, colors, contact details, asset URLs
 //   GET /api/branding/assets/:kind  → the uploaded image bytes

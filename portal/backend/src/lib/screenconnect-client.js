@@ -10,7 +10,7 @@ import { sessionOf, joinUrl } from './screenconnect.js';
  *
  * The extension's one shared secret also unlocks methods that run commands on every
  * machine. This client only ever calls GetSessionsByFilter, and the secret never leaves
- * the backend — the browser gets plain join links.
+ * the backend - the browser gets plain join links.
  *
  * One call returns every machine (a few hundred); it's cached for 3 minutes and shared
  * by every customer's Devices tab.

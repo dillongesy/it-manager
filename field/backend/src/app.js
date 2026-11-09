@@ -25,7 +25,7 @@ app.use(express.json({ limit: '40mb' }));   // the Portal's branding push carrie
 app.use(cookieParser());
 
 // Least privilege on the bridge (Docker): a connection that arrives over the
-// internal bridge network — i.e. from the Portal API — may only use the service
+// internal bridge network - i.e. from the Portal API - may only use the service
 // endpoints. It can't touch logins, users or anything else on the Field App.
 if (config.serviceAllowedCidr) {
   app.use((req, res, next) => {
@@ -43,7 +43,7 @@ app.use('/api/work-orders', workOrdersRoutes);
 app.use('/api/photos',      photosRoutes);
 app.use('/api/audit',       auditRoutes);
 
-// Shared-inventory bridge — the IT Portal is the only intended caller (service token).
+// Shared-inventory bridge - the IT Portal is the only intended caller (service token).
 app.use('/api/service',     platformServiceRoutes);
 app.use('/api/service',     serviceRoutes);
 app.use('/api/branding',    brandingRoutes);

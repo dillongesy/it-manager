@@ -33,7 +33,7 @@ export function FileManager({ customerId, kind, locations = [], companyName, emp
   const [viewing, setViewing] = useState(null);
   const [renaming, setRenaming] = useState(null);
   const [office, setOffice] = useOfficeFilter(customerId, `files-${kind}`, locations);
-  // Office a new upload is tagged with — follows the active filter, like the other tabs.
+  // Office a new upload is tagged with - follows the active filter, like the other tabs.
   const [uploadOffice, setUploadOffice] = useState(defaultOfficeFor(office));
   useEffect(() => { setUploadOffice(defaultOfficeFor(office)); }, [office]);
 
@@ -216,7 +216,7 @@ export function FileManager({ customerId, kind, locations = [], companyName, emp
   );
 }
 
-// Category heading with an inline rename — renames the category on every file in
+// Category heading with an inline rename - renames the category on every file in
 // it. Renaming onto another existing category merges the two, so ask first.
 function CategoryHeading({ name, count, renamable, categories, onRename }) {
   const [draft, setDraft] = useState(null);

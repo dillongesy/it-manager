@@ -1,7 +1,7 @@
--- Portal — Customer Detail Tables
+-- Portal - Customer Detail Tables
 -- Migration 002
 
--- ─── Devices / Workstations ──────────────────────────────────────────────────
+-- --- Devices / Workstations --------------------------------------------------
 
 CREATE TABLE customer_devices (
   id                  UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -31,7 +31,7 @@ CREATE TABLE customer_devices (
 
 CREATE INDEX idx_customer_devices_customer ON customer_devices(customer_id);
 
--- ─── Credentials ─────────────────────────────────────────────────────────────
+-- --- Credentials -------------------------------------------------------------
 -- Covers: domain admins, Microsoft/365, email, programs, cameras, printers/network,
 --         Google/Apple accounts, database passphrases, security questions, etc.
 
@@ -56,7 +56,7 @@ CREATE TABLE customer_credentials (
 CREATE INDEX idx_customer_credentials_customer ON customer_credentials(customer_id);
 CREATE INDEX idx_customer_credentials_category ON customer_credentials(customer_id, category);
 
--- ─── Camera Systems ───────────────────────────────────────────────────────────
+-- --- Camera Systems -----------------------------------------------------------
 
 CREATE TABLE customer_camera_systems (
   id             UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -77,7 +77,7 @@ CREATE TABLE customer_camera_systems (
 
 CREATE INDEX idx_customer_cameras_customer ON customer_camera_systems(customer_id);
 
--- ─── How-To Guides ────────────────────────────────────────────────────────────
+-- --- How-To Guides ------------------------------------------------------------
 
 CREATE TABLE customer_guides (
   id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -92,7 +92,7 @@ CREATE TABLE customer_guides (
 
 CREATE INDEX idx_customer_guides_customer ON customer_guides(customer_id);
 
--- ─── File Attachments ─────────────────────────────────────────────────────────
+-- --- File Attachments ---------------------------------------------------------
 
 CREATE TABLE customer_files (
   id             UUID         PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -60,7 +60,7 @@ function StatCard({ label, value, icon: Icon, accent, onClick }) {
 
 // Collapsible section; open/closed state persists per section in localStorage.
 // Shows the first 5 items, then "Show all" reveals the rest inline.
-// ─── License expiry filter (device-type / model / vendor aware) ─────────────────
+// --- License expiry filter (device-type / model / vendor aware) -----------------
 
 const DEVICE_TYPE_LABEL = {
   firewall: 'Firewalls', switch: 'Switches', server: 'Servers', workstation: 'Workstations',
@@ -185,7 +185,7 @@ function Row({ onClick, children }) {
   );
 }
 
-// ─── Analytics (dependency-free CSS charts) ─────────────────────────────────────
+// --- Analytics (dependency-free CSS charts) -------------------------------------
 
 function weekLabel(iso) { const [, m, d] = iso.split('-'); return `${+m}/${+d}`; }
 
@@ -258,7 +258,7 @@ function MiniStat({ label, value }) {
   );
 }
 
-// ─── Recurring revenue widget ───────────────────────────────────────────────────
+// --- Recurring revenue widget ---------------------------------------------------
 // Company-wide MRR/annualized headline + per-customer breakdown, plus the periodic
 // charges (annual/quarterly/semi-annual) coming due in the next 3 months. Monthly
 // charges feed the totals but aren't listed in "upcoming" (they'd recur every month).
@@ -384,7 +384,7 @@ export function Dashboard() {
     staleTime: 30_000,
   });
 
-  // ─── Section data ──────────────────────────────────────────────────────────
+  // --- Section data ----------------------------------------------------------
   // Tasks (keys start with 'tasks' so any task change refreshes them).
   const myTasks = useQuery({
     queryKey: ['tasks', 'dash', 'mine', uid],
@@ -396,7 +396,7 @@ export function Dashboard() {
     queryFn: () => tasksApi.list({ status: 'active', sort: 'priority' }).then(r => r.data),
     staleTime: 30_000,
   });
-  // Dashboard sections are "preview 5, show all" summaries — they aren't paged, so
+  // Dashboard sections are "preview 5, show all" summaries - they aren't paged, so
   // each asks for the largest window the API allows rather than a default page.
   // The Work Orders page and Billing Queue are the authoritative paged views.
   const myDrafts = useQuery({
@@ -471,7 +471,7 @@ export function Dashboard() {
     localStorage.setItem('app-dash-order', JSON.stringify(ids));
   };
 
-  // ─── Row renderers ───────────────────────────────────────────────────────────
+  // --- Row renderers -----------------------------------------------------------
   const renderTask = (task) => {
     const f = taskFlags(task);
     return (

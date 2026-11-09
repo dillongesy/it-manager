@@ -1,6 +1,5 @@
-// UniFi → Portal devices, firewall details and cameras. Pure functions only (no I/O),
-// unit-tested. The shapes below are what api.ui.com returned on a live MSP account
-// (2026-10-26).
+// UniFi → Portal devices, firewall details and cameras. Pure functions only (no I/O).
+// Response shapes from api.ui.com:
 //
 //   Site Manager  GET /v1/hosts    → consoles: { id, ipAddress, owner, reportedState: {
 //                                    name, hostname, state, version, mac, wans[],
@@ -24,7 +23,7 @@ const str = (v) => (v == null ? '' : String(v).trim());
 const compact = (v) => norm(v).replace(/\s+/g, '');
 const list = (v) => (Array.isArray(v) ? v : []);
 
-// ─── Consoles ─────────────────────────────────────────────────────────────────
+// --- Consoles -----------------------------------------------------------------
 
 export function hostOf(h) {
   const rs = h?.reportedState ?? {};
@@ -47,11 +46,11 @@ export function hostOf(h) {
   };
 }
 
-/** The console's page on unifi.ui.com — a handy management link for the gateway. */
+/** The console's page on unifi.ui.com - a handy management link for the gateway. */
 // Console IDs are hex + ':' + digits; UniFi's own links keep the colon as-is.
 export const consoleUrl = (hostId) => `https://unifi.ui.com/consoles/${encodeURIComponent(hostId).replace(/%3A/gi, ':')}/network/default/dashboard`;
 
-// ─── Devices ──────────────────────────────────────────────────────────────────
+// --- Devices ------------------------------------------------------------------
 
 const GATEWAY_SHORT = /^(UDM|UDR|UCG|UXG|USG|UGW|UDW|EFG|UX(MAX|\d)?$)/i;
 const GATEWAY_MODEL = /\b(UDM|UDR|UCG|UXG|USG|Dream (Machine|Router|Wall)|Cloud Gateway|Gateway (Lite|Max|Pro|Ultra|Fiber)|Enterprise Fortress)\b/i;
@@ -138,7 +137,7 @@ export function deviceFields(dev, extras = {}) {
   return { ...base, ip_address: dev.ip };
 }
 
-// ─── WAN ──────────────────────────────────────────────────────────────────────
+// --- WAN ----------------------------------------------------------------------
 
 const PRIVATE = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.|169\.254\.|127\.)/;
 const isIpv4 = (v) => /^(\d{1,3}\.){3}\d{1,3}$/.test(str(v));
@@ -173,7 +172,7 @@ export function wanFrom(networkconf, host) {
   };
 }
 
-// ─── VLANs ────────────────────────────────────────────────────────────────────
+// --- VLANs --------------------------------------------------------------------
 
 export function prefixToMask(prefix) {
   const p = Number(prefix);
@@ -227,7 +226,7 @@ export function vlansFrom(networks, wifi = []) {
     });
 }
 
-/** The gateway's own address on each network it routes — the firewall's "Internal IPs". */
+/** The gateway's own address on each network it routes - the firewall's "Internal IPs". */
 export const internalIpsFrom = (networks) =>
   [...new Set(list(networks).filter(n => n.management === 'GATEWAY').map(n => str(n.ipv4Configuration?.hostIpAddress)).filter(isIpv4))];
 
@@ -236,8 +235,8 @@ const VLAN_SYNCED = ['vlan_id', 'name', 'ip_group', 'gateway', 'subnet_mask', 'd
 /**
  * Merge imported VLANs into what the Portal has. Matched by UniFi network ID, then VLAN
  * number. New VLANs are added and blank details filled; with `refresh`, network facts
- * that differ are replaced too. What people add by hand — static devices, static ranges,
- * notes — is always kept, and VLANs only in the Portal are never deleted.
+ * that differ are replaced too. What people add by hand - static devices, static ranges,
+ * notes - is always kept, and VLANs only in the Portal are never deleted.
  * @returns {{ vlans, added: string[], updated: string[] }}
  */
 export function mergeVlans(existing, incoming, { refresh = true } = {}) {
@@ -268,7 +267,7 @@ export function mergeVlans(existing, incoming, { refresh = true } = {}) {
 
 export const vlansText = (vlans) => list(vlans).map(v => `VLAN ${v.vlan_id || '—'} ${str(v.name)}${v.ip_group ? ` ${v.ip_group}` : ''}`.trim()).join(', ');
 
-// ─── Firewall rules ───────────────────────────────────────────────────────────
+// --- Firewall rules -----------------------------------------------------------
 
 const ACTION = { ALLOW: 'Allow', BLOCK: 'Block', REJECT: 'Reject', accept: 'Allow', drop: 'Block', reject: 'Reject' };
 
@@ -363,18 +362,18 @@ export function addRules(existing, incoming) {
 
 export const rulesText = (rules) => list(rules).map(r => r.text).join('\n');
 
-// ─── Merge: device ────────────────────────────────────────────────────────────
+// --- Merge: device ------------------------------------------------------------
 //
 // The same rules as ConnectWise (lib/sync-merge.js), so the two never fight:
-//   FILL     — written only when the Portal field is blank.
-//   REPORTED — facts the gear reports about itself (IP, firmware, WAN…): filled when blank;
+//   FILL     - written only when the Portal field is blank.
+//   REPORTED - facts the gear reports about itself (IP, firmware, WAN…): filled when blank;
 //              a different value is kept and listed, and only replaced with take_newer.
-//   MAC      — added, never replaced: a new address fills a blank mac_address or joins
+//   MAC      - added, never replaced: a new address fills a blank mac_address or joins
 //              other_macs (a laptop has one for its port and one for Wi-Fi).
-//   IP       — only compared when UniFi saw the device's own main MAC; an IP seen on the
+//   IP       - only compared when UniFi saw the device's own main MAC; an IP seen on the
 //              other card (Wi-Fi vs the port) is just as right, so it's not a difference.
-//   NOTES    — a line is added when the notes don't already say it.
-//   LISTS    — VLANs, IPs, firewall rules and VPNs: new entries are added; refreshing or
+//   NOTES    - a line is added when the notes don't already say it.
+//   LISTS    - VLANs, IPs, firewall rules and VPNs: new entries are added; refreshing or
 //              removing what's there is a take_newer change.
 export const FILL_ONLY = ['label', 'computer_name', 'manufacturer', 'model', 'serial_number', 'driver_url', 'port_count', 'managed_switch'];
 export const REPORTED = ['ip_address', 'ip_assignment', 'firmware_version', 'wan_subnet_mask', 'wan_gateway', 'wan_dns'];
@@ -389,7 +388,7 @@ const union =(a, b) => [...list(a), ...list(b).filter(x => !list(a).some(y => co
 
 /**
  * What an import would do to an existing device.
- * @returns {{ updates, changes, newer, differs }} — see lib/sync-merge.js
+ * @returns {{ updates, changes, newer, differs }} - see lib/sync-merge.js
  */
 export function planDevice(device, fields) {
   const p = planner();
@@ -464,11 +463,11 @@ export const shortName = (v) => {
 
 /**
  * The Portal device a UniFi device or client already is: an earlier import's link, then
- * any of its MACs (against every MAC the device is known by — ConnectWise may have
+ * any of its MACs (against every MAC the device is known by - ConnectWise may have
  * recorded the wired one while UniFi sees Wi-Fi), then serial (UniFi serial = MAC), then
  * name / hostname against the label or computer name. A name two devices share is never
  * guessed.
- * @param dev { key, mac, macs?: [{ mac }], name, names?: string[] } — names: real names only
+ * @param dev { key, mac, macs?: [{ mac }], name, names?: string[] } - names: real names only
  *            (an alias or hostname), never a made-up "Aiphone · 00:0B:…" label
  */
 export function findDeviceMatch(dev, devices, claimed = new Set()) {
@@ -491,7 +490,7 @@ export function findDeviceMatch(dev, devices, claimed = new Set()) {
   return { device: null };
 }
 
-// ─── Cameras ──────────────────────────────────────────────────────────────────
+// --- Cameras ------------------------------------------------------------------
 
 const UBIQUITI_CAMERA = /^(G\d|AI\b|UVC|Doorbell|Flex|Instant|Dome|Bullet|Turret|PTZ|Theta|Pro\b|Ultra|Mini)/i;
 const titleCase = (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
@@ -597,7 +596,7 @@ export function findSystemMatch(host, systems) {
   return { system: null };
 }
 
-// ─── WiFi → Credentials ───────────────────────────────────────────────────────
+// --- WiFi → Credentials -------------------------------------------------------
 //
 // Each SSID becomes an entry in the customer's Credentials tab ("WiFi" section) with
 // its password. These functions never see a stored password: matching works on the
@@ -615,7 +614,7 @@ function securityText(w) {
 
 /**
  * One UniFi WLAN (from wifiWithPasswords) → a credential.
- * @param networkconf classic networkconf rows — names the network (VLAN) the SSID rides on
+ * @param networkconf classic networkconf rows - names the network (VLAN) the SSID rides on
  * @returns {{ key, label, password, notes, security, ppsk: [{ label, value }] }}
  */
 export function wifiCredential(w, networkconf = []) {
@@ -666,14 +665,14 @@ export function planWifi(cred, wifi, { passwordMatches }) {
   if (!str(cred?.label) && wifi.label) p.apply('label', wifi.label, null, wifi.label);
   if (wifi.password) {
     if (!cred?.has_password) p.apply('password', wifi.password, null, 'password from UniFi (stored encrypted)');
-    // A changed password is kept until asked — the stored one may be the one that works.
+    // A changed password is kept until asked - the stored one may be the one that works.
     else if (!passwordMatches) p.differ('password', wifi.password, 'the stored password', 'the current password in UniFi (stored encrypted)');
   }
   if (!str(cred?.extra_notes) && wifi.notes) p.apply('extra_notes', wifi.notes, null, wifi.notes);
   return p.result();
 }
 
-// ─── Clients (devices plugged into / on the WiFi of a UniFi network) ──────────
+// --- Clients (devices plugged into / on the WiFi of a UniFi network) ----------
 //
 // From the classic API: stat/sta (who is connected now) and rest/user (every client the
 // network has known, incl. offline ones with a reserved address). Each record carries a
@@ -687,9 +686,9 @@ const ipToInt = (ip) => {
 
 /**
  * How a client's address is assigned, judged against the network it sits on:
- *   reservation — UniFi hands it a fixed address over DHCP ("Fixed IP")
- *   dhcp        — inside the network's DHCP range, so it can change
- *   static      — outside the DHCP range (or DHCP is off), so it's set on the device itself
+ *   reservation - UniFi hands it a fixed address over DHCP ("Fixed IP")
+ *   dhcp        - inside the network's DHCP range, so it can change
+ *   static      - outside the DHCP range (or DHCP is off), so it's set on the device itself
  * null when the address isn't on any network the gateway serves (can't tell).
  * @param networks Network-integration network details (ipv4Configuration.hostIpAddress/prefixLength/dhcpConfiguration)
  */
@@ -716,8 +715,8 @@ export function ipAssignment(ip, { fixed = false } = {}, networks = []) {
 
 export const IP_ASSIGNMENT_LABEL = { dhcp: 'DHCP', reservation: 'DHCP reservation', static: 'Static' };
 
-// UniFi fingerprint categories (dev_cat) as seen on live consoles. Not an official
-// list — only used when the hostname / vendor don't already say what something is.
+// UniFi fingerprint categories (dev_cat), observed values rather than a published list.
+// Used only when the hostname and vendor don't identify the device.
 const DEV_CAT = { 1: 'computer', 56: 'computer', 11: 'printer', 31: 'printer', 3: 'voip', 44: 'mobile', 45: 'mobile', 6: 'mobile',
   2: 'tv', 24: 'tv', 37: 'tv', 47: 'tv', 61: 'tv', 51: 'camera', 130: 'iot' };
 
@@ -731,7 +730,7 @@ const VENDOR_KIND = [
   [/^(vizio|roku|grandbeing|sonos|amazon technologies|lg electronics|tcl|hisense|arris|thomson|technicolor)/i, 'tv'],
   [/^toast/i, 'mobile'],
 ];
-// Virtual machines (KVM/QEMU, Hyper-V, VMware, VirtualBox) — usually servers.
+// Virtual machines (KVM/QEMU, Hyper-V, VMware, VirtualBox) - usually servers.
 const VM_MAC = /^(525400|00155D|005056|000C29|080027)/;
 
 const CLIENT_GROUP = {
@@ -746,8 +745,8 @@ const CLIENT_TYPE = { printer: 'printer', server: 'server', nas: 'nas', network:
  *   kind: printer · server · nas · network · power (UPS / out-of-band) · computer · voip ·
  *         mobile · tv · camera · iot · unifi · unknown
  *   group: the heading it's listed under
- *   hidden: bloat (phones, TVs, smart gadgets, cameras — Protect cameras come through the
- *           camera import — and UniFi's own gear), not offered unless asked for
+ *   hidden: bloat (phones, TVs, smart gadgets, cameras - Protect cameras come through the
+ *           camera import - and UniFi's own gear), not offered unless asked for
  *   important: pre-ticked when new (printers, servers, NAS, network gear, UPS / out-of-band)
  */
 export function classifyClient(c) {
@@ -763,7 +762,7 @@ export function classifyClient(c) {
   else if (/(yealink|polycom|wildix|grandstream|sip-t\d|vvx|mitel|obihai|cisco-?ip-?phone|snom|fanvil)/i.test(text)) kind = 'voip';
   // Anything on a cameras / CCTV network is a camera (Protect cameras show up as plain clients there).
   else if (/(camera|cctv|surveillance|\bnvr\b|protect)/i.test(str(c?.last_connection_network_name || c?.network))) kind = 'camera';
-  // A client with no hostname is often only known by its MAC vendor — usually enough.
+  // A client with no hostname is often only known by its MAC vendor - usually enough.
   const byVendor = VENDOR_KIND.find(([re]) => re.test(vendor))?.[1]
     ?? (VM_MAC.test(macKey(c?.mac)) ? 'server' : null)
     ?? (!host && /^(hewlett|hp inc)/i.test(vendor) ? 'printer' : null);
@@ -818,7 +817,7 @@ export function clientOf(c, networks = [], { online = false } = {}) {
 
 /**
  * Online clients plus offline ones worth knowing about (a reserved address or an alias
- * someone typed), one per MAC — the online record wins.
+ * someone typed), one per MAC - the online record wins.
  */
 export function clientsFrom(online, known, networks = []) {
   const out = new Map();
@@ -834,7 +833,7 @@ export function clientsFrom(online, known, networks = []) {
 const macNote = (wired) => (wired == null ? '' : wired ? 'Wired' : 'Wi-Fi');
 
 /**
- * One machine can show up as several clients — a laptop on its network port and on
+ * One machine can show up as several clients - a laptop on its network port and on
  * Wi-Fi has two MACs. Clients are folded together when they share a hostname, or when
  * their MACs belong to the same Portal device. The merged client keeps the online (wired
  * first) record's details and lists every MAC in `macs` [{ mac, note, ip, online }].
@@ -908,7 +907,7 @@ export function clientInsertFields(fields) {
   return { ...cols, notes: note_line || '' };
 }
 
-// ─── VPNs ─────────────────────────────────────────────────────────────────────
+// --- VPNs ---------------------------------------------------------------------
 
 const VPN_TYPE = {
   'wireguard-server': 'WireGuard server', 'l2tp-server': 'L2TP server', 'openvpn-server': 'OpenVPN server',
@@ -918,9 +917,9 @@ const VPN_TYPE = {
 const subnetOf = (cidr) => { const [ip, p] = str(cidr).split('/'); return ip && p ? `${networkAddress(ip, p)}/${p}` : str(cidr); };
 
 /**
- * A gateway's VPNs, for the firewall record — the settings, never a key.
+ * A gateway's VPNs, for the firewall record - the settings, never a key.
  * @param networkconf classic networkconf rows (x_ fields already removed)
- * @param vpnUsers    { [networkconf _id]: [{ name, interface_ip }] } — WireGuard peers
+ * @param vpnUsers    { [networkconf _id]: [{ name, interface_ip }] } - WireGuard peers
  */
 export function vpnsFrom(networkconf, vpnUsers = {}) {
   return list(networkconf).filter(n => /vpn/.test(str(n?.purpose))).map(n => {
@@ -960,7 +959,7 @@ export const vpnsText = (vpns) => list(vpns).map(v => `${v.type}: ${v.name}${v.p
 
 /**
  * Site-to-site pre-shared keys → Credentials ("VPN" section), stored encrypted like WiFi.
- * @param secrets [{ external_id, _id, name, vpn_type, ipsec_peer_ip, psk }] — read fresh, never cached
+ * @param secrets [{ external_id, _id, name, vpn_type, ipsec_peer_ip, psk }] - read fresh, never cached
  */
 export const VPN_SECTION = 'VPN';
 export function vpnCredentials(secrets) {

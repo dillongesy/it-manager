@@ -8,7 +8,7 @@ const router = Router();
 const SINCE = `date_trunc('week', CURRENT_DATE) - INTERVAL '7 weeks'`;
 const wkKey = (d) => (d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10));
 
-// GET /api/analytics — weekly trends + a status snapshot, each with a `company` and a
+// GET /api/analytics - weekly trends + a status snapshot, each with a `company` and a
 // `personal` (logged-in user) series so the dashboard's scope toggle is instant.
 //  - hours:        Σ section hours by section work_date week (personal = sections the user is a tech on)
 //  - woSubmitted:  count of WOs entering billing (submitted_at) per week (personal = user is a tech)
@@ -111,7 +111,7 @@ router.get('/', requireAuth, async (req, res, next) => {
       return weeks.map(w => m[w] ?? 0);
     };
 
-    // Voided is counted too — leaving it out would make the breakdown quietly
+    // Voided is counted too - leaving it out would make the breakdown quietly
     // disagree with the Work Orders list, which still shows those work orders.
     const status = {
       personal: { draft: 0, pending_billing: 0, invoiced: 0, paid: 0, voided: 0 },

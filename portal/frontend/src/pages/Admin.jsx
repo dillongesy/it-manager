@@ -1,16 +1,17 @@
 import { useSearchParams } from 'react-router';
-import { Users, Plug, Palette, ShieldCheck, Server } from 'lucide-react';
+import { Users, Plug, Palette, ShieldCheck, Server, DollarSign } from 'lucide-react';
 import { UsersRoles } from '../components/admin/UsersRoles.jsx';
 import { Integrations } from '../components/admin/Integrations.jsx';
 import { Branding } from '../components/admin/Branding.jsx';
+import { BillingRates } from '../components/admin/BillingRates.jsx';
 import { Security, System } from '../components/admin/SecuritySystem.jsx';
 
-// Admin — replaces the old User Management page. Everything that used to need a
-// server .env edit or a shell is here: users & roles, integrations, branding,
-// recovery secrets and system status.
+// Admin: users and roles, integrations, default billing rates, branding, recovery
+// secrets, and system status. Admins only.
 const TABS = [
   { id: 'users',        label: 'Users & roles', icon: Users,       Component: UsersRoles },
   { id: 'integrations', label: 'Integrations',  icon: Plug,        Component: Integrations },
+  { id: 'billing',      label: 'Billing',       icon: DollarSign,  Component: BillingRates },
   { id: 'branding',     label: 'Branding',      icon: Palette,     Component: Branding },
   { id: 'security',     label: 'Security',      icon: ShieldCheck, Component: Security },
   { id: 'system',       label: 'System',        icon: Server,      Component: System },

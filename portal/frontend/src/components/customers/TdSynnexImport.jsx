@@ -8,7 +8,7 @@ import { money } from '../../utils/recurring.js';
 import { ActionChip, MatchLine, ResultSection, SetupSteps, Env, OfficeTarget } from './SyncPreview.jsx';
 
 // "Import from TD SYNNEX" on a customer's Billing tab: their Microsoft 365 subscriptions
-// (StreamOne Stellr) become recurring charges — seats, cadence, our cost, MSRP and the
+// (StreamOne Stellr) become recurring charges - seats, cadence, our cost, MSRP and the
 // term end. A charge's own price is the biller's: it's set from the Stellr customer price
 // only when the charge is first created. Matching / merge rules: backend lib/tdsynnex.js.
 

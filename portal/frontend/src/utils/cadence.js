@@ -1,12 +1,12 @@
 // Billing cadences, including "every N years" (mirrors backend lib/cadence.js).
 //
-// Every recurring thing in the Portal — a catalog service, a customer's recurring
-// charge, an auto-renewing license — has a BASE period (monthly / quarterly /
+// Every recurring thing in the Portal - a catalog service, a customer's recurring
+// charge, an auto-renewing license - has a BASE period (monthly / quarterly /
 // semiannual / annual) plus an INTERVAL COUNT: how many of those periods pass
 // between bills. Count 1 is the ordinary case and the default everywhere, so
 // anything entered before this existed behaves exactly as it always did.
 //
-// Only the ANNUAL cadence exposes a count above 1 ("every 3 years" — domain
+// Only the ANNUAL cadence exposes a count above 1 ("every 3 years" - domain
 // registrations, multi-year SSL certs, extended warranties). Both spellings of the
 // yearly period are accepted: the service catalog and work orders store 'annual',
 // customer recurring charges store 'annually'.
@@ -47,7 +47,7 @@ export function cadenceUnit(frequency, count = 1) {
   return n > 1 ? `${n}yr` : (BASE_UNIT[frequency] ?? '');
 }
 
-// How many times a year this cadence bills — 12 monthly, 1 annually, 1/3 for every
+// How many times a year this cadence bills - 12 monthly, 1 annually, 1/3 for every
 // three years. Multiply an amount by this to annualize it.
 export function perYear(frequency, count = 1) {
   return (BASE_PER_YEAR[frequency] ?? 0) / coerceIntervalCount(count, frequency);

@@ -16,13 +16,13 @@ import { EventDialog, NewItemDialog } from './calendar/EventDialog.jsx';
 // The schedule: tasks and the shared Outlook calendar together, coloured by tech, always seven
 // days a week. Opens on Everyone · Month · this month every time (only the Outlook tickbox and
 // whether "Not scheduled yet" is open are remembered).
-//   Day / Week — an hour-by-hour grid (calendar/TimeGrid.jsx): drag to move, drag an edge to
+//   Day / Week - an hour-by-hour grid (calendar/TimeGrid.jsx): drag to move, drag an edge to
 //                change the length, drag across empty time to add something there.
-//   Month      — a box per day; drag between days, double-click (or +) to add, click a date for that day.
-//   Agenda     — the month as a list.
+//   Month      - a box per day; drag between days, double-click (or +) to add, click a date for that day.
+//   Agenda     - the month as a list.
 // On one tech's view (or Unassigned), dropping a task also assigns it to them, and "Not scheduled
 // yet" lists the unassigned tasks too, so that's how work gets handed out.
-// Outlook events (dashed) open in calendar/EventDialog.jsx — details, edit, delete — and any change
+// Outlook events (dashed) open in calendar/EventDialog.jsx - details, edit, delete - and any change
 // to a repeating one asks "just this one or the whole series?" first. Events are never turned into
 // tasks; a task put on Outlook ("Add to Outlook") shows once, as the task. Outlook is re-read every
 // 20 seconds while the page is open.
@@ -164,7 +164,7 @@ function MonthGrid({ weeks, month, drop, onPickDay, onCreate, today, ...kit }) {
                 <button type="button" onClick={() => onCreate(key)} title="Add something on this day" aria-label={`Add on ${dayLabel(key)}`}
                   className="ml-auto opacity-0 group-hover:opacity-100 focus:opacity-100 text-gray-500 hover:text-gray-200 rounded p-0.5"><Plus size={13} /></button>
               </div>
-              {/* No initials in a month box — it's too narrow; the colour and the tooltip say whose */}
+              {/* No initials in a month box - it's too narrow; the colour and the tooltip say whose */}
               {(open ? items : items.slice(0, MONTH_CELL_LIMIT)).map(e => render(e, { compact: true, wrap: true, who: null }))}
               {items.length > MONTH_CELL_LIMIT && (
                 <button type="button" onClick={() => toggle(key)} className="text-[11px] text-gray-400 hover:text-gray-200 px-1">
@@ -389,7 +389,7 @@ export function TaskCalendar({ techFilter, techs, colors, onOpen }) {
   const kit = { tasks, events, colorOf, eventColor, who, eventWho, onOpen, onOpenEvent: openEvent, today };
   const entriesKit = dayEntries(kit);
 
-  // ── Changing things ──
+  // -- Changing things --
   const moveTask = async (id, patch) => {
     const withTech = assignTo === undefined ? patch : { ...patch, assigned_to: assignTo };
     try {
@@ -519,7 +519,7 @@ export function TaskCalendar({ techFilter, techs, colors, onOpen }) {
     .filter(e => (e.ev ? e.ev.all_day : !e.t.scheduled_time))
     .map(e => entriesKit.render(e, { compact: true, wrap: true }));
 
-  // ── Moving around ──
+  // -- Moving around --
   const step = (n) => setAnchor(a => (view === 'day' ? addDays(a, n) : view === 'week' ? addDays(a, 7 * n) : addMonths(a, n)));
   const goToday = () => setAnchor(fromDayKey(todayKey()));
   const pickDay = (d) => { setAnchor(d); setView('day'); };
@@ -605,7 +605,7 @@ export function TaskCalendar({ techFilter, techs, colors, onOpen }) {
           </div>
         )}
 
-        {/* Day / week grid — on a phone the day view keeps it; the week becomes a list */}
+        {/* Day / week grid - on a phone the day view keeps it; the week becomes a list */}
         {(view === 'day' || view === 'week') && (
           <div className={view === 'week' ? 'hidden md:block' : ''}>
             <TimeGrid days={visibleDays} today={today} items={gridItems} allDay={allDayFor} allDayDrop={allDayDrop} onPickDay={pickDay} {...grid} />

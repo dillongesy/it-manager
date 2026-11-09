@@ -12,7 +12,7 @@ import { makeCache, mapLimit, saidBy, fetchWithRetry, onIntegrationChange } from
  * rules…). This client has no way to send anything but GET, so the Portal can't.
  *
  * The classic Network API returns secrets alongside settings (WiFi passphrases, PPPoE
- * and VPN keys — every one in an `x_…` field). Those are dropped the moment a response
+ * and VPN keys - every one in an `x_…` field). Those are dropped the moment a response
  * arrives, before anything is cached.
  *
  * Connector limit: 100 requests a minute per console; one console's full read is ~20.
@@ -62,7 +62,7 @@ async function get(url, where) {
   return text ? JSON.parse(text) : null;
 }
 
-// ─── Site Manager (every console) ─────────────────────────────────────────────
+// --- Site Manager (every console) ---------------------------------------------
 
 async function siteManagerAll(path) {
   const out = [];
@@ -79,13 +79,13 @@ async function siteManagerAll(path) {
 
 const cache = makeCache(2 * 60 * 1000);
 
-/** Every console (host) the account can see — raw records (see lib/unifi.js hostOf). */
+/** Every console (host) the account can see - raw records (see lib/unifi.js hostOf). */
 export const hosts = ({ refresh = false } = {}) => cache.get('hosts', refresh, () => siteManagerAll('/v1/hosts'));
 
 /** Every device, grouped by console: [{ hostId, hostName, devices: [...] }]. */
 export const deviceGroups = ({ refresh = false } = {}) => cache.get('devices', refresh, () => siteManagerAll('/v1/devices'));
 
-// ─── Connector (owned consoles) ───────────────────────────────────────────────
+// --- Connector (owned consoles) -----------------------------------------------
 
 const connector = (hostId, path) =>
   get(`${API}/v1/connector/consoles/${encodeURIComponent(hostId)}/proxy${path}`, path.replace(/\/sites\/[^/]+/, '/sites/…'));
@@ -174,7 +174,7 @@ export const consoleNetwork = (hostId, siteId, { refresh = false } = {}) =>
       sites, site,
       device_macs: (devices ?? []).map(d => String(d.macAddress ?? '').replace(/[^0-9a-f]/gi, '').toUpperCase()).filter(Boolean),
       networks,
-      // Keep only what the VLAN notes use — never a passphrase.
+      // Keep only what the VLAN notes use - never a passphrase.
       wifi: (wifi ?? []).map(w => ({
         id: w.id, name: w.name, enabled: w.enabled, network: w.network,
         securityConfiguration: { type: w.securityConfiguration?.type ?? null },
@@ -206,7 +206,7 @@ export async function vpnSecrets(hostId, siteRef) {
 
 /**
  * The site's WiFi networks WITH their passwords, for the Credentials import. The one
- * place a secret is kept from a UniFi response — and so never cached: read fresh for the
+ * place a secret is kept from a UniFi response - and so never cached: read fresh for the
  * request that needs it, passed straight to the importer (which encrypts it before it's
  * stored), then dropped. Only the fields the import uses come back.
  * @returns [{ id, external_id, name, security, wpa_mode, enabled, is_guest, hidden,
