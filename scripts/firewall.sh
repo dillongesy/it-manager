@@ -28,16 +28,10 @@ SSH_FROM="${SSH_FROM:-$LAN_CIDR}"
 [ "$(id -u)" -eq 0 ] || { echo "Run as root." >&2; exit 1; }
 command -v ufw >/dev/null || { apt-get update -qq && apt-get install -y -qq ufw >/dev/null; }
 
-# ── Host (ufw) ────────────────────────────────────────────────────────────────
-ufw --force default deny incoming >/dev/null
-ufw --force default allow outgoing >/dev/null
-if [ "$SSH_FROM" = "any" ]; then
-  ufw allow 22/tcp comment 'SSH' >/dev/null
-else
-  ufw allow from "$SSH_FROM" to any port 22 proto tcp comment 'SSH (LAN)' >/dev/null
-fi
-
 # ── Containers (DOCKER-USER via ufw after.rules) ──────────────────────────────
+# Written BEFORE any ufw command: `ufw default …` rewrites the rules files and
+# crashes (UnicodeEncodeError) on any non-ASCII byte in them, so the block must be
+# plain ASCII and an older block with a non-ASCII marker must be gone first.
 WEB_SRC="$LAN_CIDR"
 FIELD_SRC="$LAN_CIDR"
 [ "$FIELD_PUBLIC" = "yes" ] && FIELD_SRC="0.0.0.0/0"
@@ -48,7 +42,7 @@ rule() { # rule <port> <source>
 }
 
 BLOCK="$(cat <<EOF
-# BEGIN IT-MANAGER DOCKER-USER (managed by scripts/firewall.sh — do not edit)
+# BEGIN IT-MANAGER DOCKER-USER (managed by scripts/firewall.sh - do not edit)
 *filter
 :DOCKER-USER - [0:0]
 -A DOCKER-USER -m conntrack --ctstate RELATED,ESTABLISHED -j RETURN
@@ -67,6 +61,15 @@ cp -n "$AFTER" "$AFTER.it-manager.bak" 2>/dev/null || true
 # Replace our previous block (if any), then append the new one.
 sed -i '/# BEGIN IT-MANAGER DOCKER-USER/,/# END IT-MANAGER DOCKER-USER/d' "$AFTER"
 printf '\n%s\n' "$BLOCK" >> "$AFTER"
+
+# ── Host (ufw) ────────────────────────────────────────────────────────────────
+ufw --force default deny incoming >/dev/null
+ufw --force default allow outgoing >/dev/null
+if [ "$SSH_FROM" = "any" ]; then
+  ufw allow 22/tcp comment 'SSH' >/dev/null
+else
+  ufw allow from "$SSH_FROM" to any port 22 proto tcp comment 'SSH (LAN)' >/dev/null
+fi
 
 ufw --force enable >/dev/null
 # Start from an empty chain so re-runs never stack duplicate rules.
