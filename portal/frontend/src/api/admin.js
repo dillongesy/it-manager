@@ -1,0 +1,25 @@
+import api from './client.js';
+
+export const setupApi = {
+  status: () => api.get('/setup/status').then(r => r.data),
+  run:    (body) => api.post('/setup', body).then(r => r.data),
+};
+
+export const adminApi = {
+  integrations:    () => api.get('/admin/integrations').then(r => r.data),
+  saveIntegration: (id, body) => api.put(`/admin/integrations/${id}`, body).then(r => r.data),
+
+  branding:     () => api.get('/admin/branding').then(r => r.data),
+  saveBranding: (body) => api.put('/admin/branding', body).then(r => r.data),
+  uploadAsset:  (kind, file) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return api.post(`/admin/branding/assets/${kind}`, fd).then(r => r.data);
+  },
+  deleteAsset:  (kind) => api.delete(`/admin/branding/assets/${kind}`).then(r => r.data),
+
+  security: () => api.get('/admin/security').then(r => r.data),
+  reveal:   (password) => api.post('/admin/security/reveal', { password }).then(r => r.data),
+
+  system: () => api.get('/admin/system').then(r => r.data),
+};

@@ -1,0 +1,17 @@
+# Dependencies / build output
+node_modules/
+dist/
+
+# Local configuration (no secrets live here, but it is per-server)
+.env
+!.env.example
+portal/backend/.env
+field/backend/.env
+field/backend/.env.test
+
+# Local dev uploads and server artifacts
+portal/backend/uploads/
+field/backend/uploads/
+backups/
+server-root-ca.crt
+*.log

@@ -1,0 +1,12 @@
+{
+  "name": "Field",
+  "short_name": "Field",
+  "description": "Field job capture and inventory",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D0D0D",
+  "theme_color": "#2563EB",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

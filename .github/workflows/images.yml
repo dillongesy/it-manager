@@ -1,0 +1,80 @@
+# Build and publish every image to GitHub Container Registry on each push to main
+# and on version tags (v1.2.3). Servers then update with ./update.sh
+# (docker compose pull && docker compose up -d).
+#
+# Images: ghcr.io/<owner>/<repo>/{init,edge,portal-api,portal-web,field-api,field-web}
+# Tags:   latest (main), sha-<short>, and 1.2.3 / 1.2 for v-tags.
+name: images
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Portal API unit tests
+        working-directory: portal/backend
+        run: npm ci && npm test
+      - name: Field API unit tests
+        working-directory: field/backend
+        run: npm ci && npm run test:unit
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: init,       context: deploy/init }
+          - { name: edge,       context: deploy/edge }
+          - { name: portal-api, context: portal/backend }
+          - { name: portal-web, context: portal/frontend }
+          - { name: field-api,  context: field/backend }
+          - { name: field-web,  context: field/frontend }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/${{ matrix.name }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}

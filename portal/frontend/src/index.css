@@ -1,0 +1,203 @@
+@import 'tailwindcss';
+
+@config '../tailwind.config.js';
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility btn-primary {
+  @apply bg-brand hover:bg-brand-light text-on-brand font-semibold px-4 py-2 rounded-md transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility btn-secondary {
+  @apply bg-surface-600 hover:bg-surface-500 text-gray-200 font-medium px-4 py-2 rounded-md transition-colors duration-150;
+}
+
+@utility btn-ghost {
+  @apply hover:bg-surface-600 text-gray-400 hover:text-gray-200 font-medium px-3 py-2 rounded-md transition-colors duration-150;
+}
+
+@utility input {
+  @apply bg-surface-700 border border-surface-500 text-gray-50 placeholder-gray-400
+           rounded-md px-3 py-2 text-base w-full
+           focus:outline-hidden focus:ring-2 focus:ring-brand focus:border-transparent
+           transition-colors duration-150;
+}
+
+@utility card {
+  @apply bg-surface-800 border border-surface-600 rounded-lg;
+}
+
+@utility badge {
+  @apply inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium;
+}
+
+/* ─── Theme variables ────────────────────────────────────────────────────────
+   Space-separated RGB triplets consumed by tailwind.config.js via
+   rgb(var(--x) / <alpha-value>). :root is the dark theme (default); adding the
+   `.light` class to <html> swaps in the light theme. */
+:root {
+    --c-surface-900: 13 13 13;
+    --c-surface-800: 20 20 20;
+    --c-surface-700: 28 28 28;
+    --c-surface-600: 36 36 36;
+    --c-surface-500: 46 46 46;
+    --c-surface-400: 58 58 58;
+
+    --c-gray-50: 249 250 251;
+    --c-gray-100: 243 244 246;
+    --c-gray-200: 229 231 235;
+    --c-gray-300: 213 217 223;
+    --c-gray-400: 176 183 194; /* secondary text — brightened for contrast on dark */
+    --c-gray-500: 150 158 170; /* muted labels — brightened */
+    --c-gray-600: 124 133 145; /* faint helper text — was hard to read, brightened */
+    --c-gray-700: 99 108 121;
+
+    --c-amber-400: 251 191 36;
+    --c-amber-900: 120 53 15;
+    --c-blue-300: 147 197 253;
+    --c-blue-400: 96 165 250;
+    --c-blue-800: 30 64 175;
+    --c-blue-900: 30 58 138;
+    --c-green-300: 134 239 172;
+    --c-green-400: 74 222 128;
+    --c-green-800: 22 101 52;
+    --c-green-900: 20 83 45;
+    --c-red-300: 252 165 165;
+    --c-red-400: 248 113 113;
+    --c-red-800: 153 27 27;
+    --c-red-900: 127 29 29;
+
+    --c-accent: 245 158 11;
+    --c-accent-dark: 217 119 6;
+    --c-brand: 37 99 235;
+    --c-brand-light: 59 130 246;
+    --c-brand-dark: 29 78 216;
+    --c-on-brand: 255 255 255;
+
+    --scrollbar-track: #141414;
+    --scrollbar-thumb: #3a3a3a;
+  }
+
+  html.light {
+    /* Cards/panels become white over a light-gray page; borders are mid grays. */
+    --c-surface-900: 244 244 245;
+    --c-surface-800: 255 255 255;
+    --c-surface-700: 244 244 245;
+    --c-surface-600: 228 228 231;
+    --c-surface-500: 212 212 216;
+    --c-surface-400: 161 161 170;
+
+    /* Neutral scale inverts: bright-in-dark becomes dark-on-light. */
+    --c-gray-50: 17 24 39;
+    --c-gray-100: 17 24 39;
+    --c-gray-200: 31 41 55;
+    --c-gray-300: 47 56 70;
+    --c-gray-400: 61 70 85; /* secondary text — darkened for contrast on white */
+    --c-gray-500: 82 91 105; /* muted labels — darkened */
+    --c-gray-600: 100 112 130; /* faint helper text — darkened so it doesn't blend in */
+    --c-gray-700: 71 85 105;
+
+    /* Status: -900 tint → pale background, -400/-300 → dark readable text/borders. */
+    --c-amber-400: 180 83 9;
+    --c-amber-900: 254 243 199;
+    --c-blue-300: 29 78 216;
+    --c-blue-400: 29 78 216;
+    --c-blue-800: 191 219 254;
+    --c-blue-900: 219 234 254;
+    --c-green-300: 21 128 61;
+    --c-green-400: 21 128 61;
+    --c-green-800: 187 247 208;
+    --c-green-900: 220 252 231;
+    --c-red-300: 185 28 28;
+    --c-red-400: 185 28 28;
+    --c-red-800: 252 165 165;
+    --c-red-900: 254 226 226;
+
+    --c-accent: 180 83 9;
+
+    --scrollbar-track: #e4e4e7;
+    --scrollbar-thumb: #a1a1aa;
+  }
+
+/* ─── Touch / phone adjustments ───────────────────────────────────────────────
+   Unlayered on purpose so they win over Tailwind utilities. Both are scoped to
+   conditions a desktop mouse+monitor never meets, so the desktop UI is untouched. */
+
+/* Touch screens can't hover, so controls that only appear on hover (download /
+   remove buttons on attachment rows, row actions…) would be unreachable. Show them. */
+@media (hover: none) {
+  .group-hover\:opacity-100,
+  .group-hover\:visible {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* iOS zooms the whole page into any field whose text is under 16px and never zooms
+   back out. `text-sm` inputs are ~15px here, so give phone form fields 16px. */
+@media (max-width: 639px) {
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  /* Larger base text — easier on older eyes. All rem-based sizes (text-xs/sm/base)
+     scale from here, so this lifts the whole UI a notch without per-element changes. */
+  html {
+    font-size: 17.5px;
+  }
+  body {
+    @apply bg-surface-900 text-gray-200;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #CC0000;
+  }
+
+  /* Number inputs (quantities, prices, hours…) are typed by hand. Hide the
+     increment/decrement spinner arrows so a stray click can't change the value.
+     Scroll-wheel value changes are disabled globally in main.jsx. */
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}

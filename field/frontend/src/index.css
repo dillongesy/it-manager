@@ -1,0 +1,222 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-brand: rgb(var(--c-brand));
+  --color-on-brand: rgb(var(--c-on-brand));
+  --color-accent: rgb(var(--c-accent));
+
+  --color-surface-400: rgb(var(--c-surface-400));
+  --color-surface-500: rgb(var(--c-surface-500));
+  --color-surface-600: rgb(var(--c-surface-600));
+  --color-surface-700: rgb(var(--c-surface-700));
+  --color-surface-800: rgb(var(--c-surface-800));
+  --color-surface-900: rgb(var(--c-surface-900));
+
+  --color-gray-50: rgb(var(--c-gray-50));
+  --color-gray-100: rgb(var(--c-gray-100));
+  --color-gray-200: rgb(var(--c-gray-200));
+  --color-gray-300: rgb(var(--c-gray-300));
+  --color-gray-400: rgb(var(--c-gray-400));
+  --color-gray-500: rgb(var(--c-gray-500));
+  --color-gray-600: rgb(var(--c-gray-600));
+  --color-gray-700: rgb(var(--c-gray-700));
+
+  --color-amber-400: rgb(var(--c-amber-400));
+  --color-amber-900: rgb(var(--c-amber-900));
+
+  --color-blue-300: rgb(var(--c-blue-300));
+  --color-blue-400: rgb(var(--c-blue-400));
+  --color-blue-800: rgb(var(--c-blue-800));
+  --color-blue-900: rgb(var(--c-blue-900));
+
+  --color-green-300: rgb(var(--c-green-300));
+  --color-green-400: rgb(var(--c-green-400));
+  --color-green-800: rgb(var(--c-green-800));
+  --color-green-900: rgb(var(--c-green-900));
+
+  --color-red-300: rgb(var(--c-red-300));
+  --color-red-400: rgb(var(--c-red-400));
+  --color-red-800: rgb(var(--c-red-800));
+  --color-red-900: rgb(var(--c-red-900));
+
+  --font-sans: Inter, system-ui, sans-serif;
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility safe-top {
+  /* Respect the device safe areas (iOS notch/home indicator, Android gesture bar).
+     Needs `viewport-fit=cover` in the viewport meta (already set in index.html).
+     `max(..., 0px)` keeps these harmless on devices/desktops with no inset. */
+  padding-top: max(env(safe-area-inset-top), 0px);
+}
+
+@utility safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 0px);
+}
+
+@utility safe-x {
+  padding-left: max(env(safe-area-inset-left), 0px);
+  padding-right: max(env(safe-area-inset-right), 0px);
+}
+
+@utility pb-nav {
+  /* Bottom tab bar: keep the buttons a comfortable height AND lift them above the
+     home indicator. The bar's background fills the inset so it reads as one solid
+     bar down to the screen edge, like a native tab bar. */
+  padding-bottom: max(env(safe-area-inset-bottom), 0.25rem);
+}
+
+@utility h-app {
+  /* Full app height that tracks the *visible* viewport on mobile browsers — so the
+     bottom nav never hides behind the URL/toolbar as it shows and hides on scroll.
+     100vh is the fallback for browsers without dynamic-viewport units. */
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
+}
+
+@utility btn-primary {
+  @apply bg-brand hover:bg-red-700 text-white font-semibold px-4 py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-95;
+}
+
+@utility btn-secondary {
+  @apply bg-surface-600 hover:bg-surface-500 text-gray-200 font-medium px-4 py-3 rounded-xl transition-colors active:scale-95;
+}
+
+@utility btn-ghost {
+  @apply hover:bg-surface-600 text-gray-400 hover:text-gray-200 font-medium px-3 py-2 rounded-lg transition-colors;
+}
+
+@utility input {
+  @apply bg-surface-700 border border-surface-500 text-gray-100 placeholder-gray-500 rounded-xl px-4 py-3 text-base w-full min-w-0 focus:outline-hidden focus:ring-2 focus:ring-brand focus:border-transparent;
+}
+
+@utility card {
+  @apply bg-surface-800 border border-surface-600 rounded-xl;
+}
+
+@utility badge {
+  @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+}
+
+/* ─── Theme variables ────────────────────────────────────────────────────────
+   Space-separated RGB triplets consumed by the @theme colors above via
+   rgb(var(--x)); v4 layers on the /opacity modifier with color-mix() itself, so
+   no <alpha-value> token is needed. :root holds the dark theme; the Field app
+   DEFAULTS to light (techs work outdoors), so index.html adds the `.light` class
+   before paint unless the user has explicitly chosen dark. */
+:root {
+    --c-surface-900: 13 13 13;
+    --c-surface-800: 20 20 20;
+    --c-surface-700: 28 28 28;
+    --c-surface-600: 36 36 36;
+    --c-surface-500: 46 46 46;
+    --c-surface-400: 58 58 58;
+
+    --c-gray-50: 249 250 251;
+    --c-gray-100: 243 244 246;
+    --c-gray-200: 229 231 235;
+    --c-gray-300: 213 217 223;
+    --c-gray-400: 176 183 194;
+    --c-gray-500: 150 158 170;
+    --c-gray-600: 124 133 145;
+    --c-gray-700: 99 108 121;
+
+    --c-amber-400: 251 191 36;
+    --c-amber-900: 120 53 15;
+    --c-blue-300: 147 197 253;
+    --c-blue-400: 96 165 250;
+    --c-blue-800: 30 64 175;
+    --c-blue-900: 30 58 138;
+    --c-green-300: 134 239 172;
+    --c-green-400: 74 222 128;
+    --c-green-800: 22 101 52;
+    --c-green-900: 20 83 45;
+    --c-red-300: 252 165 165;
+    --c-red-400: 248 113 113;
+    --c-red-800: 153 27 27;
+    --c-red-900: 127 29 29;
+
+    --c-accent: 245 158 11;
+    --c-brand: 37 99 235;
+    --c-on-brand: 255 255 255;
+  }
+
+  html.light {
+    /* Cards/panels become white over a light-gray page; borders are mid grays. */
+    --c-surface-900: 244 244 245;
+    --c-surface-800: 255 255 255;
+    --c-surface-700: 244 244 245;
+    --c-surface-600: 228 228 231;
+    --c-surface-500: 212 212 216;
+    --c-surface-400: 161 161 170;
+
+    /* Neutral scale inverts: bright-in-dark becomes dark-on-light. */
+    --c-gray-50: 17 24 39;
+    --c-gray-100: 17 24 39;
+    --c-gray-200: 31 41 55;
+    --c-gray-300: 47 56 70;
+    --c-gray-400: 61 70 85;
+    --c-gray-500: 82 91 105;
+    --c-gray-600: 100 112 130;
+    --c-gray-700: 71 85 105;
+
+    /* Status: -900 tint → pale background, -400/-300 → dark readable text/borders. */
+    --c-amber-400: 180 83 9;
+    --c-amber-900: 254 243 199;
+    --c-blue-300: 29 78 216;
+    --c-blue-400: 29 78 216;
+    --c-blue-800: 191 219 254;
+    --c-blue-900: 219 234 254;
+    --c-green-300: 21 128 61;
+    --c-green-400: 21 128 61;
+    --c-green-800: 187 247 208;
+    --c-green-900: 220 252 231;
+    --c-red-300: 185 28 28;
+    --c-red-400: 185 28 28;
+    --c-red-800: 252 165 165;
+    --c-red-900: 254 226 226;
+
+    --c-accent: 180 83 9;
+  }
+
+@layer base {
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { height: -webkit-fill-available; }
+  body { min-height: 100vh; min-height: -webkit-fill-available; }
+
+  /* iOS Safari auto-zooms when a focused field's font-size is < 16px. Keeping all
+     form controls at 16px prevents that jarring zoom on focus. */
+  input, select, textarea { font-size: 16px; }
+
+  /* Number inputs (hours, quantity, prices…) are typed by hand. Hide the
+     increment/decrement spinner arrows so a stray click can't change the value.
+     Scroll-wheel value changes are disabled globally in main.jsx. */
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}
