@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, UserX, UserCheck, History } from 'lucide-react';
+import { Plus, Pencil, UserX, UserCheck, History, ShieldCheck, ShieldOff } from 'lucide-react';
 import { Modal } from '../ui/Modal.jsx';
 import api from '../../api/client.js';
+import { mfaApi } from '../../api/mfa.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 
 function fmtWhen(ts) {
@@ -157,6 +158,17 @@ export function UsersRoles() {
     queryFn: () => api.get('/users').then(r => r.data),
   });
 
+  const resetMfa = async (user) => {
+    if (!confirm(`Reset two-factor authentication for ${user.full_name}? They can sign in with their password only until they set it up again.`)) return;
+    try {
+      await mfaApi.resetUser(user.id);
+    } catch (err) {
+      alert(err.response?.data?.error ?? 'Could not reset two-factor authentication.');
+      return;
+    }
+    refetch();
+  };
+
   const toggleActive = async (user) => {
     if (!confirm(`${user.is_active ? 'Deactivate' : 'Reactivate'} ${user.full_name}?`)) return;
     try {
@@ -208,6 +220,7 @@ export function UsersRoles() {
                         </span>
                       </div>
                       <span className="text-gray-200 font-medium">{u.full_name}</span>
+                      {u.mfa_enabled && <ShieldCheck size={13} className="text-green-400 shrink-0" aria-label="Two-factor authentication on" title="Two-factor authentication on" />}
                     </div>
                   </td>
                   <td className="px-4 py-3 text-gray-400 font-mono text-xs hidden sm:table-cell">
@@ -240,6 +253,12 @@ export function UsersRoles() {
                       >
                         <Pencil size={13} />
                       </button>
+                      {u.mfa_enabled && u.id !== me?.id && (
+                        <button onClick={() => resetMfa(u)} className="btn-ghost p-1.5 text-gray-500 hover:text-amber-400"
+                          title="Reset two-factor authentication">
+                          <ShieldOff size={13} />
+                        </button>
+                      )}
                       {u.id !== me?.id && <button
                         onClick={() => toggleActive(u)}
                         className={`btn-ghost p-1.5 ${

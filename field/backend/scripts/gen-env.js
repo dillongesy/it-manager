@@ -27,7 +27,7 @@ REFRESH_TOKEN_SECRET=${refresh}
 ACCESS_TOKEN_EXPIRY=15m
 REFRESH_TOKEN_EXPIRY_DAYS=7
 
-# Encrypts all stored passwords/credentials at rest
+# Encrypts two-factor authentication secrets at rest
 ENCRYPTION_KEY=${encryption}
 
 PORT=3000

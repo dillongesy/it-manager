@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { StorageAlert } from './admin/Storage.jsx';
+import { Modal } from './ui/Modal.jsx';
+import { TwoFactorAccount } from './auth/TwoFactorAccount.jsx';
 import { useTheme } from '../contexts/ThemeContext.jsx';
 import api from '../api/client.js';
 import { GlobalSearch } from './GlobalSearch.jsx';
@@ -127,6 +129,7 @@ export function Layout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [changePwModal, setChangePwModal] = useState(false);
+  const [mfaModal, setMfaModal] = useState(false);
   // Below the lg breakpoint the sidebar is an off-canvas drawer (phones over VPN,
   // tablets, narrow windows). At lg and up it's the same fixed column as always.
   const [navOpen, setNavOpen] = useState(false);
@@ -244,6 +247,13 @@ export function Layout({ children }) {
                 <KeyRound size={13} />
               </button>
               <button
+                onClick={() => { setNavOpen(false); setMfaModal(true); }}
+                title="Two-factor authentication"
+                className="text-gray-500 hover:text-gray-300 transition-colors p-2 lg:p-1 rounded-sm"
+              >
+                <Shield size={13} />
+              </button>
+              <button
                 onClick={handleLogout}
                 title="Sign out"
                 className="text-gray-500 hover:text-brand transition-colors p-2 lg:p-1 rounded-sm"
@@ -280,6 +290,10 @@ export function Layout({ children }) {
 
       {/* Global search overlay */}
       <GlobalSearch />
+
+      <Modal open={mfaModal} onClose={() => setMfaModal(false)} title="Two-factor authentication" size="sm">
+        <TwoFactorAccount onClose={() => setMfaModal(false)} />
+      </Modal>
 
       {/* Change password modal */}
       {changePwModal && (

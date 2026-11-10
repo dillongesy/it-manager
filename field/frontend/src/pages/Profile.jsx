@@ -5,12 +5,14 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { useTheme } from '../contexts/ThemeContext.jsx';
 import { usersApi } from '../api/users.js';
 import Modal from '../components/Modal.jsx';
+import { TwoFactorAccount } from '../components/auth/TwoFactorAccount.jsx';
 
 export default function Profile() {
   const { user, logout } = useAuth();
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
   const [showPw, setShowPw] = useState(false);
+  const [showMfa, setShowMfa] = useState(false);
 
   const fullName = user?.fullName || user?.full_name;
 
@@ -43,6 +45,11 @@ export default function Profile() {
         <span className="text-gray-600">›</span>
       </button>
 
+      <button onClick={() => setShowMfa(true)} className="card p-4 w-full text-left flex items-center justify-between">
+        <span>Two-factor authentication</span>
+        <span className="text-gray-600">›</span>
+      </button>
+
       {user?.role === 'admin' && (
         <>
           <button onClick={() => navigate('/staff')} className="card p-4 w-full text-left flex items-center justify-between">
@@ -59,6 +66,11 @@ export default function Profile() {
       <button onClick={handleLogout} className="btn-secondary w-full text-brand">Log out</button>
 
       {showPw && <ChangePasswordModal onClose={() => setShowPw(false)} />}
+      {showMfa && (
+        <Modal title="Two-factor authentication" onClose={() => setShowMfa(false)}>
+          <TwoFactorAccount onClose={() => setShowMfa(false)} />
+        </Modal>
+      )}
     </div>
   );
 }

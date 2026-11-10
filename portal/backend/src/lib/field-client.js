@@ -105,6 +105,7 @@ export function toQuery(params) {
 export const fieldPlatform = {
   health:         ()     => call('/api/service/health'),
   pushBranding:   (body) => call('/api/service/branding', { method: 'PUT', body }),
+  pushSecurity:   (body) => call('/api/service/security', { method: 'PUT', body }),
   bootstrapAdmin: (body) => call('/api/service/bootstrap-admin', { method: 'POST', body }),
   storage:        ()     => call('/api/service/storage'),
 };

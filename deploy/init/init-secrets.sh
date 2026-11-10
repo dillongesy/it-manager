@@ -9,7 +9,7 @@
 #   /secrets/portal-api  db_password, access/refresh secrets,
 #                        encryption_key, bridge_token                  → portal-api (uid 1000)
 #   /secrets/field-db    db_password                                   → field-db (uid 70)
-#   /secrets/field-api   db_password, access/refresh secrets,
+#   /secrets/field-api   db_password, access/refresh secrets, encryption_key,
 #                        service_token (= portal bridge_token)         → field-api (uid 1000)
 #   /secrets/portal-web  cert.pem, key.pem, ca.crt (Portal HTTPS)      → portal-web (uid 101)
 #   /pki                 the local CA's private key (init only)
@@ -22,6 +22,7 @@
 # Containers mount their volume read-only. No secret is ever in docker-compose.yml,
 # an .env file, environment variables, or `docker inspect` output.
 #
+#   /host-control        settings requests from the Portal to the host helper
 #   /reveal/setup_code   one-time code that unlocks the setup wizard
 #   /reveal/bundle.json  every secret, readable through the app EXACTLY ONCE; the
 #                        Portal API shreds it the moment it is revealed
@@ -46,6 +47,7 @@ F_API=/secrets/field-api
 P_WEB=/secrets/portal-web
 PKI=/pki
 REVEAL=/reveal
+HOST_CONTROL=/host-control
 
 PG_UID=70        # postgres user in the postgres:*-alpine image
 APP_UID=1000     # node user in the node:*-alpine image
@@ -96,7 +98,8 @@ write_bundle() {
   "field": {
     "DB_PASSWORD": "$(read_secret $F_API/db_password)",
     "ACCESS_TOKEN_SECRET": "$(read_secret $F_API/access_token_secret)",
-    "REFRESH_TOKEN_SECRET": "$(read_secret $F_API/refresh_token_secret)"
+    "REFRESH_TOKEN_SECRET": "$(read_secret $F_API/refresh_token_secret)",
+    "ENCRYPTION_KEY": "$(read_secret $F_API/encryption_key)"
   },
   "bridge": {
     "SERVICE_TOKEN": "$(read_secret $P_API/bridge_token)"
@@ -162,9 +165,11 @@ fix_perms() {
   chown -R 0:0 "$PKI"; chmod 0700 "$PKI"; find "$PKI" -type f -exec chmod 0600 {} +
   # The Portal API must be able to delete (shred) files here, so it owns the dir.
   chown "$APP_UID:$APP_UID" "$REVEAL"; chmod 0700 "$REVEAL"
+  # Settings requests for the host helper: written by the Portal API, read by root.
+  chown "$APP_UID:$APP_UID" "$HOST_CONTROL"; chmod 0755 "$HOST_CONTROL"
 }
 
-mkdir -p "$P_DB" "$P_API" "$F_DB" "$F_API" "$P_WEB" "$PKI" "$REVEAL"
+mkdir -p "$P_DB" "$P_API" "$F_DB" "$F_API" "$P_WEB" "$PKI" "$REVEAL" "$HOST_CONTROL"
 # Root needs write access to its own volumes while working.
 chmod 0700 "$P_DB" "$P_API" "$F_DB" "$F_API" "$P_WEB" "$PKI"
 
@@ -208,6 +213,7 @@ ensure "$F_API/db_password"          "$APP_UID" "$(pw)"
 ensure "$F_DB/db_password"           "$PG_UID"  "$(read_secret $F_API/db_password)"
 ensure "$F_API/access_token_secret"  "$APP_UID" "$(hex 64)"
 ensure "$F_API/refresh_token_secret" "$APP_UID" "$(hex 64)"
+ensure "$F_API/encryption_key"       "$APP_UID" "$(hex 32)"
 ensure "$F_API/service_token"        "$APP_UID" "$(read_secret $P_API/bridge_token)"
 
 # Portal HTTPS

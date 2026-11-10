@@ -2,7 +2,7 @@ import { config } from './config/index.js';
 import { pool } from './db/index.js';
 import app from './app.js';
 import { loadIntegrations } from './lib/settings.js';
-import { pushBrandingWithRetry } from './lib/branding-sync.js';
+import { pushFieldSettingsWithRetry } from './lib/branding-sync.js';
 import { startStorageMonitor } from './lib/storage.js';
 import { announceSetupCode } from './routes/setup.js';
 
@@ -26,8 +26,8 @@ async function start() {
     console.log(`Portal API ${config.appVersion} running on ${config.host}:${config.port} [${config.nodeEnv}]`);
   });
 
-  // Keep the Field App's copy of the branding current (it may still be booting).
-  pushBrandingWithRetry().catch(() => {});
+  // Keep the Field App's copy of the branding and security settings current.
+  pushFieldSettingsWithRetry().catch(() => {});
 
   startStorageMonitor();
 

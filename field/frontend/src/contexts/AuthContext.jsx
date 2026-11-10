@@ -21,19 +21,29 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('app:session-expired', h);
   }, []);
 
-  const login = useCallback(async (username, password) => {
-    const { data } = await api.post('/auth/login', { username, password });
+  /** Finish signing in with a session from /auth/login, the 2FA step or 2FA enrollment. */
+  const completeSession = useCallback((data) => {
     tokenStore.set(data.accessToken);
     setUser(data.user);
     return data.user;
   }, []);
+
+  /**
+   * Password step. Resolves to { user } when signed in, or { mfa, mfaToken } when a
+   * second step is needed: mfa = 'verify' (enter a code) or 'enroll' (set up 2FA first).
+   */
+  const login = useCallback(async (username, password) => {
+    const { data } = await api.post('/auth/login', { username, password });
+    if (data.mfa) return { mfa: data.mfa, mfaToken: data.mfaToken };
+    return { user: completeSession(data) };
+  }, [completeSession]);
 
   const logout = useCallback(async () => {
     try { await api.post('/auth/logout'); } catch {}
     tokenStore.clear(); setUser(null);
   }, []);
 
-  return <Ctx.Provider value={{ user, loading, login, logout }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ user, loading, login, completeSession, logout }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {

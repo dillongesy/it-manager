@@ -59,6 +59,7 @@ services:
       - secrets_field_api:/secrets/field-api
       - pki:/pki
       - reveal:/reveal
+      - host_control:/host-control
 
   # -- Portal (LAN only) --------------------------------------------------------
   portal-web:
@@ -103,9 +104,11 @@ services:
       FIELD_API_URL: http://field-api:3001
       FIELD_API_TOKEN_FILE: /run/secrets/app/bridge_token
       REVEAL_DIR: /run/reveal
+      HOST_CONTROL_DIR: /run/host-control
     volumes:
       - secrets_portal_api:/run/secrets/app:ro
       - reveal:/run/reveal
+      - host_control:/run/host-control
       - portal_uploads:/app/uploads
     networks:
       portal_app: { ipv4_address: "${NET_PREFIX:-172.29}.3.10" }
@@ -188,6 +191,7 @@ services:
       DB_PASSWORD_FILE: /run/secrets/app/db_password
       ACCESS_TOKEN_SECRET_FILE: /run/secrets/app/access_token_secret
       REFRESH_TOKEN_SECRET_FILE: /run/secrets/app/refresh_token_secret
+      ENCRYPTION_KEY_FILE: /run/secrets/app/encryption_key
       SERVICE_TOKEN_FILE: /run/secrets/app/service_token
       # Service callers must come from the bridge network, and may only use /api/service/*.
       SERVICE_ALLOWED_CIDR: ${NET_PREFIX:-172.29}.7.0/24
@@ -265,5 +269,7 @@ volumes:
   secrets_field_api:
   pki:
   reveal:
+  # Settings requests from the Portal to the host helper installed by install.sh.
+  host_control:
   proxy_data:
   proxy_letsencrypt:

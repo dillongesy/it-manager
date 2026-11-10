@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router';
+import { ShieldCheck } from 'lucide-react';
 import { usersApi } from '../api/users.js';
+import { mfaApi } from '../api/mfa.js';
 import Modal from '../components/Modal.jsx';
 
 const ROLES = [
@@ -44,6 +46,7 @@ export default function Staff() {
               <div>
                 <div className="font-semibold">
                   {u.full_name || u.username} {u.initials && <span className="text-accent">({u.initials})</span>}
+                  {u.mfa_enabled && <ShieldCheck size={14} className="inline ml-1.5 text-green-400" aria-label="Two-factor authentication on" />}
                 </div>
                 <div className="text-xs text-gray-500 mt-0.5">{u.username} · {u.role}</div>
               </div>
@@ -127,6 +130,14 @@ function StaffModal({ user, onClose, onSaved }) {
           </label>
         )}
         <button type="submit" disabled={saving} className="btn-primary w-full">{saving ? 'Saving…' : isNew ? 'Create' : 'Save'}</button>
+        {!isNew && user?.mfa_enabled && (
+          <button type="button" className="btn-ghost w-full text-sm" disabled={saving} onClick={async () => {
+            if (!confirm(`Reset two-factor authentication for ${form.full_name}? They sign in with their password only until they set it up again.`)) return;
+            try { await mfaApi.resetUser(user.id); onSaved(); } catch (err) { setError(err.response?.data?.error || 'Could not reset two-factor authentication.'); }
+          }}>
+            Reset two-factor authentication
+          </button>
+        )}
       </form>
     </Modal>
   );

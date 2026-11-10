@@ -5,6 +5,7 @@ import { config } from '../config/index.js';
 import { requireAuth, requireRole } from '../middleware/requireAuth.js';
 import { logAudit, getClientIp } from '../middleware/audit.js';
 import { parsePaging, setTotalCount } from '../lib/pagination.js';
+import { disableMfa } from '../lib/mfa.js';
 
 const router = Router();
 
@@ -12,7 +13,8 @@ const router = Router();
 router.get('/', requireAuth, async (req, res, next) => {
   try {
     const { rows } = await query(
-      `SELECT id, username, full_name, email, role, is_active, created_at, last_login
+      `SELECT id, username, full_name, email, role, is_active, created_at, last_login,
+              (totp_secret IS NOT NULL) AS mfa_enabled
        FROM users ORDER BY full_name`
     );
     res.json(rows);
@@ -192,6 +194,24 @@ router.patch('/:id', requireAuth, async (req, res, next) => {
     });
 
     res.json(rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/users/:id/mfa/reset - turn off a user's two-factor authentication (admin only),
+// e.g. after a lost phone. If 2FA is required they set it up again at their next sign-in.
+router.post('/:id/mfa/reset', requireAuth, requireRole('admin'), async (req, res, next) => {
+  try {
+    const { rows } = await query('SELECT id, full_name FROM users WHERE id = $1', [req.params.id]);
+    if (!rows[0]) return res.status(404).json({ error: 'User not found.' });
+    await disableMfa(rows[0].id);
+    await logAudit({
+      userId: req.user.sub, userName: req.user.fullName, action: 'UPDATE', entityType: 'user',
+      entityId: rows[0].id, entityName: `${rows[0].full_name} - two-factor authentication reset`,
+      ipAddress: getClientIp(req),
+    });
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }

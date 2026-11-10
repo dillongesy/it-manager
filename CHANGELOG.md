@@ -30,6 +30,15 @@ All notable changes to this project are documented here. The format follows
   `docker-compose.yml` works without an `.env`.
 
 ### Added
+- Two-factor authentication (TOTP) for the Portal and the Field App, with an Off / Optional
+  / Required policy per app (Admin → Security), QR-code setup, ten single-use recovery
+  codes, enrollment during sign-in when required, and admin reset (migrations Portal 067,
+  Field 009). The Field App gets its own encryption key from `init`.
+- Admin → System: automatic update schedule, next and last run, and "Update now"; the
+  host firewall status (read-only).
+- Setup wizard: a Server step for the one-time firewall choice and the update schedule.
+- Host helper (installed by `install.sh`) that applies those settings from a whitelisted
+  request file, so the Portal never runs anything on the host.
 - Browser setup wizard with a live start-up check, setup-code verification, per-step
   progress, and next steps for the certificate and the Field App.
 - The Portal refuses the reverse proxy's network in nginx, in the API and in the host

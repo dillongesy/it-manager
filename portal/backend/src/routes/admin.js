@@ -10,10 +10,12 @@ import {
   getSetting, saveAsset, deleteAsset, ASSET_KINDS,
 } from '../lib/settings.js';
 import { BUNDLE, oneTimeExists, consumeOneTime } from '../lib/one-time.js';
-import { pushBrandingToField } from '../lib/branding-sync.js';
+import { pushBrandingToField, pushSecurityToField } from '../lib/branding-sync.js';
+import { getMfaPolicy, saveMfaPolicy } from '../lib/mfa.js';
 import { fieldPlatform, isFieldConfigured } from '../lib/field-client.js';
 import { getDefaultRates, saveDefaultRates, RATE_LIMITS } from '../lib/billing-rates.js';
 import { storageReport } from '../lib/storage.js';
+import { hostStatus, requestHostChange } from '../lib/host-control.js';
 
 // Admin API (admin role only).
 //
@@ -25,8 +27,12 @@ import { storageReport } from '../lib/storage.js';
 //   DELETE /api/admin/branding/assets/:kind
 //   GET    /api/admin/security                  setup / recovery-secret status
 //   POST   /api/admin/security/reveal           { password } → secrets, exactly once, ever
+//   PUT    /api/admin/security/mfa              { portal?, field? } two-factor policy per app
 //   GET    /api/admin/system                    version + Field bridge health
 //   GET    /api/admin/storage                   disk, database and file sizes + forecast
+//   GET    /api/admin/host                      firewall and update status (host helper)
+//   PUT    /api/admin/host/updates              { schedule } automatic update schedule
+//   POST   /api/admin/host/update-now           start an update now
 //   GET    /api/admin/billing-rates             default hourly rates for new customers
 //   PUT    /api/admin/billing-rates             { rates: [{ label, rate }], applyToExisting? }
 export const adminRouter = Router();
@@ -121,11 +127,24 @@ async function securityStatus() {
     // code path that can produce the secrets again.
     secretsAvailable: !system.secretsRevealedAt && oneTimeExists(BUNDLE),
     managedSecrets: Boolean(config.revealDir),
+    mfa: await getMfaPolicy(),
   };
 }
 
 adminRouter.get('/security', async (_req, res, next) => {
   try { res.json(await securityStatus()); } catch (err) { next(err); }
+});
+
+adminRouter.put('/security/mfa', async (req, res, next) => {
+  try {
+    const policy = await saveMfaPolicy(req.body ?? {}, req.user.sub);
+    await audit(req, 'UPDATE', 'security', `Two-factor authentication: Portal ${policy.portal}, Field App ${policy.field}`);
+    const fieldSync = await pushSecurityToField();
+    res.json({ mfa: policy, fieldSync });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message });
+    next(err);
+  }
 });
 
 adminRouter.post('/security/reveal', async (req, res, next) => {
@@ -206,6 +225,43 @@ adminRouter.get('/system', async (_req, res, next) => {
 
 adminRouter.get('/storage', async (_req, res, next) => {
   try { res.json(await storageReport()); } catch (err) { next(err); }
+});
+
+// --- Server settings (host helper) -----------------------------------------------
+// The firewall is shown here but not changed: it is chosen once in the setup wizard,
+// or on the server with install.sh.
+
+adminRouter.get('/host', async (_req, res, next) => {
+  try {
+    const status = await hostStatus();
+    res.json(status ? { available: true, ...status } : { available: false });
+  } catch (err) { next(err); }
+});
+
+const hostResult = async (req, res, label, change) => {
+  const result = await requestHostChange(change);
+  if (!result.ok) return res.status(400).json({ error: result.error || 'The server refused the change.' });
+  await audit(req, 'UPDATE', 'server', label);
+  res.json({ ok: true, status: await hostStatus() });
+};
+
+adminRouter.put('/host/updates', async (req, res, next) => {
+  try {
+    const schedule = String(req.body?.schedule ?? '');
+    await hostResult(req, res, `Automatic updates: ${schedule}`, { updates: schedule });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message });
+    next(err);
+  }
+});
+
+adminRouter.post('/host/update-now', async (req, res, next) => {
+  try {
+    await hostResult(req, res, 'Update started from the Portal', { update: 'now' });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message });
+    next(err);
+  }
 });
 
 // Retry of the setup wizard's Field admin creation, using the signed-in admin's own

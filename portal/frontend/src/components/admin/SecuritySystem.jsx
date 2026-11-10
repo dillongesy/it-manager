@@ -5,6 +5,8 @@ import { adminApi } from '../../api/admin.js';
 import api from '../../api/client.js';
 import { RevealSecrets } from './RevealSecrets.jsx';
 import { Storage } from './Storage.jsx';
+import { TwoFactorPolicy } from './TwoFactorPolicy.jsx';
+import { HostSettings } from './HostSettings.jsx';
 
 export function Security() {
   return (
@@ -13,6 +15,7 @@ export function Security() {
         <h2 className="text-base font-semibold text-gray-200 flex items-center gap-2"><ShieldCheck size={16} /> Recovery secrets</h2>
         <RevealSecrets />
       </section>
+      <TwoFactorPolicy />
       <section className="card p-5 space-y-2 text-sm text-gray-400">
         <h2 className="text-base font-semibold text-gray-200">How this server is protected</h2>
         <ul className="list-disc pl-5 space-y-1">
@@ -61,6 +64,8 @@ export function System() {
         </dl>
         <p className="text-gray-500 text-xs">Updates: in the install folder run <code className="font-mono text-gray-300">docker compose pull && docker compose up -d</code>, or let the scheduled update set up by install.sh do it. Database migrations run automatically.</p>
       </section>
+
+      <HostSettings />
 
       <Storage />
 

@@ -21,6 +21,11 @@ export const adminApi = {
 
   security: () => api.get('/admin/security').then(r => r.data),
   reveal:   (password) => api.post('/admin/security/reveal', { password }).then(r => r.data),
+  saveMfaPolicy: (body) => api.put('/admin/security/mfa', body).then(r => r.data),
+
+  host:          () => api.get('/admin/host').then(r => r.data),
+  saveUpdates:   (schedule) => api.put('/admin/host/updates', { schedule }).then(r => r.data),
+  updateNow:     () => api.post('/admin/host/update-now').then(r => r.data),
 
   system:  () => api.get('/admin/system').then(r => r.data),
   storage: () => api.get('/admin/storage').then(r => r.data),

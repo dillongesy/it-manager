@@ -20,6 +20,8 @@ export const config = {
   revealDir: process.env.REVEAL_DIR || null,
   // The internet-facing reverse proxy's network. Requests from it are always refused.
   proxySubnet: process.env.PROXY_SUBNET || null,
+  // Volume shared with the host helper installed by install.sh (lib/host-control.js).
+  hostControlDir: process.env.HOST_CONTROL_DIR || null,
   nodeEnv: process.env.NODE_ENV ?? 'development',
   isDev: (process.env.NODE_ENV ?? 'development') === 'development',
 

@@ -5,7 +5,7 @@
 // Docker data (databases, images, logs), so its free space is what the stack runs on.
 // A snapshot is recorded every few hours; the forecast is a least-squares trend of the
 // used space over the last FORECAST_DAYS days.
-import { statfs, readdir, lstat } from 'node:fs/promises';
+import { statfs, readdir, lstat, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { query } from '../db/index.js';
@@ -58,6 +58,8 @@ async function databaseSize() {
 
 /** Measure everything now. The Field App part is null when its API can't be reached. */
 export async function measure() {
+  // The uploads folder is created on first upload; measure its filesystem regardless.
+  await mkdir(UPLOADS_ROOT, { recursive: true });
   const [disk, portalDatabase, portalFiles] = await Promise.all([
     diskUsage(UPLOADS_ROOT), databaseSize(), directorySize(UPLOADS_ROOT),
   ]);

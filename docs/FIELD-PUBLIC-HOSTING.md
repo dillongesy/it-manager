@@ -40,7 +40,8 @@ The goal is to remove the shared-host risk. The plan:
 
 - Rate limits per IP on Field login (already 20 per 15 minutes) plus progressive delays.
   Consider fail2ban on the proxy's access log.
-- Optional TOTP for Field accounts.
+- Two-factor authentication (available): set the Field App policy to Required in
+  Admin → Security.
 - Optionally put Cloudflare (proxied DNS) or similar in front. The proxy then needs
   the CDN ranges as trusted proxies so client IPs stay correct.
 - Uptime and certificate-expiry monitoring.

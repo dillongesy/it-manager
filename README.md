@@ -49,16 +49,24 @@ The installer:
    overlap a route on the host or another Docker network are refused unless you
    confirm). It writes `.env`, which holds no secrets.
 3. **Hardens the host firewall** (on by default). See [Security model](#6-security-model).
-4. **Schedules automatic updates** (on by default, Sundays at 02:00).
-5. Starts the stack and prints the Portal address and the **setup code**.
+   The setup wizard lets you keep it or turn it off, once.
+4. **Schedules automatic updates** (Sundays at 02:00 by default; change the schedule in the
+   setup wizard or Admin → System).
+5. Installs a small **host helper** that applies those two choices from the Portal, starts
+   the stack, and prints the Portal address and the **setup code**.
 
-Change these later at any time:
+On the server, root can always change them:
 
 ```bash
 sudo ./install.sh firewall    on|off|status
 sudo ./install.sh auto-update on|off|status
 sudo ./install.sh                             # re-run to change settings; data is kept
 ```
+
+The Portal itself cannot run anything on the host. It writes a small request file that the
+host helper (a root systemd service) checks against a fixed list of allowed settings:
+the update schedule, "update now", and the firewall choice, which is accepted only once,
+during setup.
 
 ### Any Docker host
 
@@ -77,8 +85,10 @@ time; continue to the site. The setup wizard then walks through:
    Containers → `itmanager-portal-api-1` → Logs, or with `docker compose logs portal-api`.
    The installer prints it too. This proves you manage the server, so nobody else on the
    network can complete setup first.
-3. **Company and first admin.** The same login is created on the Field App, and the
-   progress of each step is shown.
+3. **Company, first admin and server.** The same login is created on the Field App. On
+   installations set up with `install.sh`, choose whether to keep the firewall hardening
+   (this choice is made once) and the automatic update schedule. The progress of each step
+   is shown.
 4. **Recovery secrets.** On first start the `init` container generated the master
    encryption key (it protects every stored password), both database passwords and the
    signing secrets. You can reveal them **exactly once**:
@@ -144,8 +154,17 @@ download the new file (or `git pull`) before updating.
 | **Integrations** | ConnectWise RMM, Dell TechDirect, ScreenConnect, UniFi, TD SYNNEX, Auvik, Outlook and ThreatLocker. Each has an on/off switch and its settings. Secrets are encrypted with the master key and never sent back to the browser. Changes apply immediately, with no restart. Integrations that are off are hidden from everyone. |
 | **Billing** | The default hourly rates (initially Standard $90 and Tech $70) that every new customer starts with. Each customer's rates can still be changed on its Overview tab. Saving can also update existing customers who are still on the old price; negotiated prices are left alone. The first rate is the default for new work orders. |
 | **Branding** | Company name, app name, Field App name, primary and accent colors (live preview, contrast warning), print/PDF header (address, phone, email, website, footer), plus image uploads: square logo, full logo, browser-tab icon, login background. Changes push to the Field App automatically. |
-| **Security** | The one-time recovery-secrets reveal, and its status (who revealed them and when). |
-| **System** | Version, Field App connection, storage (see below), and "Create my Field App login" if the wizard couldn't. |
+| **Security** | The one-time recovery-secrets reveal and its status, and the **two-factor authentication** policy, set separately for the Portal and the Field App (see below). |
+| **System** | Version, Field App connection, **automatic updates** (schedule, next and last run, "Update now"), the host firewall status (read-only), storage (see below), and "Create my Field App login" if the wizard couldn't. |
+
+**Two-factor authentication.** Users sign in with a password plus a 6-digit code from an
+authenticator app (Google Authenticator, Microsoft Authenticator, Authy, 1Password and
+similar). Each app has its own policy: **Off** (not used), **Optional** (users turn it on
+from their account: the shield button in the Portal's sidebar, or Profile in the Field App),
+or **Required** (everyone sets it up at their next sign-in). Setup shows a QR code and gives
+ten single-use recovery codes. Admins can reset a user who lost their phone (Users & roles
+in the Portal, Staff in the Field App). Codes are accepted once, secrets are encrypted at
+rest, and a sign-in step locks after five wrong codes.
 
 **Storage monitoring.** Admin → System shows disk capacity, the size of each database
 and of the uploaded files, the growth rate over the last 30 days, and the estimated date

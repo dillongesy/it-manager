@@ -3,13 +3,14 @@ import { Navigate, useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle, CheckCircle2, XCircle, Loader2, KeyRound, Building2, UserCog, Server,
-  ShieldCheck, Globe, Download, ArrowRight,
+  ShieldCheck, Globe, Download, ArrowRight, HardDrive,
 } from 'lucide-react';
 import { setupApi } from '../api/admin.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useBranding } from '../contexts/BrandingContext.jsx';
 import { Logo } from '../components/ui/Logo.jsx';
 import { RevealSecrets } from '../components/admin/RevealSecrets.jsx';
+import { ScheduleFields, parseSchedule, formatSchedule } from '../components/admin/HostSettings.jsx';
 
 // First-run setup wizard. Shown only on a new install, before any user exists.
 //
@@ -171,7 +172,7 @@ function VerifyStep({ required, code, setCode, onVerified }) {
 
 // --- Step 3: company and admin ----------------------------------------------------
 
-function AccountStep({ form, set, onSubmit, error }) {
+function AccountStep({ form, set, onSubmit, error, server, serverChoice, setServerChoice }) {
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       {error && <ErrorBox>{error}</ErrorBox>}
@@ -206,6 +207,39 @@ function AccountStep({ form, set, onSubmit, error }) {
         <p className="text-gray-500 text-xs">The same login is created on the Field App.</p>
       </section>
 
+      {server?.available && serverChoice && (
+        <section className="space-y-3">
+          <h2 className="text-gray-200 font-semibold flex items-center gap-2"><HardDrive size={16} /> Server</h2>
+          {server.firewallChoiceOpen && (
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium text-gray-400 mb-1">Host firewall</legend>
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input type="radio" name="firewall" className="mt-1" checked={serverChoice.firewall === 'on'}
+                  onChange={() => setServerChoice(c => ({ ...c, firewall: 'on' }))} />
+                <span>
+                  <span className="text-gray-200">Keep hardening on (recommended)</span>
+                  <span className="block text-xs text-gray-500">Only ports 80 and 443 are open to everyone; the Portal (8443), the proxy admin (81) and SSH accept your LAN only.</span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input type="radio" name="firewall" className="mt-1" checked={serverChoice.firewall === 'off'}
+                  onChange={() => setServerChoice(c => ({ ...c, firewall: 'off' }))} />
+                <span>
+                  <span className="text-gray-200">Turn hardening off</span>
+                  <span className="block text-xs text-gray-500">For servers behind another firewall you manage. The Portal still accepts LAN addresses only.</span>
+                </span>
+              </label>
+              <p className="text-gray-500 text-xs">This choice is made once. Later it can only be changed on the server.</p>
+            </fieldset>
+          )}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-gray-400">Automatic updates</p>
+            <ScheduleFields value={serverChoice.schedule} onChange={schedule => setServerChoice(c => ({ ...c, schedule }))} />
+            <p className="text-gray-500 text-xs">Can be changed later in Admin → System.</p>
+          </div>
+        </section>
+      )}
+
       <div className="flex justify-end">
         <button type="submit" className="btn-primary">Set up</button>
       </div>
@@ -220,6 +254,7 @@ const PLANNED = [
   { id: 'company', label: 'Save company details' },
   { id: 'field-admin', label: 'Create the same login on the Field App' },
   { id: 'field-branding', label: 'Send company details to the Field App' },
+  { id: 'server', label: 'Apply server settings (firewall and automatic updates)' },
   { id: 'signin', label: 'Sign in' },
 ];
 
@@ -325,6 +360,13 @@ export function Setup() {
   const [formError, setFormError] = useState('');
   const [results, setResults] = useState(null);
   const [applyError, setApplyError] = useState('');
+  const server = status?.services?.server;
+  const [serverChoice, setServerChoice] = useState(null);
+  useEffect(() => {
+    if (server?.available && !serverChoice) {
+      setServerChoice({ firewall: server.firewall === 'off' ? 'off' : 'on', schedule: parseSchedule(server.updates) });
+    }
+  }, [server, serverChoice]);
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
   if (isLoading && step === 'start' && !statusError) return <div className="min-h-screen bg-surface-900" />;
@@ -337,7 +379,10 @@ export function Setup() {
     if (form.password.length < 12) { setFormError('Password must be at least 12 characters.'); return; }
 
     const fieldPlanned = status?.services?.field?.configured !== false;
-    setResults(fieldPlanned ? {} : { 'field-admin': null, 'field-branding': null });
+    setResults({
+      ...(fieldPlanned ? {} : { 'field-admin': null, 'field-branding': null }),
+      ...(server?.available ? {} : { server: null }),
+    });
     setApplyError('');
     setStep('apply');
     try {
@@ -346,11 +391,22 @@ export function Setup() {
         companyName: form.companyName,
         productName: form.productName,
         admin: { full_name: form.full_name, username: form.username, email: form.email, password: form.password },
+        ...(server?.available && serverChoice ? {
+          server: {
+            ...(server.firewallChoiceOpen ? { firewall: serverChoice.firewall } : {}),
+            updates: formatSchedule(serverChoice.schedule),
+          },
+        } : {}),
       });
       const byId = Object.fromEntries(result.steps.map(s => [s.id, s]));
-      setResults(r => ({ ...r, ...byId, ...(byId['field-admin'] ? {} : { 'field-admin': null, 'field-branding': null }) }));
+      setResults(r => ({
+        ...r, ...byId,
+        ...(byId['field-admin'] ? {} : { 'field-admin': null, 'field-branding': null }),
+        ...(byId.server ? {} : { server: null }),
+      }));
       try {
-        await login(form.username.trim().toLowerCase(), form.password);
+        const signedIn = await login(form.username.trim().toLowerCase(), form.password);
+        if (!signedIn.user) throw new Error('second step required');
         setResults(r => ({ ...r, signin: { ok: true } }));
       } catch {
         setResults(r => ({ ...r, signin: { ok: false, error: 'Sign in from the login page with your new account.' } }));
@@ -382,7 +438,10 @@ export function Setup() {
           {step === 'verify' && (
             <VerifyStep required={status?.setupCodeRequired !== false} code={code} setCode={setCode} onVerified={() => setStep('account')} />
           )}
-          {step === 'account' && <AccountStep form={form} set={set} onSubmit={submitAccount} error={formError} />}
+          {step === 'account' && (
+            <AccountStep form={form} set={set} onSubmit={submitAccount} error={formError}
+              server={server} serverChoice={serverChoice} setServerChoice={setServerChoice} />
+          )}
           {step === 'apply' && (
             <ApplyStep
               results={results}

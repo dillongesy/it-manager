@@ -10,5 +10,5 @@ two hosts, `install.sh --role field|portal`, and pairing from Admin → System.
 
 ## Public-exposure hardening for the Field App
 
-Stage 3 of the same document: optional TOTP for Field accounts, fail2ban on the edge
-access log, and a scheduled purge of imported captures.
+Stage 3 of the same document: fail2ban on the proxy's access log and a scheduled purge
+of imported captures. (Two-factor authentication is available; see Admin → Security.)

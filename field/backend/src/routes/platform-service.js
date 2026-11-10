@@ -3,16 +3,28 @@ import { query, getClient } from '../db/index.js';
 import { requireService } from '../middleware/requireService.js';
 import { logAudit } from '../middleware/audit.js';
 import { directorySize, UPLOADS_ROOT } from '../lib/storage.js';
+import { setMfaPolicy } from '../lib/mfa.js';
 
 // Platform endpoints on the one-way bridge (Portal → Field only, service token).
 //   GET  /api/service/health           - bridge check for the Portal's Admin → System
 //   PUT  /api/service/branding         - the Portal pushes a full copy of its branding
 //   POST /api/service/bootstrap-admin  - setup wizard: first Field admin (same login)
 //   GET  /api/service/storage          - database and uploaded-file sizes, in bytes
+//   PUT  /api/service/security         - { mfa } the Field App's two-factor policy
 const router = Router();
 router.use(requireService);
 
 router.get('/health', (_req, res) => res.json({ ok: true }));
+
+router.put('/security', async (req, res, next) => {
+  try {
+    await setMfaPolicy(req.body?.mfa);
+    res.json({ ok: true });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message });
+    next(err);
+  }
+});
 
 router.get('/storage', async (_req, res, next) => {
   try {

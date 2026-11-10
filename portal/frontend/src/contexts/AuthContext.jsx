@@ -26,6 +26,17 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('app:session-expired', handle);
   }, []);
 
+  /** Finish signing in with a session from /auth/login, the 2FA step or 2FA enrollment. */
+  const completeSession = useCallback((data) => {
+    tokenStore.set(data.accessToken);
+    setUser(data.user);
+    return data.user;
+  }, []);
+
+  /**
+   * Password step. Resolves to { user } when signed in, or { mfa, mfaToken } when a
+   * second step is needed: mfa = 'verify' (enter a code) or 'enroll' (set up 2FA first).
+   */
   const login = useCallback(async (username, password) => {
     let data;
     try {
@@ -36,10 +47,9 @@ export function AuthProvider({ children }) {
       if (err.response) throw err;
       ({ data } = await api.post('/auth/login', { username, password }));
     }
-    tokenStore.set(data.accessToken);
-    setUser(data.user);
-    return data.user;
-  }, []);
+    if (data.mfa) return { mfa: data.mfa, mfaToken: data.mfaToken };
+    return { user: completeSession(data) };
+  }, [completeSession]);
 
   const logout = useCallback(async () => {
     try { await api.post('/auth/logout'); } catch { /* best effort */ }
@@ -48,7 +58,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, completeSession, logout }}>
       {children}
     </AuthContext.Provider>
   );

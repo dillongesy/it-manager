@@ -27,6 +27,8 @@ export const config = {
     refreshExpiryDays: parseInt(process.env.REFRESH_TOKEN_EXPIRY_DAYS ?? '7', 10),
   },
   cors:         { origin: process.env.CORS_ORIGIN ?? 'http://localhost:5174' },
+  // Encrypts two-factor secrets at rest (64 hex characters).
+  encryptionKey: process.env.ENCRYPTION_KEY ?? null,
   bcryptRounds: 12,
 
   // Shared-inventory bridge: the Portal authenticates to the Field API with this
