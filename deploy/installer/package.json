@@ -1,0 +1,7 @@
+{
+  "name": "it-manager-installer",
+  "version": "1.0.0",
+  "description": "IT Manager setup wizard",
+  "private": true,
+  "type": "module"
+}

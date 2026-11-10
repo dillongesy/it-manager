@@ -6,16 +6,17 @@ only). This document covers the supported setup and the planned next stages.
 
 ## Stage 1: same host, published through Nginx Proxy Manager (supported)
 
-The bundled `proxy` service (Nginx Proxy Manager) is the Field App's entrance. The
-steps are in [README.md, Publishing the Field App](../README.md#3-publishing-the-field-app):
-a DNS name, router forwards for 80 and 443, and a proxy host for `field-web:8080` with a
-Let's Encrypt certificate.
+The bundled `proxy` service (Nginx Proxy Manager) is the Field App's entrance. It listens
+on the server's port 4443, and the router maps the public port 443 to it. The steps are
+in [README.md, Publishing the Field App](../README.md#3-publishing-the-field-app).
 
 What protects the Portal in this stage:
+- internet traffic reaches only the proxy, through the router's port mapping;
 - the proxy shares no Docker network with any Portal container;
-- portal-web and portal-api refuse the proxy's network and accept private addresses only;
-- the installer's firewall drops traffic from the proxy's network to the Portal and
-  admits only the LAN to 8443 and 81;
+- portal-web and portal-api refuse the proxy's network, and portal-web accepts the office
+  network only;
+- the firewall drops traffic from the proxy's network to the Portal and admits only the
+  office network to the Portal (443) and the proxy admin (81);
 - the one-way bridge.
 
 The remaining shared element is the host itself.

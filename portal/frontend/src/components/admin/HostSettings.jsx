@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { RefreshCw, Shield, ShieldOff, CalendarClock } from 'lucide-react';
 import { adminApi } from '../../api/admin.js';
+import { HostLog } from './HostLog.jsx';
 
 // Admin → System: automatic updates (editable) and the host firewall (status only; it
 // is chosen in the setup wizard or on the server with install.sh). Both come from the
@@ -129,9 +130,22 @@ export function HostSettings() {
           Host firewall: {data.firewall === 'on' ? 'hardened' : data.firewall === 'off' ? 'off' : 'unknown'}
         </p>
         <p className="text-gray-500 text-xs">
+          {data.firewall === 'on' && data.ports && <>Open to everyone: port {data.ports.proxyHttps} (Field App{data.acme === 'http' ? '; and 80 for certificates' : ''}).
+            Office network only: {data.ports.portal} (Portal) and {data.ports.proxyAdmin} (proxy admin). </>}
           Chosen during setup. To change it, run <code className="font-mono text-gray-300">sudo ./install.sh firewall on</code> or{' '}
           <code className="font-mono text-gray-300">off</code> on the server.
         </p>
+      </div>
+
+      <div className="space-y-2 border-t border-surface-600 pt-4">
+        <details>
+          <summary className="cursor-pointer text-gray-200 font-medium">Last update log</summary>
+          <div className="mt-2"><HostLog name="update" /></div>
+        </details>
+        <details>
+          <summary className="cursor-pointer text-gray-200 font-medium">Installation log</summary>
+          <div className="mt-2"><HostLog name="install" /></div>
+        </details>
       </div>
 
       {message && (

@@ -1,25 +1,29 @@
-import { useEffect, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router';
+import { useEffect, useRef, useState } from 'react';
+import { Navigate, useNavigate, Link } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle, CheckCircle2, XCircle, Loader2, KeyRound, Building2, UserCog, Server,
-  ShieldCheck, Globe, Download, ArrowRight, HardDrive,
+  ShieldCheck, Globe, Download, ArrowRight, ScrollText,
 } from 'lucide-react';
 import { setupApi } from '../api/admin.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useBranding } from '../contexts/BrandingContext.jsx';
 import { Logo } from '../components/ui/Logo.jsx';
 import { RevealSecrets } from '../components/admin/RevealSecrets.jsx';
-import { ScheduleFields, parseSchedule, formatSchedule } from '../components/admin/HostSettings.jsx';
+import { HostLog } from '../components/admin/HostLog.jsx';
 
-// First-run setup wizard. Shown only on a new install, before any user exists.
+// Portal setup: the second half of the setup wizard. The installer (the first half, at
+// the same address) has configured the server and installed the stack; this part
+// creates the company and the first admin.
 //
 //   start    services come up (live status, polled)
-//   verify   setup code from the Portal API log
+//   verify   setup code (skipped when the installer already checked it in this browser)
 //   account  company and first admin
 //   apply    the setup steps, with their results
 //   secrets  one-time recovery secrets
-//   finish   trust the certificate and publish the Field App
+//   finish   trust the certificate, publish the Field App, installation log
+
+const CODE_KEY = 'app-setup-code';   // set by the installer's page
 
 const STEPS = [
   { id: 'start', label: 'Start-up' },
@@ -80,7 +84,7 @@ const ErrorBox = ({ children }) => (
   </div>
 );
 
-// --- Step 1: services start ----------------------------------------------------
+// --- Start-up ----------------------------------------------------------------------
 
 function StartStep({ status, error, onContinue }) {
   const portalUp = Boolean(status);
@@ -117,47 +121,46 @@ function StartStep({ status, error, onContinue }) {
         </button>
       </div>
       {portalUp && !fieldUp && (
-        <p className="text-xs text-gray-500">
-          If you continue now, the Field App login can be created later from Admin → System.
-        </p>
+        <p className="text-xs text-gray-500">If you continue now, the Field App login can be created later from Admin → System.</p>
       )}
     </div>
   );
 }
 
-// --- Step 2: setup code ----------------------------------------------------------
+// --- Setup code ----------------------------------------------------------------------
 
 function VerifyStep({ required, code, setCode, onVerified }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const tried = useRef(false);
 
-  useEffect(() => {
-    if (!required) onVerified();
-  }, [required]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const submit = async (e) => {
-    e.preventDefault();
+  const verify = async (value) => {
     setBusy(true); setError('');
     try {
-      await setupApi.verifyCode(code);
+      await setupApi.verifyCode(value);
       onVerified();
     } catch (err) {
       setError(err.response?.data?.error ?? 'The code could not be checked.');
     } finally { setBusy(false); }
   };
 
+  // Skip this step when the code is not required, or when the installer already checked
+  // it in this browser.
+  useEffect(() => {
+    if (!required) { onVerified(); return; }
+    if (code && !tried.current) { tried.current = true; verify(code); }
+  }, [required]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <form onSubmit={(e) => { e.preventDefault(); verify(code); }} className="space-y-4">
       <h2 className="text-gray-200 font-semibold flex items-center gap-2"><KeyRound size={16} /> Confirm it's your server</h2>
       <p className="text-sm text-gray-400">
-        Enter the setup code from the Portal API's log. This proves you manage the server,
-        so nobody else on the network can complete setup first.
+        Enter the setup code that <code className="font-mono text-gray-300">install.sh</code> printed. It proves you manage the
+        server, so nobody else on the network can complete setup first.
       </p>
-      <div className="rounded-md bg-surface-900 border border-surface-600 p-3 text-sm text-gray-400 space-y-1.5">
-        <p><span className="text-gray-200">Portainer:</span> Containers → <code className="font-mono text-gray-300">itmanager-portal-api-1</code> → Logs</p>
-        <p><span className="text-gray-200">Command line</span> (in the install folder): <code className="font-mono text-gray-300">docker compose logs portal-api</code></p>
-        <p>The installer also prints it when it finishes.</p>
-      </div>
+      <p className="text-xs text-gray-500">
+        Lost it? On the server, in the install folder: <code className="font-mono text-gray-300">docker compose logs portal-api</code>
+      </p>
       {error && <ErrorBox>{error}</ErrorBox>}
       <Field label="Setup code">
         <input className="input font-mono uppercase tracking-widest" value={code} onChange={e => setCode(e.target.value)}
@@ -170,9 +173,9 @@ function VerifyStep({ required, code, setCode, onVerified }) {
   );
 }
 
-// --- Step 3: company and admin ----------------------------------------------------
+// --- Company and admin -----------------------------------------------------------------
 
-function AccountStep({ form, set, onSubmit, error, server, serverChoice, setServerChoice }) {
+function AccountStep({ form, set, onSubmit, error }) {
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       {error && <ErrorBox>{error}</ErrorBox>}
@@ -207,39 +210,6 @@ function AccountStep({ form, set, onSubmit, error, server, serverChoice, setServ
         <p className="text-gray-500 text-xs">The same login is created on the Field App.</p>
       </section>
 
-      {server?.available && serverChoice && (
-        <section className="space-y-3">
-          <h2 className="text-gray-200 font-semibold flex items-center gap-2"><HardDrive size={16} /> Server</h2>
-          {server.firewallChoiceOpen && (
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-medium text-gray-400 mb-1">Host firewall</legend>
-              <label className="flex items-start gap-2 cursor-pointer">
-                <input type="radio" name="firewall" className="mt-1" checked={serverChoice.firewall === 'on'}
-                  onChange={() => setServerChoice(c => ({ ...c, firewall: 'on' }))} />
-                <span>
-                  <span className="text-gray-200">Keep hardening on (recommended)</span>
-                  <span className="block text-xs text-gray-500">Only ports 80 and 443 are open to everyone; the Portal (8443), the proxy admin (81) and SSH accept your LAN only.</span>
-                </span>
-              </label>
-              <label className="flex items-start gap-2 cursor-pointer">
-                <input type="radio" name="firewall" className="mt-1" checked={serverChoice.firewall === 'off'}
-                  onChange={() => setServerChoice(c => ({ ...c, firewall: 'off' }))} />
-                <span>
-                  <span className="text-gray-200">Turn hardening off</span>
-                  <span className="block text-xs text-gray-500">For servers behind another firewall you manage. The Portal still accepts LAN addresses only.</span>
-                </span>
-              </label>
-              <p className="text-gray-500 text-xs">This choice is made once. Later it can only be changed on the server.</p>
-            </fieldset>
-          )}
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-400">Automatic updates</p>
-            <ScheduleFields value={serverChoice.schedule} onChange={schedule => setServerChoice(c => ({ ...c, schedule }))} />
-            <p className="text-gray-500 text-xs">Can be changed later in Admin → System.</p>
-          </div>
-        </section>
-      )}
-
       <div className="flex justify-end">
         <button type="submit" className="btn-primary">Set up</button>
       </div>
@@ -247,14 +217,13 @@ function AccountStep({ form, set, onSubmit, error, server, serverChoice, setServ
   );
 }
 
-// --- Step 4: applying ----------------------------------------------------------
+// --- Applying ---------------------------------------------------------------------------
 
 const PLANNED = [
   { id: 'admin', label: 'Create the Portal admin account' },
   { id: 'company', label: 'Save company details' },
   { id: 'field-admin', label: 'Create the same login on the Field App' },
   { id: 'field-branding', label: 'Send company details to the Field App' },
-  { id: 'server', label: 'Apply server settings (firewall and automatic updates)' },
   { id: 'signin', label: 'Sign in' },
 ];
 
@@ -293,30 +262,37 @@ function ApplyStep({ results, error, onBack, onContinue }) {
   );
 }
 
-// --- Step 6: finish --------------------------------------------------------------
+// --- Finish -----------------------------------------------------------------------------
 
-function FinishStep({ onDone }) {
-  const host = window.location.hostname;
+function FinishStep({ server, onDone }) {
+  const ip = server?.ip || window.location.hostname;
+  const proxyPort = server?.ports?.proxyHttps ?? 4443;
+  const http = server?.acme === 'http';
   return (
     <div className="space-y-6 text-sm text-gray-400">
       <section className="space-y-2">
         <h2 className="text-gray-200 font-semibold flex items-center gap-2"><ShieldCheck size={16} /> Trust this server's certificate</h2>
         <p>
-          The Portal uses a certificate from this server's own certificate authority. Install it once as a trusted
-          root on each computer and phone (by hand, Group Policy or MDM) to remove the browser warning.
+          Install the server's certificate once on each computer and phone that uses the Portal, and the browser stops
+          warning. The step-by-step guide is in Admin → Certificate, and every signed-in user can open it at{' '}
+          <Link to="/certificate" className="text-brand-light underline">/certificate</Link>.
         </p>
         <a href="/ca.crt" className="btn-secondary inline-flex items-center gap-1.5"><Download size={14} /> Download certificate</a>
       </section>
 
       <section className="space-y-2">
         <h2 className="text-gray-200 font-semibold flex items-center gap-2"><Globe size={16} /> Put the Field App online</h2>
-        <p>The Field App is published through Nginx Proxy Manager, which can reach the Field App and nothing else.</p>
         <ol className="list-decimal pl-5 space-y-1.5">
           <li>Point a DNS name (for example <code className="font-mono text-gray-300">field.example.com</code>) at your public IP address.</li>
-          <li>On your router, forward TCP ports <strong className="text-gray-200">80 and 443</strong> to this server. Do not forward 8443 or 81.</li>
+          <li>
+            On your router, forward external TCP port <strong className="text-gray-200">443</strong> to{' '}
+            <strong className="text-gray-200">{ip} port {proxyPort}</strong>
+            {http && <> and external port <strong className="text-gray-200">80</strong> to <strong className="text-gray-200">{ip} port 80</strong></>}.
+            Forward nothing else.
+          </li>
           <li>
             Open Nginx Proxy Manager at{' '}
-            <a className="text-brand-light underline" href={`http://${host}:81`} target="_blank" rel="noreferrer">http://{host}:81</a>{' '}
+            <a className="text-brand-light underline" href={`http://${ip}:81`} target="_blank" rel="noreferrer">http://{ip}:81</a>{' '}
             and create its admin account.
           </li>
           <li>
@@ -324,10 +300,19 @@ function FinishStep({ onDone }) {
             forward hostname <code className="font-mono text-gray-300">field-web</code>, port <code className="font-mono text-gray-300">8080</code>,
             and turn on "Block Common Exploits".
           </li>
-          <li>On the SSL tab: request a new Let's Encrypt certificate and turn on "Force SSL" and "HTTP/2 Support".</li>
+          <li>
+            On the SSL tab: request a new Let's Encrypt certificate
+            {http ? '' : <>, turn on <strong className="text-gray-200">Use a DNS Challenge</strong>, pick your DNS provider and paste its API token</>},
+            and turn on "Force SSL" and "HTTP/2 Support".
+          </li>
         </ol>
-        <p>Field App users sign in at that address with their Field App login. Your admin login works there too.</p>
+        <p>Field App users sign in at that address. Your admin login works there too.</p>
       </section>
+
+      <details className="space-y-2">
+        <summary className="cursor-pointer text-gray-300 flex items-center gap-2"><ScrollText size={14} /> Installation log</summary>
+        <HostLog name="install" />
+      </details>
 
       <div className="flex justify-end">
         <button type="button" className="btn-primary flex items-center gap-1.5" onClick={onDone}>Go to the dashboard <ArrowRight size={14} /></button>
@@ -336,7 +321,11 @@ function FinishStep({ onDone }) {
   );
 }
 
-// --- Wizard ---------------------------------------------------------------------
+// --- Wizard ------------------------------------------------------------------------------
+
+function storedCode() {
+  try { return sessionStorage.getItem(CODE_KEY) || ''; } catch { return ''; }
+}
 
 export function Setup() {
   const navigate = useNavigate();
@@ -352,7 +341,7 @@ export function Setup() {
     refetchInterval: step === 'start' ? 2000 : false,
   });
 
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(storedCode);
   const [form, setForm] = useState({
     companyName: '', productName: branding.productName || 'IT Manager',
     full_name: '', username: '', email: '', password: '', confirm: '',
@@ -360,13 +349,8 @@ export function Setup() {
   const [formError, setFormError] = useState('');
   const [results, setResults] = useState(null);
   const [applyError, setApplyError] = useState('');
-  const server = status?.services?.server;
-  const [serverChoice, setServerChoice] = useState(null);
-  useEffect(() => {
-    if (server?.available && !serverChoice) {
-      setServerChoice({ firewall: server.firewall === 'off' ? 'off' : 'on', schedule: parseSchedule(server.updates) });
-    }
-  }, [server, serverChoice]);
+  const [server, setServer] = useState(null);
+  useEffect(() => { if (status?.services?.server) setServer(status.services.server); }, [status]);
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
   if (isLoading && step === 'start' && !statusError) return <div className="min-h-screen bg-surface-900" />;
@@ -379,10 +363,7 @@ export function Setup() {
     if (form.password.length < 12) { setFormError('Password must be at least 12 characters.'); return; }
 
     const fieldPlanned = status?.services?.field?.configured !== false;
-    setResults({
-      ...(fieldPlanned ? {} : { 'field-admin': null, 'field-branding': null }),
-      ...(server?.available ? {} : { server: null }),
-    });
+    setResults(fieldPlanned ? {} : { 'field-admin': null, 'field-branding': null });
     setApplyError('');
     setStep('apply');
     try {
@@ -391,19 +372,9 @@ export function Setup() {
         companyName: form.companyName,
         productName: form.productName,
         admin: { full_name: form.full_name, username: form.username, email: form.email, password: form.password },
-        ...(server?.available && serverChoice ? {
-          server: {
-            ...(server.firewallChoiceOpen ? { firewall: serverChoice.firewall } : {}),
-            updates: formatSchedule(serverChoice.schedule),
-          },
-        } : {}),
       });
       const byId = Object.fromEntries(result.steps.map(s => [s.id, s]));
-      setResults(r => ({
-        ...r, ...byId,
-        ...(byId['field-admin'] ? {} : { 'field-admin': null, 'field-branding': null }),
-        ...(byId.server ? {} : { server: null }),
-      }));
+      setResults(r => ({ ...r, ...byId, ...(byId['field-admin'] ? {} : { 'field-admin': null, 'field-branding': null }) }));
       try {
         const signedIn = await login(form.username.trim().toLowerCase(), form.password);
         if (!signedIn.user) throw new Error('second step required');
@@ -415,6 +386,7 @@ export function Setup() {
       qc.setQueryData(['setup', 'status'], { ...status, needsSetup: false });
       setForm(f => ({ ...f, password: '', confirm: '' }));
       setCode('');
+      try { sessionStorage.removeItem(CODE_KEY); } catch { /* storage unavailable */ }
     } catch (err) {
       setApplyError(err.response?.data?.error ?? 'Setup failed.');
     }
@@ -438,10 +410,7 @@ export function Setup() {
           {step === 'verify' && (
             <VerifyStep required={status?.setupCodeRequired !== false} code={code} setCode={setCode} onVerified={() => setStep('account')} />
           )}
-          {step === 'account' && (
-            <AccountStep form={form} set={set} onSubmit={submitAccount} error={formError}
-              server={server} serverChoice={serverChoice} setServerChoice={setServerChoice} />
-          )}
+          {step === 'account' && <AccountStep form={form} set={set} onSubmit={submitAccount} error={formError} />}
           {step === 'apply' && (
             <ApplyStep
               results={results}
@@ -456,7 +425,7 @@ export function Setup() {
               <RevealSecrets onDone={() => setStep('finish')} />
             </div>
           )}
-          {step === 'finish' && <FinishStep onDone={() => navigate('/', { replace: true })} />}
+          {step === 'finish' && <FinishStep server={server} onDone={() => navigate('/', { replace: true })} />}
         </div>
       </div>
     </div>

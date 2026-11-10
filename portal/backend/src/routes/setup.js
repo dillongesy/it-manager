@@ -8,13 +8,13 @@ import { getSetting, setSetting, sanitizeBranding, getBranding } from '../lib/se
 import { SETUP_CODE, BUNDLE, oneTimeExists, peekOneTime, destroyOneTime, safeEqual, generateSetupCode, writeOneTime } from '../lib/one-time.js';
 import { fieldPlatform, isFieldConfigured } from '../lib/field-client.js';
 import { pushBrandingToField } from '../lib/branding-sync.js';
-import { hostStatus, requestHostChange } from '../lib/host-control.js';
+import { hostStatus, hostLog, writeInstallerSetupCode, removeInstallerSetupCode } from '../lib/host-control.js';
 
 // First-run setup wizard (public until the first admin exists, then permanently closed).
 //
 //   GET  /api/setup/status → { needsSetup, setupCodeRequired, secretsPending, services? }
-//   POST /api/setup        → { setupCode, companyName, productName, admin: { full_name, username, email, password },
-//                              server?: { firewall: 'on'|'off', updates: schedule } }
+//   POST /api/setup        → { setupCode, companyName, productName, admin: { full_name, username, email, password } }
+//   GET  /api/setup/install-log → the installation log written by the host helper
 //                          ← { ok, steps: [{ id, label, ok, error? }] }
 //
 // The setup code is printed in the Portal API's log on every start until setup is
@@ -40,13 +40,14 @@ export async function announceSetupCode() {
   if (!code) {
     code = generateSetupCode();
     await writeOneTime(SETUP_CODE, code);
+    await writeInstallerSetupCode(code).catch(() => {});
   }
   const line = '='.repeat(64);
   console.log([
     line,
     ' Setup is not complete.',
     ` SETUP CODE: ${code}`,
-    ' Open https://<server>:8443 in a browser and enter this code.',
+    ' Open https://<server> in a browser and enter this code.',
     line,
   ].join('\n'));
 }
@@ -58,13 +59,20 @@ async function serviceStatus() {
   if (field.configured) {
     try { await fieldPlatform.health(); field.reachable = true; } catch (err) { field.error = err.message; }
   }
-  // Server settings, when the host helper from install.sh is present.
+  // What the installer configured (for the finish page), when installed with install.sh.
   const host = await hostStatus();
   const server = host
-    ? { available: true, firewall: host.firewall, firewallChoiceOpen: host.firewallChoiceOpen === true, updates: host.updates }
+    ? { available: true, ip: host.host?.ip ?? null, ports: host.ports ?? null, acme: host.acme, firewall: host.firewall }
     : { available: false };
   return { portal: { reachable: true }, field, server };
 }
+
+router.get('/install-log', async (_req, res, next) => {
+  try {
+    if ((await userCount()) > 0) return res.status(404).json({ error: 'Not found.' });
+    res.json({ log: await hostLog('install') });
+  } catch (err) { next(err); }
+});
 
 router.get('/status', async (_req, res, next) => {
   try {
@@ -159,6 +167,7 @@ router.post('/', limiter, async (req, res, next) => {
   client.release();
 
   await destroyOneTime(SETUP_CODE);
+  await removeInstallerSetupCode().catch(() => {});
   await logAudit({ userId: user.id, userName: user.full_name, action: 'CREATE', entityType: 'user',
     entityId: user.id, entityName: `${user.full_name} — first admin (setup wizard)`, ipAddress: getClientIp(req) });
 
@@ -177,25 +186,6 @@ router.post('/', limiter, async (req, res, next) => {
     }
     const pushed = await pushBrandingToField();
     steps.push({ id: 'field-branding', label: 'Send company details to the Field App', ok: pushed.ok, ...(pushed.ok ? {} : { error: pushed.error }) });
-  }
-
-  // Server settings chosen in the wizard: the firewall (only while the installer's
-  // one-time choice is open) and the automatic update schedule.
-  const server = req.body?.server;
-  const host = server ? await hostStatus() : null;
-  if (host) {
-    const change = {};
-    if (host.firewallChoiceOpen && ['on', 'off'].includes(server.firewall)) change.firewall = server.firewall;
-    if (server.updates !== undefined) change.updates = server.updates;
-    if (Object.keys(change).length) {
-      const label = 'Apply server settings (firewall and automatic updates)';
-      try {
-        const r = await requestHostChange(change);
-        steps.push({ id: 'server', label, ok: r.ok, ...(r.ok ? {} : { error: r.error }) });
-      } catch (err) {
-        steps.push({ id: 'server', label, ok: false, error: err.message });
-      }
-    }
   }
 
   res.status(201).json({ ok: true, user: { username: user.username }, steps });

@@ -2,7 +2,7 @@
 # Copy the root certificate of the Portal's local certificate authority to
 # ./it-manager-ca.crt. Install it once as a trusted root on each computer and phone
 # (by hand, Group Policy or MDM) to remove the browser warning. The same file can be
-# downloaded from https://<server>:8443/ca.crt.
+# downloaded from https://<server>/ca.crt.
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")/.."
 docker compose exec -T portal-web cat /etc/nginx/tls/ca.crt > ./it-manager-ca.crt

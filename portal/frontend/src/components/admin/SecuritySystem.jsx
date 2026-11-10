@@ -22,8 +22,8 @@ export function Security() {
           <li>Each service runs in its own container on its own private network. The databases have no route to the internet or to each other.</li>
           <li>The Field App's database is reachable only by the Field API. The Portal reaches the Field App only through the Field API's service endpoints — never the reverse.</li>
           <li>Stored credentials and integration secrets are encrypted (AES-256-GCM) with the master key generated on first boot.</li>
-          <li>The Portal accepts private (LAN) addresses only and refuses the internet-facing proxy's network, so publishing the Field App can never expose the Portal.</li>
-          <li>The host firewall set up by install.sh lets the LAN reach the Portal (8443) and the proxy admin (81), and only ports 80 and 443 from anywhere.</li>
+          <li>The Portal accepts the office network chosen during setup only, and refuses the internet-facing proxy's network, so publishing the Field App can never expose the Portal.</li>
+          <li>The firewall admits only the office network to the Portal and the proxy admin page; from the internet, only the Field App's port is reachable, through the router.</li>
         </ul>
       </section>
     </div>

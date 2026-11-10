@@ -15,7 +15,7 @@ import { getMfaPolicy, saveMfaPolicy } from '../lib/mfa.js';
 import { fieldPlatform, isFieldConfigured } from '../lib/field-client.js';
 import { getDefaultRates, saveDefaultRates, RATE_LIMITS } from '../lib/billing-rates.js';
 import { storageReport } from '../lib/storage.js';
-import { hostStatus, requestHostChange } from '../lib/host-control.js';
+import { hostStatus, hostLog, requestHostChange } from '../lib/host-control.js';
 
 // Admin API (admin role only).
 //
@@ -33,6 +33,7 @@ import { hostStatus, requestHostChange } from '../lib/host-control.js';
 //   GET    /api/admin/host                      firewall and update status (host helper)
 //   PUT    /api/admin/host/updates              { schedule } automatic update schedule
 //   POST   /api/admin/host/update-now           start an update now
+//   GET    /api/admin/host/logs/:name           install or update log
 //   GET    /api/admin/billing-rates             default hourly rates for new customers
 //   PUT    /api/admin/billing-rates             { rates: [{ label, rate }], applyToExisting? }
 export const adminRouter = Router();
@@ -253,6 +254,13 @@ adminRouter.put('/host/updates', async (req, res, next) => {
     if (err.status) return res.status(err.status).json({ error: err.message });
     next(err);
   }
+});
+
+adminRouter.get('/host/logs/:name', async (req, res, next) => {
+  try {
+    if (!['install', 'update'].includes(req.params.name)) return res.status(404).json({ error: 'Not found.' });
+    res.json({ log: await hostLog(req.params.name) });
+  } catch (err) { next(err); }
 });
 
 adminRouter.post('/host/update-now', async (req, res, next) => {

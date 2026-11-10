@@ -26,6 +26,7 @@ export const adminApi = {
   host:          () => api.get('/admin/host').then(r => r.data),
   saveUpdates:   (schedule) => api.put('/admin/host/updates', { schedule }).then(r => r.data),
   updateNow:     () => api.post('/admin/host/update-now').then(r => r.data),
+  hostLog:       (name) => api.get(`/admin/host/logs/${name}`).then(r => r.data),
 
   system:  () => api.get('/admin/system').then(r => r.data),
   storage: () => api.get('/admin/storage').then(r => r.data),

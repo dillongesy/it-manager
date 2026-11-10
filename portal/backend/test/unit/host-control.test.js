@@ -49,18 +49,19 @@ test('a request is written as whitelisted lines and its result is returned', asy
   const saved = config.hostControlDir;
   const dir = await mkdtemp(join(tmpdir(), 'host-control-'));
   const seen = [];
-  const stop = fakeHelper(dir, (fields) => { seen.push(fields); return fields.firewall ? { ok: false, error: 'closed' } : { ok: true }; });
+  const stop = fakeHelper(dir, (fields) => { seen.push(fields); return fields.update ? { ok: false, error: 'busy' } : { ok: true }; });
   try {
     config.hostControlDir = dir;
     await writeFile(join(dir, 'status.json'), JSON.stringify({ agent: true, updates: 'weekly:sun:02' }));
     assert.equal((await hostStatus()).updates, 'weekly:sun:02');
 
     assert.deepEqual(await requestHostChange({ updates: 'daily:03' }), { ok: true, error: null });
-    assert.deepEqual(await requestHostChange({ firewall: 'off' }), { ok: false, error: 'closed' });
-    assert.deepEqual(seen.map(({ id, ...rest }) => rest), [{ updates: 'daily:03' }, { firewall: 'off' }]);
+    assert.deepEqual(await requestHostChange({ update: 'now' }), { ok: false, error: 'busy' });
+    assert.deepEqual(seen.map(({ id, ...rest }) => rest), [{ updates: 'daily:03' }, { update: 'now' }]);
 
     await assert.rejects(requestHostChange({ updates: 'daily:03\nfirewall=off' }), (e) => e.status === 400);
-    await assert.rejects(requestHostChange({ firewall: 'maybe' }), (e) => e.status === 400);
+    await assert.rejects(requestHostChange({ firewall: 'off' }), (e) => e.status === 400);   // not settable from the Portal
+    await assert.rejects(requestHostChange({ update: 'later' }), (e) => e.status === 400);
     await assert.rejects(requestHostChange({}), (e) => e.status === 400);
     await assert.rejects(access(join(dir, 'request')));   // invalid requests are never written
   } finally {

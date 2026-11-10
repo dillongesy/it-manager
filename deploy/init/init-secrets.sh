@@ -11,7 +11,8 @@
 #   /secrets/field-db    db_password                                   → field-db (uid 70)
 #   /secrets/field-api   db_password, access/refresh secrets, encryption_key,
 #                        service_token (= portal bridge_token)         → field-api (uid 1000)
-#   /secrets/portal-web  cert.pem, key.pem, ca.crt (Portal HTTPS)      → portal-web (uid 101)
+#   /secrets/portal-web  cert.pem, key.pem, ca.crt (Portal HTTPS)      → portal-web (uid 101) and
+#                                                                        the setup wizard (gid 1000)
 #   /pki                 the local CA's private key (init only)
 #
 # The Portal's HTTPS certificate is signed by a local CA created on first boot. It
@@ -22,7 +23,8 @@
 # Containers mount their volume read-only. No secret is ever in docker-compose.yml,
 # an .env file, environment variables, or `docker inspect` output.
 #
-#   /host-control        settings requests from the Portal to the host helper
+#   /host-control        settings requests from the Portal to the host helper, and a
+#                        copy of the setup code for the setup wizard (until setup is done)
 #   /reveal/setup_code   one-time code that unlocks the setup wizard
 #   /reveal/bundle.json  every secret, readable through the app EXACTLY ONCE; the
 #                        Portal API shreds it the moment it is revealed
@@ -156,17 +158,30 @@ ensure_portal_tls() {
   cp "$PKI/ca.crt" "$P_WEB/ca.crt.tmp" && mv -f "$P_WEB/ca.crt.tmp" "$P_WEB/ca.crt"
 }
 
+# Keep the setup wizard's copy of the setup code in step with the Portal's.
+sync_setup_code() {
+  if [ -s "$REVEAL/setup_code" ]; then
+    cp "$REVEAL/setup_code" "$HOST_CONTROL/setup_code.tmp"
+    chown "$APP_UID:$APP_UID" "$HOST_CONTROL/setup_code.tmp"; chmod 0600 "$HOST_CONTROL/setup_code.tmp"
+    mv -f "$HOST_CONTROL/setup_code.tmp" "$HOST_CONTROL/setup_code"
+  else
+    rm -f "$HOST_CONTROL/setup_code"
+  fi
+}
+
 fix_perms() {
   for d in "$P_DB" "$F_DB"; do chown -R "$PG_UID:$PG_UID" "$d"; chmod 0500 "$d"; done
   for d in "$P_API" "$F_API"; do chown -R "$APP_UID:$APP_UID" "$d"; chmod 0500 "$d"; done
   find "$P_DB" "$F_DB" "$P_API" "$F_API" -type f -exec chmod 0400 {} +
-  chown -R "$WEB_UID:$WEB_UID" "$P_WEB"; chmod 0500 "$P_WEB"
-  find "$P_WEB" -type f -exec chmod 0400 {} +
+  # Owner nginx (portal-web); group 1000 for the setup wizard, which serves the same certificate.
+  chown -R "$WEB_UID:$APP_UID" "$P_WEB"; chmod 0550 "$P_WEB"
+  find "$P_WEB" -type f -exec chmod 0440 {} +
   chown -R 0:0 "$PKI"; chmod 0700 "$PKI"; find "$PKI" -type f -exec chmod 0600 {} +
   # The Portal API must be able to delete (shred) files here, so it owns the dir.
   chown "$APP_UID:$APP_UID" "$REVEAL"; chmod 0700 "$REVEAL"
   # Settings requests for the host helper: written by the Portal API, read by root.
   chown "$APP_UID:$APP_UID" "$HOST_CONTROL"; chmod 0755 "$HOST_CONTROL"
+  sync_setup_code
 }
 
 mkdir -p "$P_DB" "$P_API" "$F_DB" "$F_API" "$P_WEB" "$PKI" "$REVEAL" "$HOST_CONTROL"
@@ -226,7 +241,7 @@ if [ "$fresh" = "1" ]; then
   echo "──────────────────────────────────────────────────────────"
   echo " First boot: secrets generated."
   echo " SETUP CODE: $c"
-  echo " Open https://<server>:8443 in a browser and enter this code to finish setup."
+  echo " Open https://<server> in a browser and enter this code to finish setup."
   echo " The Portal API also prints it in its log until setup is complete."
   echo "──────────────────────────────────────────────────────────"
 else

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Set up IT Manager</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <main class="page">
+    <header class="title">
+      <h1>Set up IT Manager</h1>
+      <p class="muted">This page appears only once, on a new installation.</p>
+    </header>
+
+    <ol class="steps" id="steps">
+      <li data-step="verify">Verify</li>
+      <li data-step="network">Network</li>
+      <li data-step="security">Security and updates</li>
+      <li data-step="review">Review</li>
+      <li data-step="install">Install</li>
+    </ol>
+
+    <!-- 1. Setup code -->
+    <section class="card" data-panel="verify" hidden>
+      <h2>Confirm it's your server</h2>
+      <p>Enter the setup code that <code>install.sh</code> printed when it finished. It proves you manage this server, so nobody else on the network can set it up first.</p>
+      <p class="muted small">Lost it? On the server, in the install folder, run <code>docker compose logs installer</code>.</p>
+      <form id="verify-form">
+        <label for="code">Setup code</label>
+        <input id="code" class="mono wide-spacing" autocomplete="off" placeholder="XXXX-XXXX-XXXX" required>
+        <p class="error" id="verify-error" hidden></p>
+        <div class="actions"><button type="submit" class="primary">Continue</button></div>
+      </form>
+    </section>
+
+    <!-- 2. Network -->
+    <section class="card" data-panel="network" hidden>
+      <h2>Network</h2>
+      <form id="network-form">
+        <div class="field">
+          <label for="lan">Office network allowed to use the Portal</label>
+          <input id="lan" class="mono" required>
+          <p class="hint">Computers on this network can open the Portal at <strong id="portal-url"></strong>. Everyone else is refused.
+            Written as a network range: <code>192.168.1.0/24</code> covers 192.168.1.1 to 192.168.1.254. Separate several ranges with commas,
+            for example to add a VPN. Detected for this server: <span id="lan-detected"></span>.</p>
+        </div>
+
+        <div class="field">
+          <label for="names">Local DNS names for the Portal <span class="muted">(optional)</span></label>
+          <input id="names" class="mono" placeholder="portal.office.lan">
+          <p class="hint">Only if your office DNS has a name for this server, such as <code>portal.office.lan</code>.
+            The Portal's certificate is issued for these names and for the server's IP address, so the browser accepts
+            either. Leave empty to use the IP address only. This is not where staff use the Field App; that is set up later
+            in Nginx Proxy Manager with your public domain.</p>
+        </div>
+
+        <div class="field">
+          <label for="prefix">Internal network for the containers</label>
+          <div class="row">
+            <input id="prefix" class="mono narrow" required>
+            <span class="mono muted">.0.0 – .8.255</span>
+          </div>
+          <p class="hint">The app's containers talk to each other on nine private networks inside this server. They must not
+            overlap any network the server already uses (your LAN, a VPN, other Docker apps). The suggested value is free;
+            change it only if you know it collides with a network elsewhere.</p>
+          <p class="status" id="prefix-status"></p>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="ghost" data-back="verify">Back</button>
+          <button type="submit" class="primary">Continue</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 3. Security and updates -->
+    <section class="card" data-panel="security" hidden>
+      <h2>Security and updates</h2>
+      <form id="security-form">
+        <fieldset class="field">
+          <legend>Firewall</legend>
+          <label class="choice"><input type="radio" name="firewall" value="on" checked>
+            <span><strong>Keep hardening on (recommended)</strong>
+              <span class="hint">Only the Field App's port is open to the internet, and only through your router. The Portal and the
+                Nginx Proxy Manager admin page accept your office network only. Every other port of the app is closed.</span></span></label>
+          <label class="choice"><input type="radio" name="firewall" value="off">
+            <span><strong>Turn hardening off</strong>
+              <span class="hint">For servers behind another firewall you manage. The Portal still refuses anything outside your office network.</span></span></label>
+          <p class="hint">This applies only to the app's ports; other services on this server are not changed. After setup it can be changed only on the server: <code>sudo ./install.sh firewall on|off</code>.</p>
+        </fieldset>
+
+        <fieldset class="field">
+          <legend>Field App certificate</legend>
+          <p class="hint">The Field App is published with a free Let's Encrypt certificate, requested by Nginx Proxy Manager. Let's Encrypt must confirm you own the domain:</p>
+          <label class="choice"><input type="radio" name="acme" value="dns" checked>
+            <span><strong>DNS validation: port 443 only</strong>
+              <span class="hint">Nginx Proxy Manager proves ownership through your DNS provider (Cloudflare, Route 53, DigitalOcean and many others) with an API token. Nothing but port 443 is open to the internet.</span></span></label>
+          <label class="choice"><input type="radio" name="acme" value="http">
+            <span><strong>HTTP validation: ports 443 and 80</strong>
+              <span class="hint">Works with any DNS provider, but port 80 must also be forwarded. It only redirects to HTTPS and answers the certificate check.</span></span></label>
+        </fieldset>
+
+        <fieldset class="field">
+          <legend>Automatic updates</legend>
+          <div class="row">
+            <select id="update-frequency" aria-label="Frequency">
+              <option value="off">Off</option>
+              <option value="daily">Every day</option>
+              <option value="weekly" selected>Every week</option>
+            </select>
+            <select id="update-day" aria-label="Day">
+              <option value="mon">Monday</option><option value="tue">Tuesday</option><option value="wed">Wednesday</option>
+              <option value="thu">Thursday</option><option value="fri">Friday</option><option value="sat">Saturday</option>
+              <option value="sun" selected>Sunday</option>
+            </select>
+            <select id="update-hour" aria-label="Time"></select>
+          </div>
+          <p class="hint">Downloads new versions of every part of the app, including Nginx Proxy Manager. Can be changed later in Admin → System.</p>
+        </fieldset>
+
+        <div class="actions">
+          <button type="button" class="ghost" data-back="network">Back</button>
+          <button type="submit" class="primary">Continue</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 4. Review -->
+    <section class="card" data-panel="review" hidden>
+      <h2>Review</h2>
+      <dl class="summary" id="summary"></dl>
+      <div class="note" id="router-note"></div>
+      <p class="error" id="install-error" hidden></p>
+      <div class="actions">
+        <button type="button" class="ghost" data-back="security">Back</button>
+        <button type="button" class="primary" id="install-button">Install</button>
+      </div>
+    </section>
+
+    <!-- 5. Install -->
+    <section class="card" data-panel="install" hidden>
+      <h2>Installing</h2>
+      <ul class="progress" id="progress"></ul>
+      <details open>
+        <summary>Installation log</summary>
+        <pre class="log" id="log" aria-live="polite"></pre>
+      </details>
+      <p class="status" id="install-status"></p>
+      <div class="actions" id="continue-actions" hidden>
+        <a class="button primary" href="/setup" id="continue-link">Continue to the Portal setup</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

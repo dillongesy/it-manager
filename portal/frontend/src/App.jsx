@@ -25,6 +25,7 @@ const Services        = lazyPage(() => import('./pages/Services.jsx'),        'S
 const Admin           = lazyPage(() => import('./pages/Admin.jsx'),           'Admin');
 const Setup           = lazyPage(() => import('./pages/Setup.jsx'),           'Setup');
 const AuditLog        = lazyPage(() => import('./pages/AuditLog.jsx'),        'AuditLog');
+const Certificate     = lazyPage(() => import('./pages/Certificate.jsx'),     'Certificate');
 
 const Blank = () => <div className="min-h-screen bg-surface-900" />;
 
@@ -90,6 +91,7 @@ function AppRoutes() {
                 <Route path="/orders"            element={<Orders />} />
                 <Route path="/billing"           element={<BillingQueue />} />
                 <Route path="/audit"             element={<AuditLog />} />
+                <Route path="/certificate"       element={<Certificate />} />
                 <Route path="/admin"             element={
                   <ProtectedRoute roles={['admin']}>
                     <Admin />

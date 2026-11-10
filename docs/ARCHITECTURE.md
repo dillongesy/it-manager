@@ -5,10 +5,11 @@
 | Service | Image | Runs as | Networks | Purpose |
 |---|---|---|---|---|
 | `init` | `init` | root, then exits | none | Generates secrets and the Portal certificate on first start; re-asserts permissions and renews the certificate on every start |
-| `portal-web` | `portal-web` (nginx) | nginx (101), read-only | portal_ingress, portal_app | Portal HTTPS on 8443 (LAN only), serves the SPA, proxies `/api` |
+| `installer` | `installer` (Node) | node (1000), read-only | default bridge | Setup wizard on the Portal's port, before installation only; stopped by the host helper |
+| `portal-web` | `portal-web` (nginx) | nginx (101), read-only | portal_ingress, portal_app | Portal HTTPS on host port 443 (office network only), serves the SPA, proxies `/api` |
 | `portal-api` | `portal-api` (Node) | node (1000), read-only | portal_app (fixed .3.10), portal_db, bridge, portal_egress | Portal API; runs migrations on start |
 | `portal-db` | `postgres:17-alpine` | postgres (70) | portal_db | Portal database |
-| `proxy` | `jc21/nginx-proxy-manager` | root, 7 capabilities | proxy_public, field_edge | Internet entrance for the Field App: TLS (Let's Encrypt), 80/443; admin UI on 81 |
+| `proxy` | `jc21/nginx-proxy-manager` | root, 7 capabilities | proxy_public, field_edge | Internet entrance for the Field App: TLS (Let's Encrypt) on host port 4443 (the router maps public 443 to it), 80 for HTTP validation; admin UI on 81 |
 | `field-web` | `field-web` (nginx) | nginx (101), read-only | field_edge, field_app | Serves the Field SPA and proxies `/api` (refuses `/api/service`) |
 | `field-api` | `field-api` (Node) | node (1000), read-only | field_app, field_db, bridge | Field API |
 | `field-db` | `postgres:17-alpine` | postgres (70) | field_db | Field database |
@@ -44,7 +45,7 @@ Docker lets two containers communicate only when they share a network. The full 
 | **field-db** | No | No | No | No | No | No | — | No |
 
 A container can also reach a port the host publishes, which would give the proxy a
-path to the Portal through the host's own `:8443`. Three layers close it:
+path to the Portal through the host's own Portal port. Three layers close it:
 
 1. portal-web refuses the proxy's subnet (`PROXY_SUBNET`) before allowing private
    addresses (`deny` precedes `allow` in its access list).
@@ -69,12 +70,13 @@ every `docker compose up`
   init ─┬─ secrets_portal_db  : db_password                       (uid 70, 0400, ro mount)
         ├─ secrets_portal_api : db_password, access/refresh secret,
         │                       encryption_key, bridge_token      (uid 1000, 0400, ro mount)
-        ├─ secrets_portal_web : cert.pem, key.pem, ca.crt         (uid 101, 0400, ro mount)
+        ├─ secrets_portal_web : cert.pem, key.pem, ca.crt         (uid 101 / gid 1000, 0440, ro mount)
         ├─ secrets_field_db   : db_password                       (uid 70, 0400, ro mount)
         ├─ secrets_field_api  : db_password, access/refresh secret,
         │                       encryption_key, service_token     (uid 1000, 0400, ro mount)
         ├─ pki                : the local CA's key                (root, init only)
-        ├─ host_control       : requests to the host helper       (uid 1000, rw → portal-api only)
+        ├─ host_control       : requests to the host helper, logs,
+        │                       setup code copy                   (uid 1000, rw → portal-api, installer)
         └─ reveal             : setup_code, bundle.json           (uid 1000, 0600, rw → portal-api only)
 ```
 
@@ -157,42 +159,58 @@ TOTP (RFC 6238: HMAC-SHA1, 30-second steps, 6 digits), implemented in `lib/totp.
   when used.
 - **Reset.** Admins clear a user's 2FA (`POST /api/users/:id/mfa/reset`, in each app).
 
-## Host helper
+## Installation and the host helper
 
-`install.sh` installs two systemd units: `it-manager-host.path` watches for a request
-file in the `host_control` volume and starts `it-manager-host.service`, which runs
-`install.sh host-apply` as root. The Portal API writes the request; it has no other way to
-affect the host.
+Installation has three stages:
+
+1. `install.sh` (console) installs Docker, runs `init` (secrets, the Portal certificate,
+   the setup code), applies the default firewall, installs the host helper, and starts the
+   `installer` service on the Portal's port. It asks nothing.
+2. The installer (the setup wizard) collects the office network, optional Portal DNS
+   names, the internal subnet prefix, the firewall choice, the certificate validation mode
+   and the update schedule.
+3. The host helper installs: it writes `.env`, applies the firewall and the update timer,
+   pulls the images and starts the stack, logging each stage to `install.log` for the
+   browser. Once the Portal API is healthy it removes the installer and starts portal-web
+   on the same port; the browser continues with the Portal's setup at `/setup`. The setup
+   code verified by the installer is kept in the browser's session storage, so it is not
+   asked twice.
+
+The host helper is two systemd units installed by `install.sh`: `it-manager-host.path`
+watches for a request file in the `host_control` volume and starts
+`it-manager-host.service`, which runs `install.sh host-apply` as root. The installer and the
+Portal API write requests; neither has any other way to affect the host.
 
 - The request is copied without following links into a private file before it is read,
-  and is limited to 512 bytes. Only these lines are accepted: `updates=off|daily:HH|weekly:DAY:HH`,
-  `update=now`, and `firewall=on|off`. Anything else is rejected with a generic error that
+  and is limited to 1 KB. Accepted lines: `updates=off|daily:HH|weekly:DAY:HH` and
+  `update=now` at any time; `check-prefix=` and `install=start` (with `lan`, `names`,
+  `prefix`, `firewall`, `acme`, `updates`) only while setup is pending. Every value is
+  matched against a strict pattern. Anything else is rejected with a generic error that
   never repeats the request's content.
-- `firewall=` is accepted only while `/etc/it-manager/firewall-choice-open` exists. The
-  installer creates it on the first install and the helper removes it after the setup
-  wizard's choice, so the Portal cannot change the firewall afterwards.
-- The helper writes `result.json` (per request id) and `status.json` (firewall state,
-  schedule, next and last update) back, by writing a new file and renaming it.
-- Updates run as `it-manager-update.service` (`docker compose pull`, `up -d`, image prune),
-  started by `it-manager-update.timer` or by "Update now".
+- The helper writes `result.json` (per request id) and `status.json` (installation state,
+  host facts, ports, firewall, validation mode, schedule, next and last update) back, by
+  writing a new file and renaming it.
+- Updates run as `it-manager-update.service` (`install.sh run-update`: `docker compose pull`,
+  `up -d`, image prune, output to `update.log`), started by `it-manager-update.timer` or by
+  "Update now".
 
-## Host firewall
+## Firewall
 
-Applied by `install.sh` (on by default; `sudo ./install.sh firewall on|off|status`):
+Applied by the host helper (on by default, chosen in the setup wizard; afterwards
+`sudo ./install.sh firewall on|off|status`). Docker-published ports bypass the host's INPUT
+rules, so the rules live in Docker's `DOCKER-USER` chain and are re-applied by
+`it-manager-firewall.service` whenever Docker starts. They match the *original*
+destination port via conntrack:
 
-- **ufw:** default deny incoming, allow outgoing. SSH is allowed from the LAN CIDR only
-  (`SSH_FROM=any` in `/etc/it-manager/install.conf` to override).
-- **DOCKER-USER** (persisted in `/etc/ufw/after.rules`). Filters traffic forwarded to
-  containers, matching the *original* destination port via conntrack:
-  - traffic from `proxy_public` to `portal_ingress`: dropped;
-  - 80 and 443 (proxy): from anywhere;
-  - 8443 (Portal) and 81 (proxy admin): LAN only;
-  - anything else new arriving on the external interface: dropped.
-- Ports are published on IPv4 only, because Docker's IPv6 userland proxy would hide
-  client addresses from the LAN-only checks.
+- traffic from `proxy_public` to `portal_ingress`: dropped;
+- 4443 (proxy, reached through the router's 443 mapping): from anywhere;
+- 80 (proxy): from anywhere with HTTP validation, otherwise from the office network;
+- 443 (Portal) and 81 (proxy admin): from the office network only;
+- anything else new arriving on the external interface: dropped.
 
-With the firewall off, the Portal's own address checks still apply; forward only 80
-and 443 from the router.
+The host's own services (SSH, for example) are not changed. Ports are published on IPv4
+only, because Docker's IPv6 userland proxy would hide client addresses from the
+office-network checks. With the firewall off, the Portal's own address checks still apply.
 
 Docker networks segment containers *inside* one host. If you also want 802.1Q VLAN
 separation on the physical network (for example, the server on a management VLAN, phones on a

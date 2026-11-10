@@ -4,6 +4,7 @@
 #
 services:
   init:       { build: ./deploy/init }
+  installer:  { build: ./deploy/installer }
   portal-web: { build: ./portal/frontend }
   portal-api: { build: ./portal/backend }
   field-web:  { build: ./field/frontend }

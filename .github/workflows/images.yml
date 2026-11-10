@@ -2,7 +2,7 @@
 # and on version tags (v1.2.3). Servers update with
 # docker compose pull && docker compose up -d.
 #
-# Images: ghcr.io/<owner>/<repo>/{init,portal-api,portal-web,field-api,field-web}
+# Images: ghcr.io/<owner>/<repo>/{init,installer,portal-api,portal-web,field-api,field-web}
 # Tags:   latest (main), sha-<short>, and 1.2.3 / 1.2 for v-tags.
 name: images
 
@@ -47,6 +47,7 @@ jobs:
       matrix:
         include:
           - { name: init,       context: deploy/init }
+          - { name: installer,  context: deploy/installer }
           - { name: portal-api, context: portal/backend }
           - { name: portal-web, context: portal/frontend }
           - { name: field-api,  context: field/backend }
