@@ -25,6 +25,8 @@ All notable changes to this project are documented here. The format follows
 - LAN mode: browsing to `https://<server-ip>` failed with `ERR_SSL_PROTOCOL_ERROR`,
   because browsers send no SNI for IP addresses. Caddy now uses `DEFAULT_SNI`.
 - Re-running `install.sh` crashed ufw on a non-ASCII character in `after.rules`.
+- The arm64 web image build could hang under QEMU emulation. The frontend build stage
+  now runs on the build host's native platform, and build jobs time out after 45 minutes.
 
 ## [1.0.0]
 

@@ -39,6 +39,9 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
+    # A normal build takes a few minutes; fail a hung one instead of waiting for
+    # GitHub's 6-hour limit.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:

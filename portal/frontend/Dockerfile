@@ -1,6 +1,8 @@
 # Portal web - static React build served by unprivileged nginx, which also
 # proxies /api to the Portal API on the internal app network.
-FROM node:24-alpine AS build
+# The build output is static files, identical on every architecture, so the build
+# stage runs natively on the build host; only the nginx stage is per-platform.
+FROM --platform=$BUILDPLATFORM node:24-alpine AS build
 WORKDIR /src
 COPY package.json package-lock.json ./
 RUN npm ci
