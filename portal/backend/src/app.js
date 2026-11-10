@@ -44,10 +44,19 @@ import { seatSyncRouter, customerSeatSyncRouter } from './routes/seat-sync.js';
 import setupRoutes from './routes/setup.js';
 import brandingRoutes from './routes/branding.js';
 import { adminRouter } from './routes/admin.js';
+import { ipInCidr } from './lib/cidr.js';
 
 const app = express();
 
 app.set('trust proxy', config.trustProxy);
+
+// The Portal is LAN only. portal-web already refuses the reverse proxy's network; this
+// repeats the check in case a request reaches the API another way.
+if (config.proxySubnet) {
+  app.use((req, res, next) => (ipInCidr(req.ip, config.proxySubnet)
+    ? res.status(403).json({ error: 'Forbidden.' })
+    : next()));
+}
 
 app.use(helmet());
 app.use(cors({

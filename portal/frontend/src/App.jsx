@@ -28,6 +28,16 @@ const AuditLog        = lazyPage(() => import('./pages/AuditLog.jsx'),        'A
 
 const Blank = () => <div className="min-h-screen bg-surface-900" />;
 
+const Starting = () => (
+  <div className="min-h-screen bg-surface-900 flex items-center justify-center px-4">
+    <div className="text-center space-y-2" role="status">
+      <Loader2 size={28} className="animate-spin text-gray-400 mx-auto" />
+      <p className="text-gray-200">The server is starting</p>
+      <p className="text-gray-500 text-sm">This page continues automatically when it is ready.</p>
+    </div>
+  </div>
+);
+
 // Shown in the content area (the nav stays put) while a page's chunk loads.
 const PageLoading = () => (
   <div className="flex items-center justify-center py-24 text-surface-400" role="status" aria-label="Loading">
@@ -35,11 +45,19 @@ const PageLoading = () => (
   </div>
 );
 
-// A brand-new install (no users yet) sends every page to the setup wizard.
+// A brand-new install (no users yet) sends every page to the setup wizard. While the
+// API is still starting (first start runs database migrations), show that and retry.
 function SetupGate({ children }) {
   const location = useLocation();
-  const { data, isLoading } = useQuery({ queryKey: ['setup', 'status'], queryFn: setupApi.status, staleTime: Infinity, retry: 1 });
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['setup', 'status'],
+    queryFn: setupApi.status,
+    staleTime: Infinity,
+    retry: false,
+    refetchInterval: (query) => (query.state.status === 'error' ? 3000 : false),
+  });
   if (isLoading) return <Blank />;
+  if (isError && !data) return <Starting />;
   if (data?.needsSetup && location.pathname !== '/setup') return <Navigate to="/setup" replace />;
   return children;
 }

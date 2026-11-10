@@ -1,8 +1,8 @@
 # Build and publish every image to GitHub Container Registry on each push to main
-# and on version tags (v1.2.3). Servers then update with ./update.sh
-# (docker compose pull && docker compose up -d).
+# and on version tags (v1.2.3). Servers update with
+# docker compose pull && docker compose up -d.
 #
-# Images: ghcr.io/<owner>/<repo>/{init,edge,portal-api,portal-web,field-api,field-web}
+# Images: ghcr.io/<owner>/<repo>/{init,portal-api,portal-web,field-api,field-web}
 # Tags:   latest (main), sha-<short>, and 1.2.3 / 1.2 for v-tags.
 name: images
 
@@ -47,7 +47,6 @@ jobs:
       matrix:
         include:
           - { name: init,       context: deploy/init }
-          - { name: edge,       context: deploy/edge }
           - { name: portal-api, context: portal/backend }
           - { name: portal-web, context: portal/frontend }
           - { name: field-api,  context: field/backend }

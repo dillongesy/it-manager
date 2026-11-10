@@ -2,7 +2,7 @@ import { lazy } from 'react';
 
 // A page loaded on first visit: lazyPage(() => import('./pages/Tasks.jsx'), 'Tasks').
 //
-// After ./update.sh the old build's chunks are gone. A tab opened before the update
+// After an update the old build's chunks are gone. A tab opened before the update
 // still asks for the old file names, the import fails, and the page would go blank.
 // Reload once instead: index.html is served no-cache, so the reload picks up the new
 // build. The session flag stops a reload loop if the chunk is missing for another reason.

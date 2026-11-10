@@ -12,12 +12,14 @@ export const config = {
   // Bind address. Containers set HOST to the API's fixed address on the internal
   // app network, so nothing on the Field bridge network can open a connection to it.
   host: process.env.HOST || '127.0.0.1',
-  // Proxies in front of the API (Docker: Caddy edge → nginx web = 2).
+  // Proxies in front of the API (Docker: portal-web = 1).
   trustProxy: parseInt(process.env.TRUST_PROXY ?? '1', 10),
   appVersion: process.env.APP_VERSION || 'dev',
   // One-time setup material written by the init container (setup code + the
   // reveal-once recovery bundle). Unset in local dev = no setup code required.
   revealDir: process.env.REVEAL_DIR || null,
+  // The internet-facing reverse proxy's network. Requests from it are always refused.
+  proxySubnet: process.env.PROXY_SUBNET || null,
   nodeEnv: process.env.NODE_ENV ?? 'development',
   isDev: (process.env.NODE_ENV ?? 'development') === 'development',
 

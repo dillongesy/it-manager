@@ -1,8 +1,9 @@
 // One-time material written by the init container into the REVEAL_DIR volume
 // (the only volume the Portal API can write to besides uploads):
 //
-//   setup_code   - proves the person running the setup wizard has shell access to
-//                  the host (install.sh prints it). Shredded when setup completes.
+//   setup_code   - proves the person running the setup wizard can see the server's
+//                  container logs (the Portal API prints it on start-up until setup
+//                  is complete). Shredded when setup completes.
 //   bundle.json  - the recovery secrets (master encryption key, DB passwords, …).
 //                  Shredded the instant it is read. After that, no API route can
 //                  produce it again: the only copies left are the read-only secret
@@ -16,7 +17,7 @@
 // system.secretsRevealedAt flag checked by the caller).
 import crypto from 'crypto';
 import { existsSync } from 'fs';
-import { open, readFile, rename, stat, unlink } from 'fs/promises';
+import { open, readFile, rename, stat, unlink, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { config } from '../config/index.js';
 
@@ -34,6 +35,20 @@ export async function peekOneTime(name) {
   const p = pathOf(name);
   if (!p) return null;
   try { return (await readFile(p, 'utf8')).trim(); } catch { return null; }
+}
+
+/** A new setup code, e.g. "4F2A-91C0-7BDE". */
+export function generateSetupCode() {
+  return crypto.randomBytes(6).toString('hex').toUpperCase().replace(/(.{4})(.{4})(.{4})/, '$1-$2-$3');
+}
+
+/** Write a one-time file atomically, readable by this process only. */
+export async function writeOneTime(name, value) {
+  const p = pathOf(name);
+  if (!p) return;
+  const tmp = `${p}.${crypto.randomBytes(4).toString('hex')}.tmp`;
+  await writeFile(tmp, value, { mode: 0o600 });
+  await rename(tmp, p);
 }
 
 async function shred(p) {

@@ -1,8 +1,9 @@
 import api from './client.js';
 
 export const setupApi = {
-  status: () => api.get('/setup/status').then(r => r.data),
-  run:    (body) => api.post('/setup', body).then(r => r.data),
+  status:     () => api.get('/setup/status').then(r => r.data),
+  verifyCode: (setupCode) => api.post('/setup/verify-code', { setupCode }).then(r => r.data),
+  run:        (body) => api.post('/setup', body).then(r => r.data),
 };
 
 export const adminApi = {

@@ -32,7 +32,7 @@ vol_tar field_uploads  "$OUT/field-uploads.tgz"
 if [ "$WITH_SECRETS" = "1" ]; then
   [ "$(id -u)" -eq 0 ] || { echo "--secrets requires root." >&2; exit 1; }
   echo "Archiving secret volumes…"
-  for v in secrets_portal_db secrets_portal_api secrets_field_db secrets_field_api; do
+  for v in secrets_portal_db secrets_portal_api secrets_portal_web secrets_field_db secrets_field_api pki proxy_data proxy_letsencrypt; do
     vol_tar "$v" "$OUT/$v.tgz"
   done
 fi

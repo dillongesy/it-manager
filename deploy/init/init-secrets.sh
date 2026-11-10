@@ -11,6 +11,13 @@
 #   /secrets/field-db    db_password                                   → field-db (uid 70)
 #   /secrets/field-api   db_password, access/refresh secrets,
 #                        service_token (= portal bridge_token)         → field-api (uid 1000)
+#   /secrets/portal-web  cert.pem, key.pem, ca.crt (Portal HTTPS)      → portal-web (uid 101)
+#   /pki                 the local CA's private key (init only)
+#
+# The Portal's HTTPS certificate is signed by a local CA created on first boot. It
+# covers localhost plus PORTAL_HOSTNAMES (comma-separated names and IPs) and is
+# re-issued when that list changes or less than 90 days remain. Installing ca.crt as
+# a trusted root on each device removes the browser warning.
 #
 # Containers mount their volume read-only. No secret is ever in docker-compose.yml,
 # an .env file, environment variables, or `docker inspect` output.
@@ -24,7 +31,8 @@
 # Commands (docker compose run --rm init <cmd>):
 #   (none)             normal start-up behaviour above
 #   show-setup-code    print the current setup code (if setup hasn't happened)
-#   new-setup-code     write and print a fresh setup code
+#   new-setup-code     write and print a fresh setup code (the Portal API also creates
+#                      one on start-up if none exists while setup is pending)
 #   clear-setup-code   remove the setup code (after an import)
 #   set-encryption-key take the master key from $SET_ENCRYPTION_KEY (importing existing data)
 # ------------------------------------------------------------------------------
@@ -35,10 +43,17 @@ P_DB=/secrets/portal-db
 P_API=/secrets/portal-api
 F_DB=/secrets/field-db
 F_API=/secrets/field-api
+P_WEB=/secrets/portal-web
+PKI=/pki
 REVEAL=/reveal
 
 PG_UID=70        # postgres user in the postgres:*-alpine image
 APP_UID=1000     # node user in the node:*-alpine image
+WEB_UID=101      # nginx user in the nginx-unprivileged image
+
+CA_DAYS=3650
+LEAF_DAYS=800    # under Apple's 825-day limit for TLS server certificates
+RENEW_SECONDS=7776000   # re-issue when less than 90 days remain
 
 hex()  { openssl rand -hex "$1"; }
 pw()   { openssl rand -base64 64 | tr -dc 'A-Za-z0-9' | head -c 40; }
@@ -93,17 +108,65 @@ EOF
   mv -f "$REVEAL/bundle.json.tmp" "$REVEAL/bundle.json"
 }
 
+# Subject alternative names for the Portal certificate, e.g. "DNS:localhost,IP:127.0.0.1,IP:192.168.1.10".
+portal_sans() {
+  out="DNS:localhost,IP:127.0.0.1"
+  for h in $(printf '%s' "${PORTAL_HOSTNAMES:-}" | tr ',' ' '); do
+    if printf '%s' "$h" | grep -Eq '^[0-9]{1,3}(\.[0-9]{1,3}){3}$'; then out="$out,IP:$h"
+    elif printf '%s' "$h" | grep -Eq '^[A-Za-z0-9.-]+$'; then out="$out,DNS:$h"
+    else echo "Ignoring invalid PORTAL_HOSTNAMES entry: $h" >&2; fi
+  done
+  printf '%s' "$out"
+}
+
+ensure_portal_tls() {
+  if [ ! -s "$PKI/ca.key" ] || [ ! -s "$PKI/ca.crt" ]; then
+    openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out "$PKI/ca.key" 2>/dev/null
+    openssl req -x509 -new -key "$PKI/ca.key" -sha256 -days "$CA_DAYS" \
+      -subj "/O=IT Manager/CN=IT Manager Local CA $(hex 4)" \
+      -addext "basicConstraints=critical,CA:TRUE,pathlen:0" \
+      -addext "keyUsage=critical,keyCertSign,cRLSign" \
+      -out "$PKI/ca.crt"
+    rm -f "$PKI/leaf.crt"
+    echo "Created the local certificate authority for the Portal."
+  fi
+
+  sans="$(portal_sans)"
+  if [ -s "$PKI/leaf.crt" ] && [ "$(cat "$PKI/leaf.sans" 2>/dev/null)" = "$sans" ] \
+     && openssl x509 -in "$PKI/leaf.crt" -noout -checkend "$RENEW_SECONDS" >/dev/null; then
+    :
+  else
+    ext="$(mktemp)"
+    printf 'basicConstraints=critical,CA:FALSE\nkeyUsage=critical,digitalSignature\nextendedKeyUsage=serverAuth\nsubjectAltName=%s\n' \
+      "$sans" > "$ext"
+    openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out "$PKI/leaf.key" 2>/dev/null
+    openssl req -new -key "$PKI/leaf.key" -subj "/O=IT Manager/CN=IT Manager Portal" -out "$PKI/leaf.csr"
+    openssl x509 -req -in "$PKI/leaf.csr" -CA "$PKI/ca.crt" -CAkey "$PKI/ca.key" -CAcreateserial \
+      -sha256 -days "$LEAF_DAYS" -extfile "$ext" -out "$PKI/leaf.crt" 2>/dev/null
+    rm -f "$ext" "$PKI/leaf.csr"
+    printf '%s' "$sans" > "$PKI/leaf.sans"
+    echo "Issued the Portal HTTPS certificate for: $sans"
+  fi
+
+  cat "$PKI/leaf.crt" "$PKI/ca.crt" > "$P_WEB/cert.pem.tmp" && mv -f "$P_WEB/cert.pem.tmp" "$P_WEB/cert.pem"
+  cp "$PKI/leaf.key" "$P_WEB/key.pem.tmp" && mv -f "$P_WEB/key.pem.tmp" "$P_WEB/key.pem"
+  cp "$PKI/ca.crt" "$P_WEB/ca.crt.tmp" && mv -f "$P_WEB/ca.crt.tmp" "$P_WEB/ca.crt"
+}
+
 fix_perms() {
   for d in "$P_DB" "$F_DB"; do chown -R "$PG_UID:$PG_UID" "$d"; chmod 0500 "$d"; done
   for d in "$P_API" "$F_API"; do chown -R "$APP_UID:$APP_UID" "$d"; chmod 0500 "$d"; done
   find "$P_DB" "$F_DB" "$P_API" "$F_API" -type f -exec chmod 0400 {} +
+  chown -R "$WEB_UID:$WEB_UID" "$P_WEB"; chmod 0500 "$P_WEB"
+  find "$P_WEB" -type f -exec chmod 0400 {} +
+  chown -R 0:0 "$PKI"; chmod 0700 "$PKI"; find "$PKI" -type f -exec chmod 0600 {} +
   # The Portal API must be able to delete (shred) files here, so it owns the dir.
   chown "$APP_UID:$APP_UID" "$REVEAL"; chmod 0700 "$REVEAL"
 }
 
-mkdir -p "$P_DB" "$P_API" "$F_DB" "$F_API" "$REVEAL"
+mkdir -p "$P_DB" "$P_API" "$F_DB" "$F_API" "$P_WEB" "$PKI" "$REVEAL"
 # Root needs write access to its own volumes while working.
-chmod 0700 "$P_DB" "$P_API" "$F_DB" "$F_API"
+chmod 0700 "$P_DB" "$P_API" "$F_DB" "$F_API" "$P_WEB" "$PKI"
 
 cmd="${1:-init}"
 
@@ -147,6 +210,9 @@ ensure "$F_API/access_token_secret"  "$APP_UID" "$(hex 64)"
 ensure "$F_API/refresh_token_secret" "$APP_UID" "$(hex 64)"
 ensure "$F_API/service_token"        "$APP_UID" "$(read_secret $P_API/bridge_token)"
 
+# Portal HTTPS
+ensure_portal_tls
+
 if [ "$fresh" = "1" ]; then
   write_bundle
   c="$(write_setup_code)"
@@ -154,7 +220,8 @@ if [ "$fresh" = "1" ]; then
   echo "──────────────────────────────────────────────────────────"
   echo " First boot: secrets generated."
   echo " SETUP CODE: $c"
-  echo " Open the Portal in a browser and enter this code to finish setup."
+  echo " Open https://<server>:8443 in a browser and enter this code to finish setup."
+  echo " The Portal API also prints it in its log until setup is complete."
   echo "──────────────────────────────────────────────────────────"
 else
   fix_perms

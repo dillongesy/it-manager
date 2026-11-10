@@ -4,6 +4,7 @@ import app from './app.js';
 import { loadIntegrations } from './lib/settings.js';
 import { pushBrandingWithRetry } from './lib/branding-sync.js';
 import { startStorageMonitor } from './lib/storage.js';
+import { announceSetupCode } from './routes/setup.js';
 
 async function start() {
   try {
@@ -29,6 +30,8 @@ async function start() {
   pushBrandingWithRetry().catch(() => {});
 
   startStorageMonitor();
+
+  announceSetupCode().catch(err => console.error('Could not prepare the setup code:', err.message));
 
   process.on('SIGTERM', () => {
     server.close(() => {

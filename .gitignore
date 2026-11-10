@@ -13,7 +13,7 @@ field/backend/.env.test
 portal/backend/uploads/
 field/backend/uploads/
 backups/
-server-root-ca.crt
+it-manager-ca.crt
 *.log
 
 # Local assistant notes (not part of the project)

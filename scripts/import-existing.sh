@@ -14,7 +14,7 @@
 #   old-portal.env (optional)  a legacy .env whose integration settings should be copied
 #                              into Admin → Integrations
 #
-# Then on this server (stack installed with install.sh; the setup wizard is not needed):
+# Then on this server (stack installed and running; the setup wizard is not needed):
 #   sudo ./scripts/import-existing.sh #     --portal-dump portal.dump [--field-dump field.dump] #     --encryption-key <64 hex chars> #     [--portal-uploads portal-uploads.tgz] [--field-uploads field-uploads.tgz] #     [--portal-env old-portal.env]
 #
 # This REPLACES the data in this stack. Users and logins from the import keep working.
@@ -43,7 +43,7 @@ read -r -p "Type IMPORT to continue: " ok
 [ "$ok" = "IMPORT" ] || exit 1
 
 echo "Stopping app containers…"
-docker compose stop edge portal-web portal-api field-web field-api
+docker compose stop proxy portal-web portal-api field-web field-api
 
 echo "Installing the imported master encryption key…"
 docker compose run --rm --no-deps -T -e SET_ENCRYPTION_KEY="$KEY" init set-encryption-key
