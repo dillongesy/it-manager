@@ -50,10 +50,10 @@ const app = express();
 
 app.set('trust proxy', config.trustProxy);
 
-// The Portal is LAN only. portal-web already refuses the reverse proxy's network; this
-// repeats the check in case a request reaches the API another way.
-if (config.proxySubnet) {
-  app.use((req, res, next) => (ipInCidr(req.ip, config.proxySubnet)
+// The Portal is LAN only. portal-web already refuses the networks of the Field App's
+// entrances; this repeats the check in case a request reaches the API another way.
+if (config.deniedSources.length) {
+  app.use((req, res, next) => (config.deniedSources.some(c => ipInCidr(req.ip, c))
     ? res.status(403).json({ error: 'Forbidden.' })
     : next()));
 }

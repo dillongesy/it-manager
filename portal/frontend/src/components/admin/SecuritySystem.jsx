@@ -7,6 +7,7 @@ import { RevealSecrets } from './RevealSecrets.jsx';
 import { Storage } from './Storage.jsx';
 import { TwoFactorPolicy } from './TwoFactorPolicy.jsx';
 import { HostSettings } from './HostSettings.jsx';
+import { OfficeNetwork } from './OfficeNetwork.jsx';
 
 export function Security() {
   return (
@@ -64,6 +65,8 @@ export function System() {
         </dl>
         <p className="text-gray-500 text-xs">Updates: in the install folder run <code className="font-mono text-gray-300">docker compose pull && docker compose up -d</code>, or let the scheduled update set up by install.sh do it. Database migrations run automatically.</p>
       </section>
+
+      <OfficeNetwork />
 
       <HostSettings />
 

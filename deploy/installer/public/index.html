@@ -52,17 +52,16 @@
           <input id="names" class="mono" placeholder="portal.office.lan">
           <p class="hint">Only if your office DNS has a name for this server, such as <code>portal.office.lan</code>.
             The Portal's certificate is issued for these names and for the server's IP address, so the browser accepts
-            either. Leave empty to use the IP address only. This is not where staff use the Field App; that is set up later
-            in Nginx Proxy Manager with your public domain.</p>
+            either. Leave empty to use the IP address only. Both can be changed later in Admin → System.</p>
         </div>
 
         <div class="field">
           <label for="prefix">Internal network for the containers</label>
           <div class="row">
             <input id="prefix" class="mono narrow" required>
-            <span class="mono muted">.0.0 – .8.255</span>
+            <span class="mono muted">.0.0 – .9.255</span>
           </div>
-          <p class="hint">The app's containers talk to each other on nine private networks inside this server. They must not
+          <p class="hint">The app's containers talk to each other on ten private networks inside this server. They must not
             overlap any network the server already uses (your LAN, a VPN, other Docker apps). The suggested value is free;
             change it only if you know it collides with a network elsewhere.</p>
           <p class="status" id="prefix-status"></p>
@@ -83,8 +82,8 @@
           <legend>Firewall</legend>
           <label class="choice"><input type="radio" name="firewall" value="on" checked>
             <span><strong>Keep hardening on (recommended)</strong>
-              <span class="hint">Only the Field App's port is open to the internet, and only through your router. The Portal and the
-                Nginx Proxy Manager admin page accept your office network only. Every other port of the app is closed.</span></span></label>
+              <span class="hint">Only the Field App's port is open to the internet, and only through your router. The Portal, the Field
+                App's office port and the Nginx Proxy Manager admin page accept your office network only. Every other port of the app is closed.</span></span></label>
           <label class="choice"><input type="radio" name="firewall" value="off">
             <span><strong>Turn hardening off</strong>
               <span class="hint">For servers behind another firewall you manage. The Portal still refuses anything outside your office network.</span></span></label>

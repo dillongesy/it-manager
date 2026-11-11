@@ -13,11 +13,13 @@
 #                        service_token (= portal bridge_token)         → field-api (uid 1000)
 #   /secrets/portal-web  cert.pem, key.pem, ca.crt (Portal HTTPS)      → portal-web (uid 101) and
 #                                                                        the setup wizard (gid 1000)
+#   /secrets/field-web   cert.pem, key.pem (Field App office HTTPS)    → field-web (uid 101)
 #   /pki                 the local CA's private key (init only)
 #
-# The Portal's HTTPS certificate is signed by a local CA created on first boot. It
-# covers localhost plus PORTAL_HOSTNAMES (comma-separated names and IPs) and is
-# re-issued when that list changes or less than 90 days remain. Installing ca.crt as
+# The Portal's HTTPS certificate, and the one the Field App uses on the office network,
+# are signed by a local CA created on first boot. Each covers localhost plus
+# PORTAL_HOSTNAMES (comma-separated names and IPs) and is re-issued when that list
+# changes or less than 90 days remain. The two have separate keys. Installing ca.crt as
 # a trusted root on each device removes the browser warning.
 #
 # Containers mount their volume read-only. No secret is ever in docker-compose.yml,
@@ -37,7 +39,8 @@
 #   new-setup-code     write and print a fresh setup code (the Portal API also creates
 #                      one on start-up if none exists while setup is pending)
 #   clear-setup-code   remove the setup code (after an import)
-#   set-encryption-key take the master key from $SET_ENCRYPTION_KEY (importing existing data)
+#   set-encryption-key take the Portal key from $SET_ENCRYPTION_KEY and/or the Field key
+#                      from $SET_FIELD_ENCRYPTION_KEY (restoring or importing data)
 # ------------------------------------------------------------------------------
 set -eu
 umask 077
@@ -47,6 +50,7 @@ P_API=/secrets/portal-api
 F_DB=/secrets/field-db
 F_API=/secrets/field-api
 P_WEB=/secrets/portal-web
+F_WEB=/secrets/field-web
 PKI=/pki
 REVEAL=/reveal
 HOST_CONTROL=/host-control
@@ -124,38 +128,45 @@ portal_sans() {
   printf '%s' "$out"
 }
 
-ensure_portal_tls() {
+ensure_ca() {
   if [ ! -s "$PKI/ca.key" ] || [ ! -s "$PKI/ca.crt" ]; then
     openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out "$PKI/ca.key" 2>/dev/null
-    openssl req -x509 -new -key "$PKI/ca.key" -sha256 -days "$CA_DAYS" \
-      -subj "/O=IT Manager/CN=IT Manager Local CA $(hex 4)" \
-      -addext "basicConstraints=critical,CA:TRUE,pathlen:0" \
-      -addext "keyUsage=critical,keyCertSign,cRLSign" \
-      -out "$PKI/ca.crt"
-    rm -f "$PKI/leaf.crt"
-    echo "Created the local certificate authority for the Portal."
+    openssl req -x509 -new -key "$PKI/ca.key" -sha256 -days "$CA_DAYS"       -subj "/O=IT Manager/CN=IT Manager Local CA $(hex 4)"       -addext "basicConstraints=critical,CA:TRUE,pathlen:0"       -addext "keyUsage=critical,keyCertSign,cRLSign"       -out "$PKI/ca.crt"
+    rm -f "$PKI/leaf.crt" "$PKI/field.crt"
+    echo "Created the local certificate authority."
   fi
+}
 
+# issue_leaf <name> <common name> <output dir>: keep $PKI/<name>.crt current for the
+# SANs, then copy the chain and key into the output dir.
+issue_leaf() {
+  name="$1"; cn="$2"; out="$3"
   sans="$(portal_sans)"
-  if [ -s "$PKI/leaf.crt" ] && [ "$(cat "$PKI/leaf.sans" 2>/dev/null)" = "$sans" ] \
-     && openssl x509 -in "$PKI/leaf.crt" -noout -checkend "$RENEW_SECONDS" >/dev/null; then
+  if [ -s "$PKI/$name.crt" ] && [ "$(cat "$PKI/$name.sans" 2>/dev/null)" = "$sans" ]      && openssl x509 -in "$PKI/$name.crt" -noout -checkend "$RENEW_SECONDS" >/dev/null; then
     :
   else
     ext="$(mktemp)"
-    printf 'basicConstraints=critical,CA:FALSE\nkeyUsage=critical,digitalSignature\nextendedKeyUsage=serverAuth\nsubjectAltName=%s\n' \
-      "$sans" > "$ext"
-    openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out "$PKI/leaf.key" 2>/dev/null
-    openssl req -new -key "$PKI/leaf.key" -subj "/O=IT Manager/CN=IT Manager Portal" -out "$PKI/leaf.csr"
-    openssl x509 -req -in "$PKI/leaf.csr" -CA "$PKI/ca.crt" -CAkey "$PKI/ca.key" -CAcreateserial \
-      -sha256 -days "$LEAF_DAYS" -extfile "$ext" -out "$PKI/leaf.crt" 2>/dev/null
-    rm -f "$ext" "$PKI/leaf.csr"
-    printf '%s' "$sans" > "$PKI/leaf.sans"
-    echo "Issued the Portal HTTPS certificate for: $sans"
+    printf 'basicConstraints=critical,CA:FALSE
+keyUsage=critical,digitalSignature
+extendedKeyUsage=serverAuth
+subjectAltName=%s
+'       "$sans" > "$ext"
+    openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out "$PKI/$name.key" 2>/dev/null
+    openssl req -new -key "$PKI/$name.key" -subj "/O=IT Manager/CN=$cn" -out "$PKI/$name.csr"
+    openssl x509 -req -in "$PKI/$name.csr" -CA "$PKI/ca.crt" -CAkey "$PKI/ca.key" -CAcreateserial       -sha256 -days "$LEAF_DAYS" -extfile "$ext" -out "$PKI/$name.crt" 2>/dev/null
+    rm -f "$ext" "$PKI/$name.csr"
+    printf '%s' "$sans" > "$PKI/$name.sans"
+    echo "Issued the $cn certificate for: $sans"
   fi
+  cat "$PKI/$name.crt" "$PKI/ca.crt" > "$out/cert.pem.tmp" && mv -f "$out/cert.pem.tmp" "$out/cert.pem"
+  cp "$PKI/$name.key" "$out/key.pem.tmp" && mv -f "$out/key.pem.tmp" "$out/key.pem"
+}
 
-  cat "$PKI/leaf.crt" "$PKI/ca.crt" > "$P_WEB/cert.pem.tmp" && mv -f "$P_WEB/cert.pem.tmp" "$P_WEB/cert.pem"
-  cp "$PKI/leaf.key" "$P_WEB/key.pem.tmp" && mv -f "$P_WEB/key.pem.tmp" "$P_WEB/key.pem"
+ensure_tls() {
+  ensure_ca
+  issue_leaf leaf "IT Manager Portal" "$P_WEB"
   cp "$PKI/ca.crt" "$P_WEB/ca.crt.tmp" && mv -f "$P_WEB/ca.crt.tmp" "$P_WEB/ca.crt"
+  issue_leaf field "IT Manager Field App" "$F_WEB"
 }
 
 # Keep the setup wizard's copy of the setup code in step with the Portal's.
@@ -176,6 +187,8 @@ fix_perms() {
   # Owner nginx (portal-web); group 1000 for the setup wizard, which serves the same certificate.
   chown -R "$WEB_UID:$APP_UID" "$P_WEB"; chmod 0550 "$P_WEB"
   find "$P_WEB" -type f -exec chmod 0440 {} +
+  chown -R "$WEB_UID:$WEB_UID" "$F_WEB"; chmod 0500 "$F_WEB"
+  find "$F_WEB" -type f -exec chmod 0400 {} +
   chown -R 0:0 "$PKI"; chmod 0700 "$PKI"; find "$PKI" -type f -exec chmod 0600 {} +
   # The Portal API must be able to delete (shred) files here, so it owns the dir.
   chown "$APP_UID:$APP_UID" "$REVEAL"; chmod 0700 "$REVEAL"
@@ -184,9 +197,9 @@ fix_perms() {
   sync_setup_code
 }
 
-mkdir -p "$P_DB" "$P_API" "$F_DB" "$F_API" "$P_WEB" "$PKI" "$REVEAL" "$HOST_CONTROL"
+mkdir -p "$P_DB" "$P_API" "$F_DB" "$F_API" "$P_WEB" "$F_WEB" "$PKI" "$REVEAL" "$HOST_CONTROL"
 # Root needs write access to its own volumes while working.
-chmod 0700 "$P_DB" "$P_API" "$F_DB" "$F_API" "$P_WEB" "$PKI"
+chmod 0700 "$P_DB" "$P_API" "$F_DB" "$F_API" "$P_WEB" "$F_WEB" "$PKI"
 
 cmd="${1:-init}"
 
@@ -200,14 +213,18 @@ case "$cmd" in
   clear-setup-code)
     rm -f "$REVEAL/setup_code"; fix_perms; echo "Setup code removed."; exit 0 ;;
   set-encryption-key)
-    k="${SET_ENCRYPTION_KEY:-}"
-    if ! printf '%s' "$k" | grep -Eq '^[0-9a-fA-F]{64}$'; then
-      echo "SET_ENCRYPTION_KEY must be 64 hex characters." >&2; exit 1
-    fi
-    write "$P_API/encryption_key" "$(printf '%s' "$k" | tr 'A-F' 'a-f')" "$APP_UID"
+    k="${SET_ENCRYPTION_KEY:-}"; fk="${SET_FIELD_ENCRYPTION_KEY:-}"
+    [ -n "$k" ] || [ -n "$fk" ] || { echo "Set SET_ENCRYPTION_KEY and/or SET_FIELD_ENCRYPTION_KEY." >&2; exit 1; }
+    for v in "$k" "$fk"; do
+      if [ -n "$v" ] && ! printf '%s' "$v" | grep -Eq '^[0-9a-fA-F]{64}$'; then
+        echo "Encryption keys must be 64 hex characters." >&2; exit 1
+      fi
+    done
+    [ -n "$k" ] && write "$P_API/encryption_key" "$(printf '%s' "$k" | tr 'A-F' 'a-f')" "$APP_UID"
+    [ -n "$fk" ] && write "$F_API/encryption_key" "$(printf '%s' "$fk" | tr 'A-F' 'a-f')" "$APP_UID"
     # If the one-time bundle hasn't been revealed yet, keep it truthful.
     if [ -s "$REVEAL/bundle.json" ]; then write_bundle; fi
-    fix_perms; echo "Master encryption key replaced."; exit 0 ;;
+    fix_perms; echo "Encryption key(s) replaced."; exit 0 ;;
   init) ;;
   *) echo "Unknown command: $cmd" >&2; exit 2 ;;
 esac
@@ -231,8 +248,8 @@ ensure "$F_API/refresh_token_secret" "$APP_UID" "$(hex 64)"
 ensure "$F_API/encryption_key"       "$APP_UID" "$(hex 32)"
 ensure "$F_API/service_token"        "$APP_UID" "$(read_secret $P_API/bridge_token)"
 
-# Portal HTTPS
-ensure_portal_tls
+# HTTPS for the Portal and for the Field App on the office network
+ensure_tls
 
 if [ "$fresh" = "1" ]; then
   write_bundle

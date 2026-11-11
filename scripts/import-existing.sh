@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ------------------------------------------------------------------------------
-# Load an existing installation's data into this stack. Use it to:
-#   • restore this stack's own backups (scripts/backup.sh) onto a new server
-#   • move a legacy, non-Docker install of the app onto Docker
+# Load another installation's data into this stack: a legacy, non-Docker install of the
+# app, or loose database dumps. (This stack's own backups are restored with
+# sudo ./install.sh backup restore; see README, "Backups and disaster recovery".)
 #
-# What you need (from scripts/backup.sh, or from the old servers):
+# What you need (from the old servers):
 #   portal.dump / field.dump   pg_dump custom-format dumps. On a legacy server:
 #                                pg_dump -Fc --no-owner --no-acl -U <user> <portal db> > portal.dump
 #                                pg_dump -Fc --no-owner --no-acl -U <user> <field db>  > field.dump

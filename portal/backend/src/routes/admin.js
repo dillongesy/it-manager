@@ -15,7 +15,8 @@ import { getMfaPolicy, saveMfaPolicy } from '../lib/mfa.js';
 import { fieldPlatform, isFieldConfigured } from '../lib/field-client.js';
 import { getDefaultRates, saveDefaultRates, RATE_LIMITS } from '../lib/billing-rates.js';
 import { storageReport } from '../lib/storage.js';
-import { hostStatus, hostLog, requestHostChange } from '../lib/host-control.js';
+import { hostStatus, hostLog, requestHostChange, backupList, LOGS, BACKUP_NAME } from '../lib/host-control.js';
+import { ipInCidr } from '../lib/cidr.js';
 
 // Admin API (admin role only).
 //
@@ -33,7 +34,16 @@ import { hostStatus, hostLog, requestHostChange } from '../lib/host-control.js';
 //   GET    /api/admin/host                      firewall and update status (host helper)
 //   PUT    /api/admin/host/updates              { schedule } automatic update schedule
 //   POST   /api/admin/host/update-now           start an update now
-//   GET    /api/admin/host/logs/:name           install or update log
+//   PUT    /api/admin/host/network              { lan: [cidr], names: [host] } office network
+//   GET    /api/admin/host/logs/:name           install, update, network, backup, verify or restore log
+//   GET    /api/admin/backups                   backup settings, status and the list of backups
+//   PUT    /api/admin/backups/settings          schedule, retention, storage and options
+//   POST   /api/admin/backups/run               back up now
+//   POST   /api/admin/backups/refresh           re-read the backup storage
+//   POST   /api/admin/backups/:name/verify      check a backup
+//   PUT    /api/admin/backups/:name/protect     { protected } never pruned or deleted
+//   DELETE /api/admin/backups/:name
+//   POST   /api/admin/backups/:name/restore     { password } replace all data with the backup
 //   GET    /api/admin/billing-rates             default hourly rates for new customers
 //   PUT    /api/admin/billing-rates             { rates: [{ label, rate }], applyToExisting? }
 export const adminRouter = Router();
@@ -258,8 +268,71 @@ adminRouter.put('/host/updates', async (req, res, next) => {
 
 adminRouter.get('/host/logs/:name', async (req, res, next) => {
   try {
-    if (!['install', 'update'].includes(req.params.name)) return res.status(404).json({ error: 'Not found.' });
+    if (!LOGS.includes(req.params.name)) return res.status(404).json({ error: 'Not found.' });
     res.json({ log: await hostLog(req.params.name) });
+  } catch (err) { next(err); }
+});
+
+// The office network decides who may open the Portal, so a change that would shut out
+// the admin making it is refused.
+adminRouter.put('/host/network', async (req, res, next) => {
+  try {
+    const list = (v) => (Array.isArray(v) ? v : []).map(x => String(x).trim()).filter(Boolean);
+    const lan = [...new Set(list(req.body?.lan))];
+    const names = [...new Set(list(req.body?.names).map(n => n.toLowerCase()))];
+    if (!lan.length) return res.status(400).json({ error: 'Enter at least one office network.' });
+    if (!lan.some(c => ipInCidr(req.ip, c))) {
+      return res.status(400).json({ error: `Your computer (${String(req.ip).replace(/^::ffff:/, '')}) is not in any of these networks, so this change would lock you out of the Portal.` });
+    }
+    await hostResult(req, res, `Office network: ${lan.join(', ')}; Portal names: ${names.join(', ') || '(none)'}`, { network: { lan, names } });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message });
+    next(err);
+  }
+});
+
+// --- Backups (host helper; see scripts/backup.sh) ----------------------------------------
+
+const hostError = (res, next) => (err) => (err.status ? res.status(err.status).json({ error: err.message }) : next(err));
+
+adminRouter.get('/backups', async (_req, res, next) => {
+  try {
+    const status = await hostStatus();
+    if (!status?.backup) return res.json({ available: false });
+    res.json({ available: true, settings: status.backup, updates: status.updates, nextUpdate: status.nextUpdate, list: await backupList() });
+  } catch (err) { next(err); }
+});
+
+adminRouter.put('/backups/settings', async (req, res, next) => {
+  const b = req.body ?? {};
+  const where = b.storage === 'local' ? b.path : b.share;
+  await hostResult(req, res, `Backups: ${b.schedule}, ${b.storage} ${where ?? ''}, keep ${Object.values(b.keep ?? {}).join('/')}, encryption ${b.encryption}`, { backup: b })
+    .catch(hostError(res, next));
+});
+
+const backupTask = (task, label) => async (req, res, next) => {
+  const name = req.params.name;
+  if (name !== undefined && !BACKUP_NAME.test(name)) return res.status(400).json({ error: 'Invalid backup name.' });
+  await hostResult(req, res, label(name, req.body ?? {}), { backupTask: { task: typeof task === 'function' ? task(req.body ?? {}) : task, name } })
+    .catch(hostError(res, next));
+};
+
+adminRouter.post('/backups/run', backupTask('now', () => 'Backup started from the Portal'));
+adminRouter.post('/backups/refresh', backupTask('refresh', () => 'Backup list refreshed'));
+adminRouter.post('/backups/:name/verify', backupTask('verify', (n) => `Backup verification started: ${n}`));
+adminRouter.put('/backups/:name/protect', backupTask((b) => (b.protected ? 'protect' : 'unprotect'), (n, b) => `Backup ${b.protected ? 'protected' : 'unprotected'}: ${n}`));
+adminRouter.delete('/backups/:name', backupTask('delete', (n) => `Backup deleted: ${n}`));
+
+// Restoring replaces every record and file, so the admin re-enters their password.
+adminRouter.post('/backups/:name/restore', async (req, res, next) => {
+  try {
+    const { password } = req.body ?? {};
+    const { rows } = await query('SELECT password_hash FROM users WHERE id = $1 AND is_active = true', [req.user.sub]);
+    if (!rows[0] || !password || !(await bcrypt.compare(String(password), rows[0].password_hash))) {
+      await audit(req, 'UPDATE', 'server', `Restore refused (wrong password): ${req.params.name}`);
+      return res.status(401).json({ error: 'Password is incorrect.' });
+    }
+    return backupTask('restore', (n) => `Restore started from the Portal: ${n}`)(req, res, next);
   } catch (err) { next(err); }
 });
 

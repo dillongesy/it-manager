@@ -6,6 +6,7 @@ import {
   ListChecks, Package, BadgeCheck, Briefcase, Check, RefreshCw, Repeat, Filter,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { ServerAlerts } from '../components/admin/ServerAlerts.jsx';
 import { workOrdersApi } from '../api/workOrders.js';
 import { tasksApi } from '../api/tasks.js';
 import { taskNumber, taskFlags } from '../utils/tasks.js';
@@ -622,6 +623,8 @@ export function Dashboard() {
           {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
         </p>
       </div>
+
+      <ServerAlerts enabled={user?.role === 'admin'} />
 
       {/* Quick stats */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">

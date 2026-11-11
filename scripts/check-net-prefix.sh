@@ -4,7 +4,7 @@
 #
 #   scripts/check-net-prefix.sh 172.29
 #
-# The stack's nine Docker networks are <prefix>.0.0/24 … <prefix>.8.0/24. This
+# The stack's ten Docker networks are <prefix>.0.0/24 … <prefix>.9.0/24. This
 # looks for anything on the host that already uses part of that range: routes in
 # any table (the LAN, VPNs, WireGuard / Tailscale, static routes) and other Docker
 # networks. This stack's own networks (compose project "itmanager") don't count,
@@ -33,7 +33,7 @@ fi
 
 ip2int() { local IFS=.; set -- $1; echo $(( ($1 << 24) + ($2 << 16) + ($3 << 8) + $4 )); }
 LO=$(ip2int "$prefix.0.0")
-HI=$(ip2int "$prefix.8.255")
+HI=$(ip2int "$prefix.9.255")
 
 # overlaps <cidr> → true when it shares any address with LO..HI
 overlaps() {

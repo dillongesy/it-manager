@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Download, Monitor, Network, Smartphone, Terminal } from 'lucide-react';
+import { Download, Monitor, Network, Smartphone, Terminal, RefreshCcw } from 'lucide-react';
 
 // How to trust the server's certificate authority on each device, so browsers stop
 // warning about the Portal's certificate. Shown in Admin → Certificate and at
@@ -8,7 +8,7 @@ import { Download, Monitor, Network, Smartphone, Terminal } from 'lucide-react';
 const CA_URL = '/ca.crt';
 const FILE = 'it-manager-ca.crt';
 
-/** SHA-1 thumbprint (as Windows shows it) and SHA-256 fingerprint of the CA certificate. */
+/** SHA-1 thumbprint (as Windows shows it), SHA-256 fingerprint and name of the CA certificate. */
 function useFingerprints() {
   const [prints, setPrints] = useState(null);
   useEffect(() => {
@@ -21,7 +21,9 @@ function useFingerprints() {
         const hex = async (alg) => [...new Uint8Array(await crypto.subtle.digest(alg, der))]
           .map(b => b.toString(16).padStart(2, '0')).join(' ').toUpperCase();
         const [sha1, sha256] = await Promise.all([hex('SHA-1'), hex('SHA-256')]);
-        if (live) setPrints({ sha1, sha256 });
+        // The authority's name, e.g. "IT Manager Local CA 3f9a" (the suffix differs per installation).
+        const name = String.fromCharCode(...der).match(/IT Manager Local CA [0-9a-f]{4}/)?.[0] ?? null;
+        if (live) setPrints({ sha1, sha256, name });
       } catch {
         if (live) setPrints(null);
       }
@@ -53,10 +55,15 @@ export function CertificateGuide() {
           know yet, so they warn the first time. Install the authority's certificate once on each computer and phone and
           the warning goes away for good. It does not give this server any access to the device.
         </p>
+        <p>
+          The same certificate covers the Portal and the Field App's office address, on computers and on phones. Staff who
+          open the Portal on a phone need it installed on the phone too.
+        </p>
         <a href={CA_URL} download={FILE} className="btn-primary inline-flex items-center gap-1.5"><Download size={14} /> Download {FILE}</a>
         <p className="text-xs">Also available at <C>{origin}{CA_URL}</C>, for devices that aren't signed in.</p>
         {prints && (
           <dl className="grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1 text-xs">
+            {prints.name && <><dt>Name</dt><dd className="text-gray-300">{prints.name}</dd></>}
             <dt>Thumbprint (Windows)</dt><dd className="font-mono text-gray-300 break-all">{prints.sha1}</dd>
             <dt>SHA-256</dt><dd className="font-mono text-gray-300 break-all">{prints.sha256}</dd>
           </dl>
@@ -79,8 +86,8 @@ export function CertificateGuide() {
           <li>Close every browser window, open the browser again and go to <C>{origin}</C>. There is no warning now.</li>
         </Steps>
         <p className="text-xs">
-          Without administrator rights, choose <B>Current User</B> in step 5 instead. It then works only for your Windows account,
-          and Windows asks you to confirm the install.
+          Always choose <B>Local Machine</B>, so the certificate is in the computer's store for every account. A copy installed for
+          Current User works only for one Windows account and is easy to miss when it has to be removed.
         </p>
         <p className="text-xs">
           Firefox: if it still warns, open Settings → Privacy &amp; Security → Certificates → <B>View Certificates…</B> →
@@ -108,6 +115,41 @@ export function CertificateGuide() {
           Microsoft Intune: Devices → Configuration → Create → Windows 10 and later → Templates → <B>Trusted certificate</B>.
           Upload the file (rename it to <C>.cer</C> if Intune asks), set Destination store to <B>Computer certificate store - Root</B>,
           and assign it to your device groups.
+        </p>
+      </Section>
+
+      <Section icon={RefreshCcw} title="When the certificate changes, and removing an old one">
+        <p>
+          Changing the office networks or the server's DNS names (Admin → System) re-issues the server's certificate, but it is
+          signed by the same authority, so <B>devices need nothing new</B>.
+        </p>
+        <p>
+          Only <B>reinstalling IT Manager</B> (a new server, or a server wiped and set up again) creates a new authority. Its name
+          ends in different characters{prints?.name ? <> (this server's is <B>{prints.name}</B>)</> : ''}. Install the new one as above,
+          then remove the old one, which no longer protects anything.
+        </p>
+        <p><B>Windows, by hand</B> (the computer's store, where the steps above install it):</p>
+        <Steps>
+          <li>Press <B>Windows + R</B>, type <C>certlm.msc</C> and press Enter. Approve the administrator prompt.</li>
+          <li>Open <B>Trusted Root Certification Authorities → Certificates</B>.</li>
+          <li>
+            Find every <B>IT Manager Local CA …</B> in the Issued To column. Keep the one{prints?.name ? <> named <B>{prints.name}</B></> : ' matching this server'};
+            to check, double-click it and compare the Thumbprint on the Details tab with the one above.
+          </li>
+          <li>Right-click each other one → <B>Delete</B> → <B>Yes</B>. Then restart the browser.</li>
+        </Steps>
+        <p><B>Windows, PowerShell as administrator</B>: removes every IT Manager authority except this server's{prints?.sha1 ? '' : ' (open this page from the server to fill in its thumbprint)'}.</p>
+        <pre className="font-mono text-xs text-gray-300 bg-surface-900 border border-surface-600 rounded-md p-3 overflow-x-auto">
+          {`Get-ChildItem Cert:\\LocalMachine\\Root |
+  Where-Object { $_.Subject -like '*IT Manager Local CA*' -and $_.Thumbprint -ne '${prints?.sha1?.replace(/ /g, '') ?? 'THUMBPRINT'}' } |
+  Remove-Item`}
+        </pre>
+        <p className="text-xs">
+          Group Policy: in the GPO, under Trusted Root Certification Authorities, delete the old certificate and import the new one.
+          Intune: replace the file in the Trusted certificate profile.
+          iPhone: Settings → General → <B>VPN &amp; Device Management</B> → the old profile → <B>Remove Profile</B>.
+          Android: Encryption &amp; credentials → <B>User credentials</B> → the old certificate → <B>Remove</B>.
+          Mac: delete it from the System keychain in Keychain Access.
         </p>
       </Section>
 

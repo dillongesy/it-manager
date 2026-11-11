@@ -15,14 +15,16 @@
 #                                                   └─ bridge ─▶ field-api (/api/service/* only)
 #   internet ─▶ router :443 ─▶ :4443  proxy (Nginx Proxy Manager; :80, admin UI :81)
 #                      └─ field_edge ─▶ field-web ─ field_app ─▶ field-api ─ field_db ─▶ field-db
+#   LAN ──────▶ :4433  field-web (field_ingress; the Field App on the office network,
+#                                 no proxy needed)
 #
 #   - The router forwards external port 443 to the server's port 4443, so internet
 #     traffic reaches only the proxy, and the Portal keeps port 443 for the LAN.
 #   - The proxy is attached only to field_edge, so it can reach field-web and nothing
-#     on the Portal side. portal-web also refuses the proxy's network by address, in
-#     case a proxy host is pointed at the server's own Portal port.
-#   - Every network except proxy_public, portal_ingress and portal_egress is internal
-#     (no route off the host).
+#     on the Portal side. portal-web also refuses the proxy's network and field_ingress
+#     by address, in case either is pointed at the server's own Portal port.
+#   - Every network except proxy_public, portal_ingress, field_ingress and
+#     portal_egress is internal (no route off the host).
 #   - field-db is reachable by field-api only.
 #   - portal-api listens only on its portal_app address, so field-api cannot connect
 #     back over the bridge; field-api answers bridge callers on /api/service/* only.
@@ -60,6 +62,7 @@ services:
       - secrets_portal_db:/secrets/portal-db
       - secrets_portal_api:/secrets/portal-api
       - secrets_portal_web:/secrets/portal-web
+      - secrets_field_web:/secrets/field-web
       - secrets_field_db:/secrets/field-db
       - secrets_field_api:/secrets/field-api
       - pki:/pki
@@ -92,7 +95,7 @@ services:
     ports:
       - "0.0.0.0:${PORTAL_PORT:-443}:8443"
     environment:
-      PROXY_SUBNET: ${NET_PREFIX:-172.29}.0.0/24
+      PORTAL_DENIED_SOURCES: "${NET_PREFIX:-172.29}.0.0/24 ${NET_PREFIX:-172.29}.9.0/24"
       PORTAL_ALLOWED_SOURCES: ${PORTAL_ALLOWED_SOURCES:-}
     volumes:
       - secrets_portal_web:/etc/nginx/tls:ro
@@ -115,7 +118,7 @@ services:
       HOST: ${NET_PREFIX:-172.29}.3.10
       PORT: "3000"
       TRUST_PROXY: "1"                       # portal-web → api
-      PROXY_SUBNET: ${NET_PREFIX:-172.29}.0.0/24
+      DENIED_SOURCES: "${NET_PREFIX:-172.29}.0.0/24 ${NET_PREFIX:-172.29}.9.0/24"
       DB_HOST: portal-db
       DB_NAME: portal
       DB_USER: portal
@@ -174,7 +177,9 @@ services:
   # field-web:8080 with a Let's Encrypt certificate and "Force SSL".
   proxy:
     <<: *hardening
-    image: jc21/nginx-proxy-manager:latest
+    # Follows the 2.x releases automatically. A new major version is a deliberate step:
+    # Admin → System shows when one exists; then sudo ./install.sh proxy-version <major>.
+    image: jc21/nginx-proxy-manager:${PROXY_TAG:-2}
     cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, KILL, NET_BIND_SERVICE, SETGID, SETUID]
     environment:
       DISABLE_IPV6: "true"
@@ -193,12 +198,22 @@ services:
   field-web:
     <<: *app
     image: ${IMAGE_REGISTRY:-ghcr.io/dillongesy/it-manager}/field-web:${IMAGE_TAG:-latest}
-    networks: [field_edge, field_app]
+    # The Field App on the office network, without the proxy: https://<server>:4433.
+    # Office addresses only (nginx and the firewall); IPv4 only, as for portal-web.
+    ports:
+      - "0.0.0.0:${FIELD_LAN_PORT:-4433}:8443"
+    environment:
+      OFFICE_SOURCES: ${PORTAL_ALLOWED_SOURCES:-}
+    volumes:
+      - secrets_field_web:/etc/nginx/tls:ro
+    networks: [field_ingress, field_edge, field_app]
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
       interval: 15s
       timeout: 3s
       retries: 5
+    depends_on:
+      init: { condition: service_completed_successfully }
 
   field-api:
     <<: *app
@@ -207,7 +222,9 @@ services:
       NODE_ENV: production
       HOST: 0.0.0.0
       PORT: "3001"
-      TRUST_PROXY: "2"                       # proxy → field-web → api
+      # proxy → field-web → api. On the office port field-web is the only hop and
+      # replaces X-Forwarded-For with the client's address.
+      TRUST_PROXY: "2"
       DB_HOST: field-db
       DB_NAME: field
       DB_USER: field
@@ -254,7 +271,7 @@ services:
       init: { condition: service_completed_successfully }
 
 networks:
-  # Only proxy_public, portal_ingress and portal_egress can leave the host.
+  # Only proxy_public, portal_ingress, field_ingress and portal_egress can leave the host.
   proxy_public:
     ipam: { config: [{ subnet: "${NET_PREFIX:-172.29}.0.0/24" }] }
   portal_ingress:
@@ -279,6 +296,8 @@ networks:
     ipam: { config: [{ subnet: "${NET_PREFIX:-172.29}.7.0/24" }] }
   portal_egress:
     ipam: { config: [{ subnet: "${NET_PREFIX:-172.29}.8.0/24" }] }
+  field_ingress:
+    ipam: { config: [{ subnet: "${NET_PREFIX:-172.29}.9.0/24" }] }
 
 volumes:
   portal_db_data:
@@ -288,6 +307,7 @@ volumes:
   secrets_portal_db:
   secrets_portal_api:
   secrets_portal_web:
+  secrets_field_web:
   secrets_field_db:
   secrets_field_api:
   pki:

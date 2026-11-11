@@ -7,6 +7,13 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Changed
+- Nginx Proxy Manager follows its 2.x releases (`PROXY_TAG`) instead of `latest`.
+- `scripts/backup.sh` is the backup engine behind Admin → Backups; backups are single
+  files (`itm-<date>-<time>.tar.zst[.gpg]`) and include Nginx Proxy Manager's data.
+- `sudo ./install.sh` on an installed server checks that the internal address range is
+  still free before changing anything.
+- The Admin tabs wrap onto a second line on narrow screens instead of scrolling.
+- Re-running `sudo ./install.sh` on an installed server also pulls the current images.
 - **Upgrading from 1.0.0:** reinstall (`git pull`, then `sudo ./install.sh` on a clean
   server, or import a backup with `scripts/import-existing.sh`). The ports, the firewall
   and the installation flow changed.
@@ -30,6 +37,22 @@ All notable changes to this project are documented here. The format follows
 - Source comments describe current behavior only.
 
 ### Added
+- Scheduled backups (Admin → Backups): on by default every day at 01:00 and before each
+  update; Proxmox-style retention (last, daily, weekly, monthly, yearly); storage in a
+  folder, an SMB share or an NFS export, tested before saving; AES-256 encryption with a
+  passphrase; optional encryption keys inside encrypted backups; verification; protected
+  backups; restore from the Portal (password required) or with
+  `sudo ./install.sh backup restore`. An update is skipped when the backup before it fails.
+- Dashboard alerts for admins: failed, overdue or disabled backups, backups kept only on
+  the server, a failed or skipped update, and a new major version of Nginx Proxy Manager.
+- Admin → System shows Nginx Proxy Manager's installed version and latest release, and how
+  to move to a new major version (`sudo ./install.sh proxy-version N`).
+- Admin → Certificate explains when the certificate changes and how to remove an old one.
+- The Field App on the office network without any proxy set up: `https://<server>:4433`,
+  HTTPS with a certificate from the server's CA, office addresses only.
+- Admin → System → Office network: change the networks allowed to use the Portal and the
+  server's local DNS names after installation. The certificates are re-issued and the
+  web containers restarted; a change that would lock out the admin making it is refused.
 - Setup wizard (`installer` image) served before installation, with the host helper that
   performs the installation from a whitelisted request.
 - Two-factor authentication (TOTP) for the Portal and the Field App, with an Off / Optional
@@ -53,6 +76,17 @@ All notable changes to this project are documented here. The format follows
 ## [1.0.0]
 
 ### Added
+- Scheduled backups (Admin → Backups): on by default every day at 01:00 and before each
+  update; Proxmox-style retention (last, daily, weekly, monthly, yearly); storage in a
+  folder, an SMB share or an NFS export, tested before saving; AES-256 encryption with a
+  passphrase; optional encryption keys inside encrypted backups; verification; protected
+  backups; restore from the Portal (password required) or with
+  `sudo ./install.sh backup restore`. An update is skipped when the backup before it fails.
+- Dashboard alerts for admins: failed, overdue or disabled backups, backups kept only on
+  the server, a failed or skipped update, and a new major version of Nginx Proxy Manager.
+- Admin → System shows Nginx Proxy Manager's installed version and latest release, and how
+  to move to a new major version (`sudo ./install.sh proxy-version N`).
+- Admin → Certificate explains when the certificate changes and how to remove an old one.
 - Docker Compose stack: edge (Caddy), Portal web/API/database, Field web/API/database,
   and a secret-generating `init` service, published to GHCR for amd64 and arm64.
 - `install.sh` (Docker install, settings, internal subnet check, firewall, start) and

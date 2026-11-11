@@ -13,5 +13,6 @@ RUN npm run build
 FROM nginxinc/nginx-unprivileged:1.27-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY docker/security-headers.conf /etc/nginx/snippets/security-headers.conf
+COPY --chmod=0755 docker/30-field-access.sh /docker-entrypoint.d/30-field-access.sh
 COPY --from=build /src/dist /usr/share/nginx/html
-EXPOSE 8080
+EXPOSE 8080 8443

@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { RefreshCw, Shield, ShieldOff, CalendarClock } from 'lucide-react';
 import { adminApi } from '../../api/admin.js';
+import { Link } from 'react-router';
 import { HostLog } from './HostLog.jsx';
+import { describeBackupSchedule } from './Backups.jsx';
 
 // Admin → System: automatic updates (editable) and the host firewall (status only; it
 // is chosen in the setup wizard or on the server with install.sh). Both come from the
@@ -50,6 +52,44 @@ export function ScheduleFields({ value, onChange }) {
           {HOURS.map(h => <option key={h} value={h}>{h}:00</option>)}
         </select>
       )}
+    </div>
+  );
+}
+
+const major = (v) => parseInt(String(v || '').split('.')[0], 10);
+
+/** Nginx Proxy Manager: installed version, newest release, and how to move to a new major version. */
+function ProxyVersion({ proxy, ip, adminPort }) {
+  const newMajor = proxy.latest && major(proxy.latest) > Number(proxy.tag);
+  const behind = proxy.latest && proxy.version && proxy.latest !== proxy.version && !newMajor;
+  return (
+    <div className="space-y-2 border-t border-surface-600 pt-4">
+      <p className="text-gray-200 font-medium">Nginx Proxy Manager</p>
+      <dl className="grid grid-cols-3 gap-3 text-xs">
+        <div><dt className="text-gray-500">Installed</dt><dd className="text-gray-200">{proxy.version || 'not running'}</dd></div>
+        <div><dt className="text-gray-500">Latest release</dt><dd className="text-gray-200">{proxy.latest || 'unknown'}</dd></div>
+        <div><dt className="text-gray-500">Follows</dt><dd className="text-gray-200">{proxy.tag}.x releases</dd></div>
+      </dl>
+      <p className="text-gray-500 text-xs">
+        Releases within {proxy.tag}.x install with the automatic updates. A new major version can change how it works, so it is never
+        installed automatically.{behind && ' The latest release installs with the next update.'}
+      </p>
+      {newMajor && (
+        <div className="rounded-sm p-2 text-xs text-gray-300 bg-surface-700 space-y-1">
+          <p><strong className="text-gray-100">Version {major(proxy.latest)} is available.</strong> To install it:</p>
+          <ol className="list-decimal pl-5 space-y-0.5">
+            <li>Read its release notes: <a className="underline" href="https://github.com/NginxProxyManager/nginx-proxy-manager/releases" target="_blank" rel="noreferrer">github.com/NginxProxyManager/nginx-proxy-manager/releases</a>.</li>
+            <li>Make a backup (Admin → Backups → Back up now). It includes the proxy's settings and certificates.</li>
+            <li>On the server: <code className="font-mono text-gray-200">cd /opt/it-manager && sudo ./install.sh proxy-version {major(proxy.latest)}</code></li>
+            <li>Check that the Field App still opens from the internet. To go back: <code className="font-mono text-gray-200">sudo ./install.sh proxy-version {proxy.tag}</code></li>
+          </ol>
+        </div>
+      )}
+      <p className="text-xs rounded-sm p-2 text-amber-300 bg-amber-900/20">
+        The admin page{ip ? <> (<span className="font-mono">http://{ip}:{adminPort ?? 81}</span>)</> : ''} uses plain HTTP: its password crosses the
+        office network unencrypted. The firewall admits only the office network, but sign in to it only from trusted office computers,
+        and use a password you use nowhere else.
+      </p>
     </div>
   );
 }
@@ -108,9 +148,19 @@ export function HostSettings() {
           {lastAt && <> Last: {lastAt} ({data.lastUpdateResult === 'success' ? 'succeeded' : data.lastUpdateResult || 'unknown'}).</>}
         </p>
         <p className="text-gray-500 text-xs">
-          Pulls new images for every service, including Nginx Proxy Manager, and restarts what changed. The Portal is
+          Pulls new images for every service, including Nginx Proxy Manager's 2.x releases, and restarts what changed. The Portal is
           briefly unavailable while it restarts.
         </p>
+        {data.backup && (
+          <p className={`text-xs rounded-sm p-2 ${data.backup.beforeUpdate === 'on' ? 'text-gray-400 bg-surface-700' : 'text-amber-300 bg-amber-900/20'}`}>
+            <strong>We recommend a backup before every update.</strong>{' '}
+            {data.backup.beforeUpdate === 'on'
+              ? 'Each update first makes a backup and is skipped if that backup fails.'
+              : 'Backing up before each update is turned off.'}{' '}
+            Scheduled backups: {describeBackupSchedule(data.backup.schedule)}; schedule them before the update time.{' '}
+            <Link to="/admin?tab=backups" className="underline">Admin → Backups</Link>
+          </p>
+        )}
         {schedule && <ScheduleFields value={schedule} onChange={setSchedule} />}
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn-primary text-sm" disabled={busy || preset === data.updates}
@@ -131,11 +181,13 @@ export function HostSettings() {
         </p>
         <p className="text-gray-500 text-xs">
           {data.firewall === 'on' && data.ports && <>Open to everyone: port {data.ports.proxyHttps} (Field App{data.acme === 'http' ? '; and 80 for certificates' : ''}).
-            Office network only: {data.ports.portal} (Portal) and {data.ports.proxyAdmin} (proxy admin). </>}
+            Office network only: {data.ports.portal} (Portal), {data.ports.fieldLan ? <>{data.ports.fieldLan} (Field App), </> : ''}and {data.ports.proxyAdmin} (proxy admin). </>}
           Chosen during setup. To change it, run <code className="font-mono text-gray-300">sudo ./install.sh firewall on</code> or{' '}
           <code className="font-mono text-gray-300">off</code> on the server.
         </p>
       </div>
+
+      {data.proxy && <ProxyVersion proxy={data.proxy} ip={data.host?.ip} adminPort={data.ports?.proxyAdmin} />}
 
       <div className="space-y-2 border-t border-surface-600 pt-4">
         <details>

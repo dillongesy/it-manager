@@ -26,7 +26,17 @@ export const adminApi = {
   host:          () => api.get('/admin/host').then(r => r.data),
   saveUpdates:   (schedule) => api.put('/admin/host/updates', { schedule }).then(r => r.data),
   updateNow:     () => api.post('/admin/host/update-now').then(r => r.data),
+  saveNetwork:   (lan, names) => api.put('/admin/host/network', { lan, names }).then(r => r.data),
   hostLog:       (name) => api.get(`/admin/host/logs/${name}`).then(r => r.data),
+
+  backups:         () => api.get('/admin/backups').then(r => r.data),
+  saveBackups:     (body) => api.put('/admin/backups/settings', body).then(r => r.data),
+  backupNow:       () => api.post('/admin/backups/run').then(r => r.data),
+  refreshBackups:  () => api.post('/admin/backups/refresh').then(r => r.data),
+  verifyBackup:    (name) => api.post(`/admin/backups/${encodeURIComponent(name)}/verify`).then(r => r.data),
+  protectBackup:   (name, value) => api.put(`/admin/backups/${encodeURIComponent(name)}/protect`, { protected: value }).then(r => r.data),
+  deleteBackup:    (name) => api.delete(`/admin/backups/${encodeURIComponent(name)}`).then(r => r.data),
+  restoreBackup:   (name, password) => api.post(`/admin/backups/${encodeURIComponent(name)}/restore`, { password }).then(r => r.data),
 
   system:  () => api.get('/admin/system').then(r => r.data),
   storage: () => api.get('/admin/storage').then(r => r.data),

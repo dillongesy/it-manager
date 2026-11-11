@@ -61,10 +61,11 @@ continue to the site (see [Trusting the certificate](#trusting-the-certificate))
 2. **Network.**
    - *Office network allowed to use the Portal*: the address range of your office
      computers (for example `192.168.1.0/24`), detected for you. Add a VPN range if
-     staff connect remotely. Everything outside these ranges is refused.
+     staff connect remotely. Everything outside these ranges is refused. Networks and
+     DNS names can be changed later in Admin → System.
    - *Local DNS names for the Portal* (optional): only if your office DNS has a name for
      the server, so the certificate matches it. The IP address always works.
-   - *Internal network for the containers*: nine small private networks inside the
+   - *Internal network for the containers*: ten small private networks inside the
      server. The wizard suggests a free prefix and checks it live against the server's
      networks.
 3. **Security and updates.** Firewall hardening (recommended: on), how the Field App's
@@ -95,6 +96,11 @@ macOS. The certificate is at `https://<server>/ca.crt`, or run `./scripts/export
 
 ## 3. Publishing the Field App
 
+On the office network the Field App works straight after installation, with nothing to
+set up: `https://<server-ip>:4433` (office addresses only; devices need the server's
+certificate, see [Trusting the certificate](#trusting-the-certificate)). Publishing it
+lets staff use it anywhere.
+
 The Field App is published through the bundled **Nginx Proxy Manager**, which is
 attached only to the Field App's network and cannot reach the Portal. On the server it
 listens on port **4443**; the router maps the public port 443 to it, so the Portal keeps
@@ -104,7 +110,9 @@ port 443 on the office network.
 2. On the router, forward external TCP **443 to the server's port 4443**. With HTTP
    certificate validation, also forward external **80 to the server's port 80**.
    Forward nothing else.
-3. Open `http://<server-ip>:81` and create the Nginx Proxy Manager admin account.
+3. Open `http://<server-ip>:81` and create the Nginx Proxy Manager admin account. This
+   page is plain HTTP, so the password crosses the office network unencrypted: use a
+   password you use nowhere else, and sign in only from trusted office computers.
 4. **Hosts → Proxy Hosts → Add Proxy Host**: the domain, scheme `http`, forward hostname
    `field-web`, port `8080`, and turn on **Block Common Exploits**.
 5. On the **SSL** tab: request a Let's Encrypt certificate. With DNS validation, turn on
@@ -131,8 +139,14 @@ scheduled update (Admin → System, or `sudo ./install.sh auto-update on|off`) r
 same commands, and its output is kept in Admin → System. To pin a version, set
 `IMAGE_TAG=1.4.0` in `.env`.
 
-`docker-compose.yml` itself changes rarely. When a release notes that it changed,
-`git pull` before updating.
+`docker-compose.yml` itself changes rarely. When a release notes that it changed, run
+`git pull` and then `sudo ./install.sh`, which re-applies the settings and checks that
+the internal address range is still free.
+
+**Nginx Proxy Manager** follows its 2.x releases automatically. A new major version can
+change how it works, so it is never installed automatically: Admin → System shows the
+installed version and the latest release, and when a new major version exists, how to
+move to it (`sudo ./install.sh proxy-version 3`, after a backup).
 
 ## 5. Admin area
 
@@ -146,6 +160,7 @@ same commands, and its output is kept in Admin → System. To pin a version, set
 | **Branding** | Company name, app name, Field App name, primary and accent colors (live preview, contrast warning), print/PDF header (address, phone, email, website, footer), plus image uploads: square logo, full logo, browser-tab icon, login background. Changes push to the Field App automatically. |
 | **Security** | The one-time recovery-secrets reveal and its status, and the **two-factor authentication** policy, set separately for the Portal and the Field App (see below). |
 | **System** | Version, Field App connection, **automatic updates** (schedule, next and last run, "Update now", the last update's log), the firewall status (read-only), the installation log, storage (see below), and "Create my Field App login" if the wizard couldn't. |
+| **Backups** | Schedule, retention, storage (folder, SMB, NFS), encryption, verification, and the list of backups with verify, protect, delete and restore. See [Backups](#7-backups-and-disaster-recovery). |
 | **Certificate** | How to trust the server's certificate on Windows (by hand, PowerShell, Group Policy, Intune), iPhone, Android and macOS. Also at `/certificate` for every signed-in user. |
 
 **Two-factor authentication.** Users sign in with a password plus a 6-digit code from an
@@ -173,6 +188,7 @@ office LAN ─▶ :443   portal-web ─ portal_app ─▶ portal-api ─ portal_
                                                   └─ bridge ─▶ field-api (/api/service/* only)
 internet ─▶ router :443 ─▶ :4443  proxy (Nginx Proxy Manager; admin :81, office only)
                  └─ field_edge ─▶ field-web ─ field_app ─▶ field-api ─ field_db ─▶ field-db
+office LAN ─▶ :4433 ─────────────────▶ field-web (Field App on the office network)
 ```
 
 - **Two separate entrances.** Internet traffic arrives only at the proxy (through the
@@ -195,7 +211,7 @@ internet ─▶ router :443 ─▶ :4443  proxy (Nginx Proxy Manager; admin :81,
 - **Firewall** (on by default, chosen in the wizard; `sudo ./install.sh firewall on|off`).
   Docker-published ports bypass the host's own firewall, so the rules live in Docker's
   **DOCKER-USER** chain, re-applied by a systemd unit whenever Docker starts: port 4443
-  from anywhere (and 80 with HTTP validation), 443 and 81 from the office network only,
+  from anywhere (and 80 with HTTP validation), 443, 4433 and 81 from the office network only,
   everything else dropped. Other services on the host, such as SSH, are not changed.
 - **Host helper.** The setup wizard and the Portal can't run anything on the host. They
   drop a small request file that a root systemd service checks against a fixed list:
@@ -204,15 +220,48 @@ internet ─▶ router :443 ─▶ :4443  proxy (Nginx Proxy Manager; admin :81,
 
 ## 7. Backups and disaster recovery
 
+Backups are on from the first install: **every day at 01:00, before the automatic
+updates**, and once more right before each update. They start out in
+`/var/backups/it-manager` on the server itself, which does not survive a failed disk, so
+the first thing to do after setup is to choose a network share in **Admin → Backups**.
+**We recommend keeping backups scheduled before the update time**, so every update starts
+from a fresh backup; the page warns when the schedule doesn't.
+
+Admin → Backups offers:
+
+| Setting | Options |
+|---|---|
+| Schedule | Off, every day, or selected days, at a set time (server time) |
+| Retention | Keep last / daily / weekly / monthly / yearly, as in Proxmox VE. All zero keeps every backup |
+| Storage | A folder on the server (or a mounted second disk), an SMB share (Windows, NAS) or an NFS export. Shares are mounted only while in use. The storage is tested before the settings are saved |
+| Encryption | AES-256 (GnuPG) with a passphrase. Earlier passphrases are kept, so older backups stay readable |
+| Encryption keys | Optionally include the Portal and Field encryption keys (encrypted backups only), so a backup restores onto a new server with the passphrase alone |
+| Before updates | Back up before each update; if that backup fails, the update is skipped |
+| Verify | Re-read each new backup and check every checksum and both database dumps |
+| Compression | Zstandard (default), gzip or none |
+
+Each backup is one file holding both databases, all uploaded files, and Nginx Proxy
+Manager's settings and certificates. The list shows each backup's size, encryption and
+verification, and lets you **verify**, **protect** (never pruned or deleted),
+**delete** or **restore** it. Restoring asks for your password and replaces all data.
+A failed or overdue backup, or a skipped update, shows as an alert on the admin's
+dashboard.
+
+On the server:
+
 ```bash
-./scripts/backup.sh                 # both databases + uploads  → backups/<timestamp>/
-sudo ./scripts/backup.sh --secrets  # also the secret, certificate and proxy volumes
+sudo ./install.sh backup run             # back up now
+sudo ./install.sh backup list
+sudo ./install.sh backup verify <name>
+sudo ./install.sh backup restore <name | /path/to/file> [--passphrase-file FILE]
+     [--encryption-key HEX --field-encryption-key HEX]
 ```
 
-To restore onto a new server: install, then use `scripts/import-existing.sh` with your
-dumps, upload archives and the **ENCRYPTION_KEY** (from the one-time reveal, a
-`--secrets` backup, or the root access described below). Without the encryption key,
-stored credentials can't be recovered. That's by design.
+**Restoring onto a new server:** install as usual (stop at the Portal's own setup page),
+copy the backup file to the server, and run the restore command above. An encrypted
+backup needs its passphrase in a file. If the backup does not include the encryption
+keys, also pass both keys from the recovery secrets; without them, stored credentials
+can't be read. That's by design.
 
 ### Recovering secrets as root
 

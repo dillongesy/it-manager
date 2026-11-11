@@ -10,13 +10,13 @@
 | `portal-api` | `portal-api` (Node) | node (1000), read-only | portal_app (fixed .3.10), portal_db, bridge, portal_egress | Portal API; runs migrations on start |
 | `portal-db` | `postgres:17-alpine` | postgres (70) | portal_db | Portal database |
 | `proxy` | `jc21/nginx-proxy-manager` | root, 7 capabilities | proxy_public, field_edge | Internet entrance for the Field App: TLS (Let's Encrypt) on host port 4443 (the router maps public 443 to it), 80 for HTTP validation; admin UI on 81 |
-| `field-web` | `field-web` (nginx) | nginx (101), read-only | field_edge, field_app | Serves the Field SPA and proxies `/api` (refuses `/api/service`) |
+| `field-web` | `field-web` (nginx) | nginx (101), read-only | field_ingress, field_edge, field_app | Serves the Field SPA and proxies `/api` (refuses `/api/service`): HTTP 8080 for the proxy, and HTTPS on host port 4433 for the office network (certificate from the local CA, office addresses only) |
 | `field-api` | `field-api` (Node) | node (1000), read-only | field_app, field_db, bridge | Field API |
 | `field-db` | `postgres:17-alpine` | postgres (70) | field_db | Field database |
 
 ## Networks
 
-Nine networks on `${NET_PREFIX}.0.0/24` … `${NET_PREFIX}.8.0/24` (default prefix `172.29`):
+Ten networks on `${NET_PREFIX}.0.0/24` … `${NET_PREFIX}.9.0/24` (default prefix `172.29`):
 
 | Network | Subnet | Internal | Members |
 |---|---|---|---|
@@ -29,6 +29,7 @@ Nine networks on `${NET_PREFIX}.0.0/24` … `${NET_PREFIX}.8.0/24` (default pref
 | `field_db` | `.6` | yes | field-api, field-db |
 | `bridge` | `.7` | yes | portal-api, field-api |
 | `portal_egress` | `.8` | no | portal-api (integrations) |
+| `field_ingress` | `.9` | no | field-web (office port) |
 
 ## Who can talk to whom
 
@@ -40,17 +41,18 @@ Docker lets two containers communicate only when they share a network. The full 
 | **portal-api** | No | — | Yes | No | No | Yes `/api/service/*` only | No | Yes (integrations) |
 | **portal-db** | No | No | — | No | No | No | No | No |
 | **proxy** | No (see below) | No | No | — | Yes | No | No | Yes (ACME) |
-| **field-web** | No | No | No | No | — | Yes (refuses `/api/service`) | No | No |
+| **field-web** | No (see below) | No | No | No | — | Yes (refuses `/api/service`) | No | No |
 | **field-api** | No | No (it binds only portal_app) | No | No | No | — | Yes | No |
 | **field-db** | No | No | No | No | No | No | — | No |
 
-A container can also reach a port the host publishes, which would give the proxy a
-path to the Portal through the host's own Portal port. Three layers close it:
+A container can also reach a port the host publishes, which would give the proxy or
+field-web a path to the Portal through the host's own Portal port. Three layers close it:
 
-1. portal-web refuses the proxy's subnet (`PROXY_SUBNET`) before allowing private
-   addresses (`deny` precedes `allow` in its access list).
-2. portal-api refuses requests whose client address is in the proxy's subnet.
-3. The installer's DOCKER-USER rules drop traffic from `proxy_public` to `portal_ingress`.
+1. portal-web refuses `proxy_public` and `field_ingress` (`PORTAL_DENIED_SOURCES`)
+   before allowing the office network (`deny` precedes `allow` in its access list).
+2. portal-api refuses requests whose client address is in either (`DENIED_SOURCES`).
+3. The DOCKER-USER rules drop traffic from `proxy_public` and `field_ingress` to
+   `portal_ingress`.
 
 The three layers of bridge protection, applied in order:
 1. **Network.** Only portal-api and field-api share the `bridge` network.
@@ -183,13 +185,26 @@ Portal API write requests; neither has any other way to affect the host.
 
 - The request is copied without following links into a private file before it is read,
   and is limited to 1 KB. Accepted lines: `updates=off|daily:HH|weekly:DAY:HH` and
-  `update=now` at any time; `check-prefix=` and `install=start` (with `lan`, `names`,
+  `update=now` at any time; `network=apply` (with `lan`, `names`) once installed; `check-prefix=` and `install=start` (with `lan`, `names`,
   `prefix`, `firewall`, `acme`, `updates`) only while setup is pending. Every value is
   matched against a strict pattern. Anything else is rejected with a generic error that
   never repeats the request's content.
 - The helper writes `result.json` (per request id) and `status.json` (installation state,
   host facts, ports, firewall, validation mode, schedule, next and last update) back, by
   writing a new file and renaming it.
+- Backup requests: `backup-settings=save` with the `backup-*` settings (passwords and
+  passphrases base64-encoded; the storage is mounted and tested before the settings are
+  kept, otherwise they are rolled back) and `backup-task=now|verify|restore|delete|protect|
+  unprotect|refresh` with `backup-name`, once installed. Long tasks run as the transient
+  unit `it-manager-backup-task`, one at a time. The SMB password
+  (`/etc/it-manager/backup-smb.cred`) and the encryption passphrases
+  (`/etc/it-manager/backup-passphrases/`) are root-only and never reported back.
+- Scheduled backups run as `it-manager-backup.service` (`install.sh run-backup` →
+  `scripts/backup.sh run`), started by `it-manager-backup.timer`. The backup holds
+  `pg_dump` custom-format dumps of both databases, tar archives of the upload and proxy
+  volumes, `manifest.json` and `SHA256SUMS`, compressed and optionally GnuPG-encrypted;
+  with "include keys", also both encryption keys (encrypted backups only). The list is
+  written to `backups.json` in the control volume for the Portal.
 - Updates run as `it-manager-update.service` (`install.sh run-update`: `docker compose pull`,
   `up -d`, image prune, output to `update.log`), started by `it-manager-update.timer` or by
   "Update now".
@@ -202,10 +217,11 @@ rules, so the rules live in Docker's `DOCKER-USER` chain and are re-applied by
 `it-manager-firewall.service` whenever Docker starts. They match the *original*
 destination port via conntrack:
 
-- traffic from `proxy_public` to `portal_ingress`: dropped;
+- traffic from `proxy_public` or `field_ingress` to `portal_ingress`: dropped;
 - 4443 (proxy, reached through the router's 443 mapping): from anywhere;
 - 80 (proxy): from anywhere with HTTP validation, otherwise from the office network;
-- 443 (Portal) and 81 (proxy admin): from the office network only;
+- 443 (Portal), 4433 (Field App on the office network) and 81 (proxy admin): from the
+  office network only;
 - anything else new arriving on the external interface: dropped.
 
 The host's own services (SSH, for example) are not changed. Ports are published on IPv4

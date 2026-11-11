@@ -125,10 +125,12 @@ function renderReview() {
   const rows = [
     ['Portal address', `https://${ip}${settings.names ? ` and ${settings.names.split(/[\s,]+/).filter(Boolean).map(n => `https://${n}`).join(', ')}` : ''}`],
     ['Office network', settings.lanCidr],
-    ['Container networks', `${settings.prefix}.0.0 – ${settings.prefix}.8.255`],
+    ['Container networks', `${settings.prefix}.0.0 – ${settings.prefix}.9.255`],
+    ['Field App in the office', `https://${ip}:4433 (office network only)`],
     ['Firewall hardening', settings.firewall === 'on' ? 'On' : 'Off'],
     ['Field App certificate', settings.acme === 'dns' ? 'DNS validation (port 443 only)' : 'HTTP validation (ports 443 and 80)'],
     ['Automatic updates', describeUpdates(settings.updates)],
+    ['Backups', 'Every day at 01:00, before the updates, on this server. Choose a network share in Admin → Backups after setup.'],
   ];
   const dl = $('#summary');
   dl.replaceChildren(...rows.flatMap(([k, v]) => {

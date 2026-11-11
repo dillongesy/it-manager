@@ -3,7 +3,7 @@ import { Navigate, useNavigate, Link } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle, CheckCircle2, XCircle, Loader2, KeyRound, Building2, UserCog, Server,
-  ShieldCheck, Globe, Download, ArrowRight, ScrollText,
+  ShieldCheck, Globe, Download, ArrowRight, ScrollText, Smartphone, DatabaseBackup,
 } from 'lucide-react';
 import { setupApi } from '../api/admin.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
@@ -267,6 +267,7 @@ function ApplyStep({ results, error, onBack, onContinue }) {
 function FinishStep({ server, onDone }) {
   const ip = server?.ip || window.location.hostname;
   const proxyPort = server?.ports?.proxyHttps ?? 4443;
+  const fieldLan = server?.ports?.fieldLan ?? 4433;
   const http = server?.acme === 'http';
   return (
     <div className="space-y-6 text-sm text-gray-400">
@@ -278,6 +279,15 @@ function FinishStep({ server, onDone }) {
           <Link to="/certificate" className="text-brand-light underline">/certificate</Link>.
         </p>
         <a href="/ca.crt" className="btn-secondary inline-flex items-center gap-1.5"><Download size={14} /> Download certificate</a>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-gray-200 font-semibold flex items-center gap-2"><Smartphone size={16} /> Field App in the office</h2>
+        <p>
+          The Field App works on the office network right away, with no router or proxy set up:{' '}
+          <a className="font-mono text-brand-light underline" href={`https://${ip}:${fieldLan}`} target="_blank" rel="noreferrer">https://{ip}:{fieldLan}</a>.
+          Phones need the server's certificate installed (see above). To use it away from the office, publish it below.
+        </p>
       </section>
 
       <section className="space-y-2">
@@ -293,7 +303,8 @@ function FinishStep({ server, onDone }) {
           <li>
             Open Nginx Proxy Manager at{' '}
             <a className="text-brand-light underline" href={`http://${ip}:81`} target="_blank" rel="noreferrer">http://{ip}:81</a>{' '}
-            and create its admin account.
+            and create its admin account. This page uses plain HTTP, so its password crosses the office network
+            unencrypted: use a password you use nowhere else, and sign in only from office computers.
           </li>
           <li>
             Hosts → Proxy Hosts → Add Proxy Host: your domain, scheme <code className="font-mono text-gray-300">http</code>,
@@ -307,6 +318,16 @@ function FinishStep({ server, onDone }) {
           </li>
         </ol>
         <p>Field App users sign in at that address. Your admin login works there too.</p>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-gray-200 font-semibold flex items-center gap-2"><DatabaseBackup size={16} /> Set up backups</h2>
+        <p>
+          Backups already run every night at 01:00, before the automatic updates, but they are kept on this server, so they do not
+          survive a failed disk. In <Link to="/admin?tab=backups" className="text-brand-light underline">Admin → Backups</Link>, store them
+          on a network share (a NAS or a Windows server) and set an encryption passphrase. We recommend keeping backups scheduled
+          before the update time.
+        </p>
       </section>
 
       <details className="space-y-2">
