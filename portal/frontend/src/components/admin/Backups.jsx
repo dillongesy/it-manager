@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  DatabaseBackup, RefreshCw, Play, ShieldCheck, Shield, Trash2, RotateCcw, CheckCircle2, XCircle,
-  Lock, KeyRound, AlertTriangle, Loader2, HardDrive, Clock,
+  DatabaseBackup, Play, ShieldCheck, Shield, Trash2, RotateCcw, CheckCircle2, XCircle,
+  Lock, KeyRound, AlertTriangle, Loader2, HardDrive, Clock, FlaskConical,
 } from 'lucide-react';
 import { adminApi } from '../../api/admin.js';
 import { formatBytes } from './Storage.jsx';
-import { describeSchedule, parseSchedule } from './HostSettings.jsx';
+import { parseSchedule } from './HostSettings.jsx';
 import { HostLog } from './HostLog.jsx';
+import { RefreshButton } from './RefreshButton.jsx';
 import { Modal } from '../ui/Modal.jsx';
 import { PasswordInput } from '../ui/PasswordInput.jsx';
 
@@ -15,14 +16,8 @@ import { PasswordInput } from '../ui/PasswordInput.jsx';
 // applied by the host helper (scripts/backup.sh). Restores need the admin's password.
 
 const DAYS = [['mon', 'Mon'], ['tue', 'Tue'], ['wed', 'Wed'], ['thu', 'Thu'], ['fri', 'Fri'], ['sat', 'Sat'], ['sun', 'Sun']];
-const KEEP = [
-  ['last', 'Last', 'The newest backups, whatever their age.'],
-  ['daily', 'Daily', 'One per day, for this many days.'],
-  ['weekly', 'Weekly', 'One per week, for this many weeks.'],
-  ['monthly', 'Monthly', 'One per month, for this many months.'],
-  ['yearly', 'Yearly', 'One per year, for this many years.'],
-];
-const backupsQuery = { queryKey: ['admin', 'backups'], queryFn: adminApi.backups };
+const KEEP = [['last', 'Keep last'], ['daily', 'Keep daily'], ['weekly', 'Keep weekly'], ['monthly', 'Keep monthly'], ['yearly', 'Keep yearly']];
+const pad = (n) => String(n).padStart(2, '0');
 
 /** 'weekly:mon,wed:01:30' ↔ { frequency, days, time } */
 export function parseBackupSchedule(value) {
@@ -47,22 +42,30 @@ export function describeBackupSchedule(value) {
   return `${DAYS.filter(([d]) => s.days.includes(d)).map(([, l]) => l).join(', ')} at ${s.time}`;
 }
 
-/**
- * Whether every scheduled update has a scheduled backup earlier the same day.
- * Returns null when there is nothing to compare.
- */
-export function backupPrecedesUpdates(backupValue, updateValue) {
-  const b = parseBackupSchedule(backupValue);
+/** An everyday backup an hour before the automatic updates, or null when updates are off. */
+export function suggestedBackupSchedule(updateValue) {
   const u = parseSchedule(updateValue);
-  if (b.frequency === 'off' || u.frequency === 'off') return null;
-  const updateDays = u.frequency === 'daily' ? DAYS.map(([d]) => d) : [u.day];
-  const backupDays = b.frequency === 'daily' ? DAYS.map(([d]) => d) : b.days;
-  const before = b.time < `${u.hour}:00`;
-  return updateDays.every(d => backupDays.includes(d)) && before;
+  if (u.frequency === 'off') return null;
+  const hour = (Number(u.hour) + 23) % 24;
+  return { frequency: 'daily', days: ['sun'], time: `${pad(hour)}:00` };
+}
+
+/** Plain-English summary of the retention settings. */
+export function describeRetention(keep) {
+  const parts = [];
+  if (keep.last) parts.push(`the ${keep.last} newest`);
+  if (keep.daily) parts.push(`one a day for ${keep.daily} day${keep.daily === 1 ? '' : 's'}`);
+  if (keep.weekly) parts.push(`one a week for ${keep.weekly} week${keep.weekly === 1 ? '' : 's'}`);
+  if (keep.monthly) parts.push(`one a month for ${keep.monthly} month${keep.monthly === 1 ? '' : 's'}`);
+  if (keep.yearly) parts.push(`one a year for ${keep.yearly} year${keep.yearly === 1 ? '' : 's'}`);
+  if (!parts.length) return 'Keeps every backup.';
+  const list = parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}` : parts[0];
+  return `Keeps ${list}. Older backups are deleted.`;
 }
 
 const fromSettings = (s) => {
-  const [last, daily, weekly, monthly, yearly] = String(s.keep || '0,0,0,0,0').split(',').map(Number);
+  const [last, daily, weekly, monthly, yearly] = String(s.keep || '3,0,0,0,0').split(',').map(Number);
+  const keep = { last, daily, weekly, monthly, yearly };
   return {
     schedule: parseBackupSchedule(s.schedule),
     storage: s.storage || 'local',
@@ -71,16 +74,18 @@ const fromSettings = (s) => {
     user: s.user || '',
     domain: s.domain || '',
     password: '',
-    keep: { last, daily, weekly, monthly, yearly },
+    keepAll: Object.values(keep).every(n => !n),
+    keep: Object.values(keep).every(n => !n) ? { last: 3, daily: 0, weekly: 0, monthly: 0, yearly: 0 } : keep,
     compress: s.compress || 'zstd',
     encryption: 'keep',
     passphrase: '',
     passphrase2: '',
     includeKeys: s.secrets === 'on',
-    beforeUpdate: s.beforeUpdate !== 'off',
     verify: s.verify !== 'off',
   };
 };
+
+const storageKey = (f) => JSON.stringify([f.storage, f.storage === 'local' ? f.path : f.share, f.user, f.domain, f.password]);
 
 function Message({ value }) {
   if (!value) return null;
@@ -89,10 +94,14 @@ function Message({ value }) {
 
 export function Backups() {
   const qc = useQueryClient();
-  const { data, isLoading } = useQuery({
-    ...backupsQuery,
-    refetchInterval: (q) => (q.state.data?.settings?.running ? 5000 : false),
+  // Poll while a task runs, and for a short while after starting one (its status lags a moment).
+  const watchUntil = useRef(0);
+  const query = useQuery({
+    queryKey: ['admin', 'backups'],
+    queryFn: adminApi.backups,
+    refetchInterval: (q) => (q.state.data?.settings?.running || Date.now() < watchUntil.current ? 3000 : false),
   });
+  const { data, isLoading } = query;
   const [form, setForm] = useState(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(null);
@@ -101,10 +110,13 @@ export function Backups() {
   const settings = data?.settings;
   useEffect(() => { if (settings && !form) setForm(fromSettings(settings)); }, [settings]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // When a running task finishes, refresh the logs too.
+  // When a running task finishes, refresh the logs and the storage figures.
   const running = !!settings?.running;
   useEffect(() => {
-    if (!running) ['backup', 'verify', 'restore'].forEach(n => qc.invalidateQueries({ queryKey: ['host-log', n] }));
+    if (!running) {
+      qc.invalidateQueries({ queryKey: ['host-log'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'host'] });
+    }
   }, [running, qc]);
 
   if (isLoading) return <section className="card p-5 text-sm text-gray-500">Loading backups…</section>;
@@ -112,50 +124,48 @@ export function Backups() {
     return (
       <section className="card p-5 text-sm text-gray-400 space-y-2">
         <h2 className="text-base font-semibold text-gray-200 flex items-center gap-2"><DatabaseBackup size={16} /> Backups</h2>
-        <p>Backups are managed by the host helper that install.sh sets up. This server was not set up with install.sh, or the
-          helper has not reported yet. On the server: <code className="font-mono text-gray-300">sudo ./install.sh</code>.</p>
+        <p>This server was not set up with install.sh, so backups are not available here.</p>
       </section>
     );
   }
 
-  const act = async (fn, ok) => {
+  const act = async (fn, ok, { watch = false } = {}) => {
     setBusy(true); setMessage(null);
     try {
       await fn();
       setMessage({ ok });
-      await qc.invalidateQueries({ queryKey: ['admin', 'backups'] });
-      qc.invalidateQueries({ queryKey: ['admin', 'host'] });
+      if (watch) watchUntil.current = Date.now() + 15_000;
+      await query.refetch();
     } catch (err) {
       setMessage({ error: err.response?.data?.error ?? 'The server did not accept the request.' });
     } finally { setBusy(false); }
   };
 
   const list = data.list?.backups ?? [];
-  const last = settings.lastAt ? new Date(settings.lastAt) : null;
 
   return (
     <div className="space-y-6">
       <StatusCard data={data} busy={busy} running={running}
-        onRun={() => act(adminApi.backupNow, 'Backup started. It appears in the list when it finishes.')}
-        onRefresh={() => act(adminApi.refreshBackups, 'Backup list refreshed.')} last={last} />
+        refresh={<RefreshButton query={query} disabled={running} before={async () => {
+          await adminApi.refreshBackups();
+          await qc.invalidateQueries({ queryKey: ['host-log'] });
+        }} />}
+        onRun={() => act(adminApi.backupNow, 'Backup started. It appears in the list when it finishes.', { watch: true })} />
 
       {message && <Message value={message} />}
 
       {form && (
         <SettingsForm form={form} setForm={setForm} settings={settings} updates={data.updates} busy={busy}
-          onSave={(body) => act(async () => { await adminApi.saveBackups(body); setForm(null); },
-            'Backup settings saved. The storage was tested and works.')} />
+          onSave={(body) => act(async () => { await adminApi.saveBackups(body); setForm(null); }, 'Backup settings saved.')} />
       )}
 
       <section className="card p-5 space-y-3 text-sm">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-gray-200">Backups on the storage ({list.length})</h2>
-          {data.list?.free > 0 && (
-            <span className="text-xs text-gray-500">{formatBytes(data.list.free)} free of {formatBytes(data.list.total)}</span>
-          )}
+          <h2 className="text-base font-semibold text-gray-200">Backups ({list.length})</h2>
+          {data.list?.free > 0 && <span className="text-xs text-gray-500">{formatBytes(data.list.free)} free on the storage</span>}
         </div>
         {list.length === 0 ? (
-          <p className="text-gray-500">No backups yet. Use “Back up now”, or wait for the schedule.</p>
+          <p className="text-gray-500">No backups yet.</p>
         ) : (
           <div className="overflow-x-auto -mx-5 px-5">
             <table className="w-full text-left text-sm">
@@ -171,8 +181,8 @@ export function Backups() {
               <tbody>
                 {list.map(b => (
                   <BackupRow key={b.name} b={b} busy={busy || running}
-                    onVerify={() => act(() => adminApi.verifyBackup(b.name), 'Verification started.')}
-                    onProtect={() => act(() => adminApi.protectBackup(b.name, !b.protected), b.protected ? 'Protection removed.' : 'Backup protected: it is never pruned or deleted.')}
+                    onVerify={() => act(() => adminApi.verifyBackup(b.name), 'Verification started.', { watch: true })}
+                    onProtect={() => act(() => adminApi.protectBackup(b.name, !b.protected), b.protected ? 'Protection removed.' : 'Backup protected: it is never deleted automatically.')}
                     onDelete={() => { if (confirm(`Delete the backup from ${new Date(b.created).toLocaleString()}? This cannot be undone.`)) act(() => adminApi.deleteBackup(b.name), 'Backup deleted.'); }}
                     onRestore={() => setRestoreName(b.name)} />
                 ))}
@@ -204,18 +214,16 @@ export function Backups() {
   );
 }
 
-function StatusCard({ data, busy, running, onRun, onRefresh, last }) {
+function StatusCard({ data, busy, running, onRun, refresh }) {
   const s = data.settings;
-  const local = s.storage === 'local';
-  const where = local ? s.path : s.share;
+  const last = s.lastAt ? new Date(s.lastAt) : null;
+  const where = s.storage === 'local' ? s.path : s.share;
   return (
     <section className="card p-5 space-y-4 text-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-base font-semibold text-gray-200 flex items-center gap-2"><DatabaseBackup size={16} /> Backups</h2>
         <div className="flex gap-2">
-          <button type="button" className="btn-ghost text-xs flex items-center gap-1" disabled={busy || running} onClick={onRefresh}>
-            <RefreshCw size={12} /> Refresh
-          </button>
+          {refresh}
           <button type="button" className="btn-primary text-sm flex items-center gap-1.5" disabled={busy || running} onClick={onRun}>
             {running ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />} {running ? 'Working…' : 'Back up now'}
           </button>
@@ -234,64 +242,83 @@ function StatusCard({ data, busy, running, onRun, onRefresh, last }) {
         </div>
         <div>
           <dt className="text-xs text-gray-500">Schedule</dt>
-          <dd className="text-gray-200">{describeBackupSchedule(s.schedule)}{s.next ? <span className="text-gray-500"> (next: {s.next})</span> : ''}</dd>
+          <dd className="text-gray-200">{describeBackupSchedule(s.schedule)}</dd>
         </div>
         <div>
           <dt className="text-xs text-gray-500">Stored on</dt>
-          <dd className="text-gray-200 break-all flex items-center gap-1.5"><HardDrive size={13} className="shrink-0 text-gray-500" />
-            {local ? 'This server: ' : s.storage === 'smb' ? 'Share: ' : 'NFS: '}<span className="font-mono text-xs">{where}</span></dd>
+          <dd className="text-gray-200 break-all font-mono text-xs mt-0.5">{where}</dd>
         </div>
       </dl>
 
-      {running && <p className="text-gray-400 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> A backup task is running. This page updates when it finishes.</p>}
-
       {s.schedule === 'off' && (
         <p className="rounded-sm p-2 text-amber-300 bg-amber-900/20 flex gap-2"><AlertTriangle size={16} className="shrink-0 mt-0.5" />
-          Scheduled backups are off. Without backups, a failed disk or a mistake loses every record and file.</p>
-      )}
-      {local && (
-        <p className="rounded-sm p-2 text-amber-300 bg-amber-900/20 flex gap-2"><AlertTriangle size={16} className="shrink-0 mt-0.5" />
-          <span>Backups are kept on this server{s.path?.startsWith('/var/') ? '’s own disk' : ''}. They protect against mistakes and failed updates,
-            but not against losing the disk or the server. Store them on a network share (below), or on a second disk mounted on the server.</span></p>
-      )}
-      {!s.encrypted && !local && (
-        <p className="rounded-sm p-2 text-amber-300 bg-amber-900/20 flex gap-2"><Lock size={16} className="shrink-0 mt-0.5" />
-          Backups are not encrypted. Anyone who can read the share can read the customer data in them. Set an encryption passphrase below.</p>
+          Scheduled backups are off.</p>
       )}
     </section>
+  );
+}
+
+function Choice({ checked, onChange, title, children, disabled = false }) {
+  return (
+    <label className={`flex items-start gap-3 rounded-md border p-3 cursor-pointer ${checked ? 'border-brand bg-brand/10' : 'border-surface-600'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
+      <input type="radio" className="mt-1" checked={checked} onChange={onChange} disabled={disabled} />
+      <span className="space-y-0.5">
+        <span className="block text-gray-200 font-medium">{title}</span>
+        <span className="block text-xs text-gray-400">{children}</span>
+      </span>
+    </label>
   );
 }
 
 function SettingsForm({ form, setForm, settings, updates, busy, onSave }) {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const setSchedule = (patch) => setForm(f => ({ ...f, schedule: { ...f.schedule, ...patch } }));
+  const [test, setTest] = useState({});   // { key, ok, error, busy }
+
   const scheduleValue = formatBackupSchedule(form.schedule);
-  const precedes = backupPrecedesUpdates(scheduleValue, updates);
+  const suggestion = suggestedBackupSchedule(updates);
+  const suggestionValue = suggestion && formatBackupSchedule(suggestion);
   const willEncrypt = form.encryption === 'set' || (form.encryption === 'keep' && settings.encrypted);
-  const keepAll = Object.values(form.keep).every(n => !Number(n));
+  const keep = form.keepAll ? { last: 0, daily: 0, weekly: 0, monthly: 0, yearly: 0 } : form.keep;
+
+  // A changed storage location must pass a test before it can be saved.
+  const savedKey = storageKey({ ...fromSettings(settings), password: '' });
+  const currentKey = storageKey(form);
+  const storageChanged = currentKey !== savedKey;
+  const tested = test.key === currentKey && test.ok;
 
   const problems = useMemo(() => {
     const p = [];
     if (form.schedule.frequency === 'weekly' && !form.schedule.days.length) p.push('Choose at least one day.');
-    if (form.storage === 'local' && !form.path.startsWith('/')) p.push('The folder must be a full path, such as /var/backups/it-manager.');
-    if (form.storage === 'smb' && !form.share.startsWith('//')) p.push('Enter the share as //server/share.');
+    if (!form.keepAll && Object.values(form.keep).every(n => !n)) p.push('Set at least one “Keep” value, or choose “Keep all backups”.');
     if (form.storage === 'smb' && !form.password && !(settings.passwordSet && settings.storage === 'smb' && form.user === settings.user)) p.push('Enter the share password.');
-    if (form.storage === 'nfs' && !/^[^/]+:\//.test(form.share)) p.push('Enter the export as server:/path.');
     if (form.encryption === 'set' && form.passphrase.length < 12) p.push('The passphrase must be at least 12 characters.');
     if (form.encryption === 'set' && form.passphrase !== form.passphrase2) p.push('The two passphrases do not match.');
-    if (form.includeKeys && !willEncrypt) p.push('The encryption keys can only be included in encrypted backups.');
+    if (storageChanged && !tested) p.push('Test the storage location before saving.');
     return p;
-  }, [form, settings, willEncrypt]);
+  }, [form, settings, storageChanged, tested]);
+
+  const body = () => ({
+    schedule: scheduleValue, storage: form.storage, path: form.path, share: form.share, user: form.user, domain: form.domain,
+    password: form.password || undefined, keep, compress: form.compress, encryption: form.encryption,
+    passphrase: form.encryption === 'set' ? form.passphrase : undefined,
+    includeKeys: form.includeKeys && willEncrypt, verify: form.verify,
+  });
+
+  const runTest = async () => {
+    setTest({ key: currentKey, busy: true });
+    try {
+      await adminApi.testBackupStorage(body());
+      setTest({ key: currentKey, ok: true });
+    } catch (err) {
+      setTest({ key: currentKey, error: err.response?.data?.error ?? 'The storage did not work.' });
+    }
+  };
 
   const save = () => {
-    if (form.encryption === 'set' && !confirm('Store this passphrase somewhere safe, away from the server (with the recovery secrets).\n\nWithout it, encrypted backups cannot be restored on another server.')) return;
+    if (form.encryption === 'set' && !confirm('Store this passphrase somewhere safe, away from the server.\n\nWithout it, encrypted backups cannot be restored on another server.')) return;
     if (form.encryption === 'off' && settings.encrypted && !confirm('New backups will not be encrypted. Existing encrypted backups stay readable on this server.')) return;
-    onSave({
-      schedule: scheduleValue, storage: form.storage, path: form.path, share: form.share, user: form.user, domain: form.domain,
-      password: form.password || undefined, keep: form.keep, compress: form.compress, encryption: form.encryption,
-      passphrase: form.encryption === 'set' ? form.passphrase : undefined,
-      includeKeys: form.includeKeys && willEncrypt, beforeUpdate: form.beforeUpdate, verify: form.verify,
-    });
+    onSave(body());
   };
 
   return (
@@ -309,7 +336,6 @@ function SettingsForm({ form, setForm, settings, updates, busy, onSave }) {
             <input type="time" className="input w-auto" value={form.schedule.time} aria-label="Time"
               onChange={e => setSchedule({ time: e.target.value || '01:00' })} />
           )}
-          <span className="text-xs text-gray-500">server time</span>
         </div>
         {form.schedule.frequency === 'weekly' && (
           <div className="flex flex-wrap gap-1.5">
@@ -325,36 +351,32 @@ function SettingsForm({ form, setForm, settings, updates, busy, onSave }) {
             })}
           </div>
         )}
-        <p className="text-gray-400">
-          <strong className="text-gray-200">We recommend scheduling backups before the automatic update time</strong>, so every update starts
-          from a fresh backup. Updates run: {describeSchedule(updates)}.
-        </p>
-        {precedes === false && (
-          <p className="rounded-sm p-2 text-amber-300 bg-amber-900/20 flex gap-2"><AlertTriangle size={16} className="shrink-0 mt-0.5" />
-            This schedule does not back up before every update. Choose an earlier time, or days that include the update day.</p>
+        {suggestion && (
+          <p className="text-xs text-gray-500">
+            Suggested: {describeBackupSchedule(suggestionValue).toLowerCase()}, an hour before the automatic updates.
+            {suggestionValue !== scheduleValue && (
+              <button type="button" className="ml-2 underline text-brand-light" onClick={() => setSchedule(suggestion)}>Use this</button>
+            )}
+          </p>
         )}
-        <label className="flex items-start gap-2 text-gray-300">
-          <input type="checkbox" className="mt-0.5" checked={form.beforeUpdate} onChange={e => set('beforeUpdate', e.target.checked)} />
-          <span>Back up before each update (recommended). If that backup fails, the update is skipped and shown as an alert.</span>
-        </label>
       </div>
 
       {/* Retention */}
-      <div className="space-y-2 border-t border-surface-600 pt-5">
+      <div className="space-y-3 border-t border-surface-600 pt-5">
         <h3 className="text-gray-200 font-medium">Retention</h3>
-        <p className="text-gray-500 text-xs">
-          Older backups are removed after each backup. Each rule keeps the newest backup of that many days, weeks, months or years not
-          already kept by an earlier rule. Protected backups are always kept. {keepAll && <strong className="text-amber-300">All zero keeps every backup.</strong>}
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          {KEEP.map(([k, label, hint]) => (
-            <label key={k} className="space-y-1" title={hint}>
-              <span className="text-xs text-gray-400">Keep {label.toLowerCase()}</span>
-              <input type="number" min="0" max="999" className="input" value={form.keep[k]}
-                onChange={e => set('keep', { ...form.keep, [k]: Math.max(0, Math.min(999, parseInt(e.target.value || '0', 10))) })} />
+        <label className="flex items-center gap-2 text-gray-300">
+          <input type="checkbox" checked={form.keepAll} onChange={e => set('keepAll', e.target.checked)} /> Keep all backups
+        </label>
+        <div className={`grid grid-cols-2 sm:grid-cols-5 gap-3 ${form.keepAll ? 'opacity-40' : ''}`}>
+          {KEEP.map(([k, label]) => (
+            <label key={k} className="space-y-1">
+              <span className="text-xs text-gray-400">{label}</span>
+              <input type="number" min="0" max="999" className="input" disabled={form.keepAll} value={form.keep[k] || ''} placeholder="0"
+                onChange={e => set('keep', { ...form.keep, [k]: Math.max(0, Math.min(999, parseInt(e.target.value || '0', 10) || 0)) })} />
             </label>
           ))}
         </div>
+        <p className="text-xs text-gray-400">{describeRetention(keep)}</p>
       </div>
 
       {/* Storage */}
@@ -368,11 +390,14 @@ function SettingsForm({ form, setForm, settings, updates, busy, onSave }) {
           ))}
         </div>
         {form.storage === 'local' && (
-          <label className="block space-y-1">
-            <span className="text-xs text-gray-400">Folder</span>
-            <input className="input font-mono" value={form.path} onChange={e => set('path', e.target.value)} placeholder="/var/backups/it-manager" />
-            <span className="text-xs text-gray-500 block">A second disk mounted on the server (for example <code className="font-mono">/mnt/backup</code>) survives the main disk failing.</span>
-          </label>
+          <>
+            <label className="block space-y-1">
+              <span className="text-xs text-gray-400">Folder</span>
+              <input className="input font-mono" value={form.path} onChange={e => set('path', e.target.value)} placeholder="/var/backups/it-manager" />
+            </label>
+            <p className="rounded-sm p-2 text-amber-300 bg-amber-900/20 flex gap-2 text-xs"><AlertTriangle size={14} className="shrink-0" />
+              Backups stored only on this server will not survive a failed disk. Use a network share.</p>
+          </>
         )}
         {form.storage === 'smb' && (
           <div className="grid sm:grid-cols-2 gap-3">
@@ -392,7 +417,6 @@ function SettingsForm({ form, setForm, settings, updates, busy, onSave }) {
               <span className="text-xs text-gray-400">Password</span>
               <PasswordInput value={form.password} onChange={e => set('password', e.target.value)}
                 placeholder={settings.passwordSet && settings.storage === 'smb' ? 'Saved (leave empty to keep it)' : ''} />
-              <span className="text-xs text-gray-500 block">Stored on the server, readable by root only. Use an account that can write only to this share.</span>
             </label>
           </div>
         )}
@@ -400,33 +424,42 @@ function SettingsForm({ form, setForm, settings, updates, busy, onSave }) {
           <label className="block space-y-1">
             <span className="text-xs text-gray-400">Export</span>
             <input className="input font-mono" value={form.share} onChange={e => set('share', e.target.value)} placeholder="nas.office.lan:/volume1/backups" />
-            <span className="text-xs text-gray-500 block">The export must allow this server's address with read-write access.</span>
           </label>
         )}
-        <p className="text-xs text-gray-500">Backups go into an <code className="font-mono">it-manager/&lt;server name&gt;</code> folder. The storage is tested when you save.</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" className="btn-secondary text-sm flex items-center gap-1.5" disabled={test.busy || busy} onClick={runTest}>
+            {test.busy ? <Loader2 size={14} className="animate-spin" /> : <FlaskConical size={14} />} {test.busy ? 'Testing…' : 'Test storage'}
+          </button>
+          {test.key === currentKey && test.ok && <span className="text-green-400 text-xs flex items-center gap-1"><CheckCircle2 size={14} /> Works: the server can write there.</span>}
+          {test.key === currentKey && test.error && <span className="text-red-400 text-xs flex items-center gap-1"><XCircle size={14} /> {test.error}</span>}
+        </div>
       </div>
 
-      {/* Options */}
+      {/* Encryption */}
       <div className="space-y-3 border-t border-surface-600 pt-5">
-        <h3 className="text-gray-200 font-medium flex items-center gap-2"><Lock size={14} /> Encryption and options</h3>
-        <p className="text-gray-400">
-          Encryption: <strong className="text-gray-200">{settings.encrypted ? 'on (AES-256)' : 'off'}</strong>.
-          {' '}Encrypted backups can be read only with the passphrase. It is kept on this server for scheduled backups;
-          keep a copy elsewhere, or the backups cannot be restored on a new server.
-        </p>
-        <div className="flex flex-wrap gap-4">
-          <label className="flex items-center gap-2 text-gray-300">
-            <input type="radio" name="enc" checked={form.encryption === 'keep'} onChange={() => set('encryption', 'keep')} />
-            {settings.encrypted ? 'Keep the current passphrase' : 'Leave unencrypted'}
-          </label>
-          <label className="flex items-center gap-2 text-gray-300">
-            <input type="radio" name="enc" checked={form.encryption === 'set'} onChange={() => set('encryption', 'set')} />
-            {settings.encrypted ? 'Change the passphrase' : 'Encrypt with a passphrase'}
-          </label>
-          {settings.encrypted && (
-            <label className="flex items-center gap-2 text-gray-300">
-              <input type="radio" name="enc" checked={form.encryption === 'off'} onChange={() => set('encryption', 'off')} /> Stop encrypting
-            </label>
+        <h3 className="text-gray-200 font-medium flex items-center gap-2"><Lock size={14} /> Encryption</h3>
+        <div className="grid sm:grid-cols-2 gap-3">
+          {settings.encrypted ? (
+            <>
+              <Choice checked={form.encryption === 'keep'} onChange={() => set('encryption', 'keep')} title="Keep encrypting">
+                Backups stay encrypted with the current passphrase.
+              </Choice>
+              <Choice checked={form.encryption === 'set'} onChange={() => set('encryption', 'set')} title="Change the passphrase">
+                New backups use the new passphrase. Older backups still open on this server.
+              </Choice>
+              <Choice checked={form.encryption === 'off'} onChange={() => set('encryption', 'off')} title="Stop encrypting">
+                New backups are readable by anyone who can open the files.
+              </Choice>
+            </>
+          ) : (
+            <>
+              <Choice checked={form.encryption !== 'set'} onChange={() => set('encryption', 'keep')} title="No encryption">
+                Anyone who can open the backup files (for example on the share) can read the customer data in them.
+              </Choice>
+              <Choice checked={form.encryption === 'set'} onChange={() => set('encryption', 'set')} title="Encrypt with a passphrase (recommended)">
+                The files can only be opened with your passphrase. Keep it somewhere safe: without it, the backups cannot be restored.
+              </Choice>
+            </>
           )}
         </div>
         {form.encryption === 'set' && (
@@ -436,26 +469,34 @@ function SettingsForm({ form, setForm, settings, updates, busy, onSave }) {
               <PasswordInput value={form.passphrase} onChange={e => set('passphrase', e.target.value)} />
             </label>
             <label className="space-y-1">
-              <span className="text-xs text-gray-400">Repeat</span>
+              <span className="text-xs text-gray-400">Repeat the passphrase</span>
               <PasswordInput value={form.passphrase2} onChange={e => set('passphrase2', e.target.value)} />
             </label>
-            {settings.encrypted && <p className="sm:col-span-2 text-xs text-gray-500">Backups made with the old passphrase stay readable on this server.</p>}
           </div>
         )}
         <label className={`flex items-start gap-2 ${willEncrypt ? 'text-gray-300' : 'text-gray-600'}`}>
           <input type="checkbox" className="mt-0.5" disabled={!willEncrypt} checked={form.includeKeys && willEncrypt} onChange={e => set('includeKeys', e.target.checked)} />
-          <span><KeyRound size={13} className="inline mr-1" />Include the encryption keys (encrypted backups only). A backup then restores onto a new server
-            with just the passphrase. Without them you also need <code className="font-mono">ENCRYPTION_KEY</code> from the recovery secrets, or
-            stored customer passwords cannot be read.</span>
+          <span>
+            <KeyRound size={13} className="inline mr-1" />Include the app's encryption keys
+            <span className="block text-xs text-gray-400 mt-0.5">
+              The app encrypts stored customer passwords with its own keys, which are separate from this passphrase. With this on, a
+              backup restores onto a new server with just the passphrase. With it off, you also need the <code className="font-mono">ENCRYPTION_KEY</code>{' '}
+              values from the recovery secrets you saved during setup.{!willEncrypt && ' Only available for encrypted backups.'}
+            </span>
+          </span>
         </label>
+      </div>
+
+      {/* Options */}
+      <div className="space-y-3 border-t border-surface-600 pt-5">
         <label className="flex items-start gap-2 text-gray-300">
           <input type="checkbox" className="mt-0.5" checked={form.verify} onChange={e => set('verify', e.target.checked)} />
-          <span>Verify each new backup (re-reads it and checks every file's checksum and both database dumps).</span>
+          <span>Verify each new backup</span>
         </label>
         <label className="flex items-center gap-2 text-gray-300">
           Compression
           <select className="input w-auto" value={form.compress} onChange={e => set('compress', e.target.value)}>
-            <option value="zstd">Zstandard (fast, recommended)</option>
+            <option value="zstd">Zstandard (recommended)</option>
             <option value="gzip">gzip</option>
             <option value="none">None</option>
           </select>
@@ -465,7 +506,7 @@ function SettingsForm({ form, setForm, settings, updates, busy, onSave }) {
       <div className="border-t border-surface-600 pt-5 space-y-2">
         {problems.map(p => <p key={p} className="text-amber-300 text-xs">{p}</p>)}
         <button type="button" className="btn-primary text-sm" disabled={busy || problems.length > 0} onClick={save}>
-          {busy ? 'Saving and testing…' : 'Save backup settings'}
+          {busy ? 'Saving…' : 'Save backup settings'}
         </button>
       </div>
     </section>
@@ -499,7 +540,7 @@ function BackupRow({ b, busy, onVerify, onProtect, onDelete, onRestore }) {
       <td className="py-2">
         <div className="flex justify-end gap-1">
           <button type="button" className="btn-ghost px-2 text-xs" disabled={busy} onClick={onVerify} title="Verify"><CheckCircle2 size={14} /></button>
-          <button type="button" className="btn-ghost px-2 text-xs" disabled={busy} onClick={onProtect} title={b.protected ? 'Remove protection' : 'Protect (never pruned or deleted)'}>
+          <button type="button" className="btn-ghost px-2 text-xs" disabled={busy} onClick={onProtect} title={b.protected ? 'Remove protection' : 'Protect (never deleted automatically)'}>
             {b.protected ? <ShieldCheck size={14} className="text-brand-light" /> : <Shield size={14} />}
           </button>
           <button type="button" className="btn-ghost px-2 text-xs" disabled={busy} onClick={onRestore} title="Restore"><RotateCcw size={14} /></button>
@@ -533,14 +574,12 @@ function RestoreModal({ name, backup, onClose }) {
       {state.started ? (
         <div className="space-y-3 text-sm text-gray-300">
           <p className="flex items-center gap-2 text-green-400"><Loader2 size={16} className="animate-spin" /> Restore started.</p>
-          <p>The Portal and the Field App stop while the data is replaced, usually for a few minutes, then start again. This page loses
-            its connection in the meantime. Reload it afterwards and sign in again; the restore log is in Admin → Backups.</p>
+          <p>The Portal and the Field App stop for a few minutes while the data is replaced. Reload this page afterwards and sign in again.</p>
         </div>
       ) : (
         <div className="space-y-4 text-sm text-gray-300">
           <p className="rounded-sm p-2 text-red-300 bg-red-900/20 flex gap-2"><AlertTriangle size={16} className="shrink-0 mt-0.5" />
-            <span>This <strong>replaces all current data</strong> (both databases, all uploaded files and the Nginx Proxy Manager settings) with
-              the backup from <strong>{when}</strong>. Everything entered since then is lost. Consider “Back up now” first.</span></p>
+            <span>This <strong>replaces all current data</strong> with the backup from <strong>{when}</strong>. Everything entered since then is lost.</span></p>
           <label className="block space-y-1">
             <span className="text-xs text-gray-400">Type <strong className="text-gray-200">RESTORE</strong> to confirm</span>
             <input className="input" value={typed} onChange={e => setTyped(e.target.value)} autoComplete="off" />
@@ -562,22 +601,36 @@ function RestoreModal({ name, backup, onClose }) {
   );
 }
 
+const Cmd = ({ children }) => (
+  <pre className="mt-1 rounded-md bg-surface-900 border border-surface-600 p-2 text-xs text-gray-300 whitespace-pre-wrap break-all font-mono">{children}</pre>
+);
+
 function RestoreElsewhere() {
   return (
     <section className="card p-5 space-y-2 text-sm text-gray-400">
       <details>
         <summary className="cursor-pointer text-gray-200 font-medium">Restoring onto a new server (disaster recovery)</summary>
-        <ol className="list-decimal pl-5 space-y-1.5 mt-3">
+        <ol className="list-decimal pl-5 space-y-3 mt-3">
           <li>Install IT Manager on the new server (<code className="font-mono text-gray-300">sudo ./install.sh</code> and the setup wizard).
             Stop at the Portal's own setup page; there is no need to create the admin.</li>
-          <li>Copy the backup file to the new server, for example into <code className="font-mono text-gray-300">/root</code>, or mount the share.</li>
-          <li>Run:
-            <pre className="mt-1 rounded-md bg-surface-900 border border-surface-600 p-2 text-xs text-gray-300 whitespace-pre-wrap break-all font-mono">{`cd /opt/it-manager
-sudo ./install.sh backup restore /root/itm-YYYY_MM_DD-HH_MM_SS.tar.zst.gpg --passphrase-file /root/passphrase.txt`}</pre>
-            For an encrypted backup, put the passphrase alone in that file. If the backup does not include the encryption keys, also add{' '}
-            <code className="font-mono text-gray-300">--encryption-key</code> and <code className="font-mono text-gray-300">--field-encryption-key</code>{' '}
-            with the values from the recovery secrets.</li>
-          <li>Sign in with an account from the backup. Then set up backups again here.</li>
+          <li>Copy the backup file to the new server, for example into <code className="font-mono text-gray-300">/root</code>.</li>
+          <li>
+            Run the command that matches the backup (the file name ends in <code className="font-mono">.gpg</code> when it is encrypted):
+            <p className="mt-2 text-gray-300">Unencrypted backup:</p>
+            <Cmd>{`cd /opt/it-manager
+sudo ./install.sh backup restore /root/itm-YYYY_MM_DD-HH_MM_SS.tar.zst \\
+  --encryption-key <ENCRYPTION_KEY> --field-encryption-key <Field ENCRYPTION_KEY>`}</Cmd>
+            <p className="mt-2 text-gray-300">Encrypted backup that includes the encryption keys:</p>
+            <Cmd>{`cd /opt/it-manager
+echo 'your backup passphrase' | sudo tee /root/passphrase.txt > /dev/null
+sudo ./install.sh backup restore /root/itm-YYYY_MM_DD-HH_MM_SS.tar.zst.gpg --passphrase-file /root/passphrase.txt
+sudo rm /root/passphrase.txt`}</Cmd>
+            <p className="mt-2 text-gray-300">Encrypted backup without the encryption keys:</p>
+            <Cmd>{`sudo ./install.sh backup restore /root/itm-YYYY_MM_DD-HH_MM_SS.tar.zst.gpg --passphrase-file /root/passphrase.txt \\
+  --encryption-key <ENCRYPTION_KEY> --field-encryption-key <Field ENCRYPTION_KEY>`}</Cmd>
+            <p className="mt-2 text-xs">The two keys are in the recovery secrets you saved during setup. Type <strong>RESTORE</strong> when asked.</p>
+          </li>
+          <li>Sign in with an account from the backup, then set up backups again here.</li>
         </ol>
       </details>
     </section>

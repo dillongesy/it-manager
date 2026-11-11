@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { RefreshCw, Shield, ShieldOff, CalendarClock } from 'lucide-react';
+import { Shield, ShieldOff, CalendarClock } from 'lucide-react';
 import { adminApi } from '../../api/admin.js';
-import { Link } from 'react-router';
 import { HostLog } from './HostLog.jsx';
-import { describeBackupSchedule } from './Backups.jsx';
+import { RefreshButton } from './RefreshButton.jsx';
 
 // Admin → System: automatic updates (editable) and the host firewall (status only; it
 // is chosen in the setup wizard or on the server with install.sh). Both come from the
@@ -61,34 +60,27 @@ const major = (v) => parseInt(String(v || '').split('.')[0], 10);
 /** Nginx Proxy Manager: installed version, newest release, and how to move to a new major version. */
 function ProxyVersion({ proxy, ip, adminPort }) {
   const newMajor = proxy.latest && major(proxy.latest) > Number(proxy.tag);
-  const behind = proxy.latest && proxy.version && proxy.latest !== proxy.version && !newMajor;
   return (
     <div className="space-y-2 border-t border-surface-600 pt-4">
       <p className="text-gray-200 font-medium">Nginx Proxy Manager</p>
       <dl className="grid grid-cols-3 gap-3 text-xs">
         <div><dt className="text-gray-500">Installed</dt><dd className="text-gray-200">{proxy.version || 'not running'}</dd></div>
         <div><dt className="text-gray-500">Latest release</dt><dd className="text-gray-200">{proxy.latest || 'unknown'}</dd></div>
-        <div><dt className="text-gray-500">Follows</dt><dd className="text-gray-200">{proxy.tag}.x releases</dd></div>
+        <div><dt className="text-gray-500">Follows</dt><dd className="text-gray-200">{proxy.tag ? `${proxy.tag}.x releases` : 'unknown'}</dd></div>
       </dl>
-      <p className="text-gray-500 text-xs">
-        Releases within {proxy.tag}.x install with the automatic updates. A new major version can change how it works, so it is never
-        installed automatically.{behind && ' The latest release installs with the next update.'}
-      </p>
       {newMajor && (
         <div className="rounded-sm p-2 text-xs text-gray-300 bg-surface-700 space-y-1">
-          <p><strong className="text-gray-100">Version {major(proxy.latest)} is available.</strong> To install it:</p>
+          <p><strong className="text-gray-100">Version {major(proxy.latest)} is available.</strong> It is not installed automatically. To install it:</p>
           <ol className="list-decimal pl-5 space-y-0.5">
             <li>Read its release notes: <a className="underline" href="https://github.com/NginxProxyManager/nginx-proxy-manager/releases" target="_blank" rel="noreferrer">github.com/NginxProxyManager/nginx-proxy-manager/releases</a>.</li>
-            <li>Make a backup (Admin → Backups → Back up now). It includes the proxy's settings and certificates.</li>
+            <li>Make a backup (Admin → Backups → Back up now).</li>
             <li>On the server: <code className="font-mono text-gray-200">cd /opt/it-manager && sudo ./install.sh proxy-version {major(proxy.latest)}</code></li>
             <li>Check that the Field App still opens from the internet. To go back: <code className="font-mono text-gray-200">sudo ./install.sh proxy-version {proxy.tag}</code></li>
           </ol>
         </div>
       )}
-      <p className="text-xs rounded-sm p-2 text-amber-300 bg-amber-900/20">
-        The admin page{ip ? <> (<span className="font-mono">http://{ip}:{adminPort ?? 81}</span>)</> : ''} uses plain HTTP: its password crosses the
-        office network unencrypted. The firewall admits only the office network, but sign in to it only from trusted office computers,
-        and use a password you use nowhere else.
+      <p className="text-xs text-amber-300">
+        Nginx Proxy Manager{ip ? <> (<span className="font-mono">http://{ip}:{adminPort ?? 81}</span>)</> : ''} uses plain HTTP: the password crosses the office network unencrypted.
       </p>
     </div>
   );
@@ -96,7 +88,8 @@ function ProxyVersion({ proxy, ip, adminPort }) {
 
 export function HostSettings() {
   const qc = useQueryClient();
-  const { data, isLoading, refetch, isFetching } = useQuery({ queryKey: ['admin', 'host'], queryFn: adminApi.host });
+  const query = useQuery({ queryKey: ['admin', 'host'], queryFn: adminApi.host });
+  const { data, isLoading } = query;
   const [schedule, setSchedule] = useState(null);
   const [message, setMessage] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -110,8 +103,7 @@ export function HostSettings() {
       <section className="card p-5 space-y-2 text-sm">
         <h2 className="text-base font-semibold text-gray-200 flex items-center gap-2"><CalendarClock size={16} /> Updates and firewall</h2>
         <p className="text-gray-400">
-          This server was not set up with install.sh, so updates and the host firewall are managed on the server.
-          Update with <code className="font-mono text-gray-300">docker compose pull &amp;&amp; docker compose up -d</code>.
+          This server was not set up with install.sh. Update with <code className="font-mono text-gray-300">docker compose pull &amp;&amp; docker compose up -d</code>.
         </p>
       </section>
     );
@@ -129,61 +121,34 @@ export function HostSettings() {
   };
 
   const preset = schedule ? formatSchedule(schedule) : data.updates;
-  const lastAt = data.lastUpdateAt ? new Date(data.lastUpdateAt).toLocaleString() : null;
 
   return (
     <section className="card p-5 space-y-4 text-sm">
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-gray-200 flex items-center gap-2"><CalendarClock size={16} /> Updates and firewall</h2>
-        <button onClick={() => refetch()} className="btn-ghost text-xs flex items-center gap-1">
-          <RefreshCw size={12} className={isFetching ? 'animate-spin' : ''} /> Refresh
-        </button>
+        <RefreshButton query={query} before={() => qc.invalidateQueries({ queryKey: ['host-log'] })} />
       </div>
 
       <div className="space-y-2">
         <p className="text-gray-200 font-medium">Automatic updates</p>
-        <p className="text-gray-400">
-          {describeSchedule(data.updates)}.
-          {data.nextUpdate && <> Next: {data.nextUpdate}.</>}
-          {lastAt && <> Last: {lastAt} ({data.lastUpdateResult === 'success' ? 'succeeded' : data.lastUpdateResult || 'unknown'}).</>}
-        </p>
-        <p className="text-gray-500 text-xs">
-          Pulls new images for every service, including Nginx Proxy Manager's 2.x releases, and restarts what changed. The Portal is
-          briefly unavailable while it restarts.
-        </p>
-        {data.backup && (
-          <p className={`text-xs rounded-sm p-2 ${data.backup.beforeUpdate === 'on' ? 'text-gray-400 bg-surface-700' : 'text-amber-300 bg-amber-900/20'}`}>
-            <strong>We recommend a backup before every update.</strong>{' '}
-            {data.backup.beforeUpdate === 'on'
-              ? 'Each update first makes a backup and is skipped if that backup fails.'
-              : 'Backing up before each update is turned off.'}{' '}
-            Scheduled backups: {describeBackupSchedule(data.backup.schedule)}; schedule them before the update time.{' '}
-            <Link to="/admin?tab=backups" className="underline">Admin → Backups</Link>
-          </p>
-        )}
         {schedule && <ScheduleFields value={schedule} onChange={setSchedule} />}
+        <p className="text-gray-500 text-xs">Every update makes a backup first, and stops if that backup fails.</p>
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn-primary text-sm" disabled={busy || preset === data.updates}
             onClick={() => run(() => adminApi.saveUpdates(preset), 'Update schedule saved.')}>
             Save schedule
           </button>
           <button type="button" className="btn-secondary text-sm" disabled={busy}
-            onClick={() => { if (confirm('Update now? The Portal restarts if a new version is available.')) run(adminApi.updateNow, 'Update started. The page may disconnect briefly.'); }}>
+            onClick={() => { if (confirm('Update now? A backup is made first, then the Portal restarts if a new version is available.')) run(adminApi.updateNow, 'Update started. The page may disconnect briefly.'); }}>
             Update now
           </button>
         </div>
       </div>
 
-      <div className="space-y-1 border-t border-surface-600 pt-4">
+      <div className="border-t border-surface-600 pt-4">
         <p className="text-gray-200 font-medium flex items-center gap-2">
           {data.firewall === 'on' ? <Shield size={14} className="text-green-400" /> : <ShieldOff size={14} className="text-amber-400" />}
           Host firewall: {data.firewall === 'on' ? 'hardened' : data.firewall === 'off' ? 'off' : 'unknown'}
-        </p>
-        <p className="text-gray-500 text-xs">
-          {data.firewall === 'on' && data.ports && <>Open to everyone: port {data.ports.proxyHttps} (Field App{data.acme === 'http' ? '; and 80 for certificates' : ''}).
-            Office network only: {data.ports.portal} (Portal), {data.ports.fieldLan ? <>{data.ports.fieldLan} (Field App), </> : ''}and {data.ports.proxyAdmin} (proxy admin). </>}
-          Chosen during setup. To change it, run <code className="font-mono text-gray-300">sudo ./install.sh firewall on</code> or{' '}
-          <code className="font-mono text-gray-300">off</code> on the server.
         </p>
       </div>
 

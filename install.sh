@@ -34,7 +34,8 @@
 #                                             DNS names (once installed); re-issues the
 #                                             certificates and restarts the web containers
 #   backup-settings=save + backup-*           backup schedule, retention, storage and
-#                                             options (once installed; tested before saving)
+#                                             options (once installed; tested before saving;
+#                                             with backup-test=1, only tested)
 #   backup=now | backup-verify=NAME |         backup tasks (once installed)
 #     backup-delete=NAME | backup-protect=NAME:on|off |
 #     backup-restore=NAME | backup-list=refresh
@@ -81,10 +82,9 @@ BACKUP_PATH="${BACKUP_PATH:-/var/backups/it-manager}"
 BACKUP_SHARE="${BACKUP_SHARE:-}"
 BACKUP_USER="${BACKUP_USER:-}"
 BACKUP_DOMAIN="${BACKUP_DOMAIN:-}"
-BACKUP_KEEP="${BACKUP_KEEP:-3,7,4,6,0}"
+BACKUP_KEEP="${BACKUP_KEEP:-3,0,0,0,0}"
 BACKUP_COMPRESS="${BACKUP_COMPRESS:-zstd}"
 BACKUP_SECRETS="${BACKUP_SECRETS:-off}"
-BACKUP_BEFORE_UPDATE="${BACKUP_BEFORE_UPDATE:-on}"
 BACKUP_VERIFY="${BACKUP_VERIFY:-on}"
 
 save_conf() {
@@ -113,7 +113,7 @@ EOF
   # Values that may hold spaces (share names) are quoted for the shell.
   local v
   for v in BACKUP_SCHEDULE BACKUP_STORAGE BACKUP_PATH BACKUP_SHARE BACKUP_USER BACKUP_DOMAIN \
-           BACKUP_KEEP BACKUP_COMPRESS BACKUP_SECRETS BACKUP_BEFORE_UPDATE BACKUP_VERIFY; do
+           BACKUP_KEEP BACKUP_COMPRESS BACKUP_SECRETS BACKUP_VERIFY; do
     printf '%s=%q\n' "$v" "${!v}"
   done
   } > "$CONF"
@@ -279,17 +279,15 @@ run_update() {
   {
     echo "==> Update started $(date -u +%Y-%m-%dT%H:%M:%SZ)"
     cd "$ROOT"
-    if [ "$BACKUP_BEFORE_UPDATE" = on ]; then
-      echo "Backing up before the update (log: Admin → Backups)…"
-      if run_backup_logged pre-update; then
-        echo "Backup done."
-      else
-        result=skipped
-        echo "The backup before the update failed, so the update was not started."
-        echo "See the backup log in Admin → Backups. Fix the backup, or turn off"
-        echo "\"Back up before each update\", then update again."
-        echo "==> FAILED"
-      fi
+    # Every update starts from a fresh backup; without one, the update does not run.
+    echo "Backing up before the update (log: Admin → Backups)…"
+    if run_backup_logged pre-update; then
+      echo "Backup done."
+    else
+      result=skipped
+      echo "The backup before the update failed, so the update was not started."
+      echo "See the backup log in Admin → Backups, fix the backup, then update again."
+      echo "==> FAILED"
     fi
     if [ "$result" = success ]; then
       if docker compose --progress plain pull && docker compose --progress plain up -d --remove-orphans; then
@@ -370,7 +368,7 @@ run_backup_logged() {
   dir="$(control_dir)"; log="${dir:-/tmp}/backup.log"
   bash "$ROOT/scripts/backup.sh" run "${1:-manual}" > "$log.tmp" 2>&1 || rc=$?
   mv -f "$log.tmp" "$log"; chmod 0644 "$log"
-  host_status
+  BACKUP_TASK_DONE=1 host_status
   return "$rc"
 }
 
@@ -391,7 +389,7 @@ start_backup_task() { # start_backup_task <log name> <backup.sh arguments…>
 # message on failure and nothing on success; they run in a subshell.
 backup_save() {
   [ -n "$bsched" ] && [ -n "$bstorage" ] && [ -n "$bkeep" ] && [ -n "$bcompress" ] && [ -n "$bencrypt" ] \
-    && [ -n "$bsecrets" ] && [ -n "$bbefore" ] && [ -n "$bverify" ] || { echo "Incomplete backup settings."; return 1; }
+    && [ -n "$bsecrets" ] && [ -n "$bverify" ] || { echo "Incomplete backup settings."; return 1; }
   case "$bstorage" in
     local) [ -n "$bpath" ] || { echo "Choose a folder for the backups."; return 1; } ;;
     smb)   [[ "$bshare" == //* ]] || { echo "Enter the share as //server/share."; return 1; } ;;
@@ -419,7 +417,7 @@ backup_save() {
   }
 
   BACKUP_SCHEDULE="$bsched"; BACKUP_STORAGE="$bstorage"; BACKUP_KEEP="$bkeep"; BACKUP_COMPRESS="$bcompress"
-  BACKUP_SECRETS="$bsecrets"; BACKUP_BEFORE_UPDATE="$bbefore"; BACKUP_VERIFY="$bverify"
+  BACKUP_SECRETS="$bsecrets"; BACKUP_VERIFY="$bverify"
   [ "$bstorage" = local ] && BACKUP_PATH="$bpath"
   if [ "$bstorage" != local ]; then BACKUP_SHARE="$bshare"; fi
   if [ "$bstorage" = smb ]; then
@@ -443,6 +441,8 @@ backup_save() {
   if ! out="$(bash "$ROOT/scripts/backup.sh" test 2>&1)"; then
     rollback; printf '%s\n' "$out" | grep -v '^Installing' | tail -n 1; return 1
   fi
+  # A test (backup-test=1) checks the storage only and keeps the saved settings.
+  if [ -n "$btest" ]; then rollback; return 0; fi
   rm -f "$CONF.prev" "$SMB_CRED.prev"
   [ "$bstorage" = smb ] || rm -f "$SMB_CRED"
 
@@ -524,7 +524,8 @@ host_status() {
   if [ -f "$LAST_UPDATE" ]; then read -r last_at last_result < "$LAST_UPDATE" || true; fi
   local b_at="" b_result="" b_size=0 b_name="" running=false
   if [ -f "$LAST_BACKUP" ]; then read -r b_at b_result b_size b_name < "$LAST_BACKUP" || true; fi
-  if systemctl is-active --quiet "$BACKUP_JOB.service" 2>/dev/null || systemctl is-active --quiet "$BACKUP_UNIT.service" 2>/dev/null; then running=true; fi
+  # A task reporting its own end (BACKUP_TASK_DONE) is still an active unit at this point.
+  if [ -z "${BACKUP_TASK_DONE:-}" ] && { systemctl is-active --quiet "$BACKUP_JOB.service" 2>/dev/null        || systemctl is-active --quiet "$BACKUP_UNIT.service" 2>/dev/null; }; then running=true; fi
   local pass=false smb=false
   ls "$PASS_DIR"/pass-* >/dev/null 2>&1 && pass=true
   [ -s "$SMB_CRED" ] && smb=true
@@ -554,7 +555,6 @@ host_status() {
     "compress": $(json_str "$BACKUP_COMPRESS"),
     "encrypted": $pass,
     "secrets": $(json_str "$BACKUP_SECRETS"),
-    "beforeUpdate": $(json_str "$BACKUP_BEFORE_UPDATE"),
     "verify": $(json_str "$BACKUP_VERIFY"),
     "running": $running,
     "lastAt": $(json_str "$b_at"),
@@ -597,7 +597,7 @@ host_apply() {
 
   local id="" updates="" update="" check="" install="" network="" lan="" names="" prefix="" firewall="" acme="" error="" content
   local bsave="" btask="" bname="" bsched="" bstorage="" bpath="" bshare="" buser="" bdomain="" bpass="" bkeep="" bcompress=""
-  local bencrypt="" bphrase="" bsecrets="" bbefore="" bverify=""
+  local bencrypt="" bphrase="" bsecrets="" bverify="" btest=""
   content="$(cat "$copy")"
   rm -f "$copy"
   local cidr='(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])(\.(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])){3}/([0-9]|[12][0-9]|3[0-2])'
@@ -627,7 +627,8 @@ host_apply() {
       backup-encrypt)  [[ "$value" =~ ^(keep|set|off)$ ]] && bencrypt="$value" || error="Invalid encryption setting." ;;
       backup-passphrase) [[ "$value" =~ $b64 && ${#value} -le 700 ]] && bphrase="$value" || error="Invalid passphrase." ;;
       backup-secrets)  [[ "$value" =~ ^(on|off)$ ]] && bsecrets="$value" || error="Invalid setting." ;;
-      backup-before-update) [[ "$value" =~ ^(on|off)$ ]] && bbefore="$value" || error="Invalid setting." ;;
+      backup-before-update) ;;   # always on; accepted for older Portal versions
+      backup-test)     [ "$value" = 1 ] && btest=1 || error="Invalid backup request." ;;
       backup-verify)   [[ "$value" =~ ^(on|off)$ ]] && bverify="$value" || error="Invalid setting." ;;
       id)           [[ "$value" =~ ^[A-Za-z0-9-]{1,64}$ ]] && id="$value" ;;
       updates)      [[ "$value" =~ $PRESET_RE ]] && updates="$value" || error="Invalid update schedule." ;;
@@ -830,7 +831,7 @@ case "${1:-install}" in
     dir="$(control_dir)"; log="${dir:-/tmp}/$name.log"; rc=0
     bash "$ROOT/scripts/backup.sh" "$@" > "$log.tmp" 2>&1 || rc=$?
     mv -f "$log.tmp" "$log"; chmod 0644 "$log"
-    host_status; exit $rc ;;
+    BACKUP_TASK_DONE=1 host_status; exit $rc ;;
   backup)
     [ "$STATE" = installed ] || die "IT Manager is not installed yet."
     shift; rc=0; bash "$ROOT/scripts/backup.sh" "$@" || rc=$?

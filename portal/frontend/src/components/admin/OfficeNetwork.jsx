@@ -60,7 +60,10 @@ export function OfficeNetwork() {
 
   const save = async () => {
     const namesChanged = cleanNames.join(',') !== savedNames.join(',');
-    if (!confirm(`Apply the new office network?\n\nThe Portal and the Field App's office address restart; this page reconnects in about 30 seconds.${namesChanged ? '\n\nThe server\'s certificate is re-issued for the new names. It is signed by the same certificate authority, so devices that already trust it keep working: there is nothing to install or remove.' : ''}`)) return;
+    const certNote = namesChanged
+      ? '\n\nThe server\'s certificate is re-issued for the new names. Devices that installed the certificate from the Certificate tab keep working. Anyone who only clicked past the browser warning will see it again until they install it.'
+      : '';
+    if (!confirm(`Apply these changes?\n\nThe Portal and the office Field App restart; this page reconnects in about 30 seconds.${certNote}`)) return;
     setBusy(true); setMessage(null);
     try {
       await adminApi.saveNetwork(cleanLan, cleanNames);
@@ -81,20 +84,12 @@ export function OfficeNetwork() {
 
       <div className="space-y-2">
         <p className="text-gray-200 font-medium">Networks allowed to use the Portal</p>
-        <p className="text-gray-500 text-xs">
-          Address ranges of office computers, plus any VPN or second office (for example <code className="font-mono">192.168.1.0/24</code> or{' '}
-          <code className="font-mono">10.8.0.0/24</code>). Everything else is refused. The same ranges may open the Field App on the office
-          network. Your computer must stay inside one of them.
-        </p>
+        <p className="text-gray-500 text-xs">Ranges that may contact the Portal and the local Field App. Your computer must stay inside one of them.</p>
         <ListEditor items={lan} onChange={setLan} placeholder="192.168.1.0/24" max={8} valid={CIDR} label="network" />
       </div>
 
       <div className="space-y-2">
         <p className="text-gray-200 font-medium">Local DNS names for the server (optional)</p>
-        <p className="text-gray-500 text-xs">
-          Only if your office DNS has a name for this server (for example <code className="font-mono">portal.office.lan</code>), so the
-          certificate matches it. The IP address{ip ? <> (<span className="font-mono">{ip}</span>)</> : ''} always works.
-        </p>
         <ListEditor items={names} onChange={setNames} placeholder="portal.office.lan" max={10} valid={HOSTNAME} label="name" />
       </div>
 
@@ -104,7 +99,7 @@ export function OfficeNetwork() {
 
       {ip && fieldPort && (
         <p className="text-gray-400 text-xs border-t border-surface-600 pt-3">
-          Field App on the office network, no proxy needed:{' '}
+          Field App on the office network:{' '}
           <a className="font-mono text-brand-light hover:underline" href={`https://${ip}:${fieldPort}`} target="_blank" rel="noreferrer">
             https://{ip}:{fieldPort}
           </a>

@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { HardDrive, RefreshCw, AlertTriangle } from 'lucide-react';
+import { HardDrive, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router';
 import { adminApi } from '../../api/admin.js';
+import { RefreshButton } from './RefreshButton.jsx';
 
 // Admin → System → Storage: disk capacity, what the application stores, growth rate
 // and the forecast date the disk fills up.
@@ -30,12 +31,17 @@ const STATUS = {
 export const storageQuery = { queryKey: ['admin', 'storage'], queryFn: adminApi.storage, staleTime: 5 * 60 * 1000 };
 
 export function Storage() {
-  const { data, isLoading, isError, refetch, isFetching } = useQuery(storageQuery);
+  const query = useQuery(storageQuery);
+  const backupsQuery = useQuery({ queryKey: ['admin', 'backups'], queryFn: adminApi.backups });
+  const { data, isLoading, isError } = query;
 
   if (isLoading) return <section className="card p-5 text-sm text-gray-500">Measuring storage…</section>;
   if (isError || !data) return <section className="card p-5 text-sm text-red-400">Storage could not be measured.</section>;
 
-  const { disk, portal, field, forecast: f, thresholds } = data;
+  const { disk, portal, field, forecast: f } = data;
+  const backups = backupsQuery.data?.available ? backupsQuery.data : null;
+  const backupBytes = backups?.list?.backups?.reduce((sum, b) => sum + b.size, 0) ?? null;
+  const backupsHere = backups?.settings?.storage === 'local';
   const status = STATUS[f.status] ?? STATUS.ok;
   const appTotal = portal.database + portal.files + (field ? field.database + field.files : 0);
   const rows = [
@@ -43,7 +49,8 @@ export function Storage() {
     ['Portal files', portal.files],
     ['Field App database', field?.database],
     ['Field App photos', field?.files],
-    ['Everything else on the disk', Math.max(disk.used - appTotal, 0), 'Operating system, Docker images, logs and backups.'],
+    ...(backups ? [['Backups', backupBytes, backupsHere ? 'On this server' : backups.settings.storage === 'smb' ? 'On the network share' : 'On the NFS export']] : []),
+    ['Everything else on the disk', Math.max(disk.used - appTotal - (backupsHere ? backupBytes ?? 0 : 0), 0), 'Operating system, Docker images and logs.'],
   ];
 
   let outlook;
@@ -51,8 +58,6 @@ export function Storage() {
     outlook = <>At the current rate the disk is full in <strong className="text-gray-100">{formatDuration(f.daysUntilFull)}</strong> (around {new Date(`${f.fullBy}T00:00:00`).toLocaleDateString(undefined, { dateStyle: 'medium' })}).</>;
   } else if (f.growthPerDay != null) {
     outlook = <>Disk usage is not growing.</>;
-  } else {
-    outlook = <>A forecast needs at least a day of history. Usage is recorded every 6 hours.</>;
   }
 
   return (
@@ -61,9 +66,7 @@ export function Storage() {
         <h2 className="text-base font-semibold text-gray-200 flex items-center gap-2"><HardDrive size={16} /> Storage</h2>
         <div className="flex items-center gap-2">
           <span className={`text-xs rounded-full px-2 py-0.5 ${status.pill}`}>{status.label}</span>
-          <button onClick={() => refetch()} className="btn-ghost text-xs flex items-center gap-1">
-            <RefreshCw size={12} className={isFetching ? 'animate-spin' : ''} /> Refresh
-          </button>
+          <RefreshButton query={query} queries={[backupsQuery]} />
         </div>
       </div>
 
@@ -77,10 +80,12 @@ export function Storage() {
         </div>
       </div>
 
-      <p className="text-gray-400">
-        {f.growthPerDay != null && f.growthPerDay > 0 && <>Growing about <strong className="text-gray-100">{formatBytes(f.growthPerDay)}</strong> per day over the last 30 days. </>}
-        {outlook}
-      </p>
+      {(outlook || f.growthPerDay > 0) && (
+        <p className="text-gray-400">
+          {f.growthPerDay != null && f.growthPerDay > 0 && <>Growing about <strong className="text-gray-100">{formatBytes(f.growthPerDay)}</strong> per day over the last 30 days. </>}
+          {outlook}
+        </p>
+      )}
 
       {f.status !== 'ok' && (
         <p className="flex items-start gap-2 rounded-sm p-2 bg-amber-900/20 text-amber-300">
@@ -99,11 +104,6 @@ export function Storage() {
           ))}
         </tbody>
       </table>
-
-      <p className="text-gray-500 text-xs">
-        Measured on the disk that holds the Docker data. Warning at {thresholds.warningPercent}% or under {thresholds.warningDays} days
-        left; critical at {thresholds.criticalPercent}% or under {thresholds.criticalDays} days.
-      </p>
     </section>
   );
 }

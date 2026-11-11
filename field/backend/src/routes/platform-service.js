@@ -14,7 +14,13 @@ import { setMfaPolicy } from '../lib/mfa.js';
 const router = Router();
 router.use(requireService);
 
-router.get('/health', (_req, res) => res.json({ ok: true }));
+// hasUsers tells the Portal whether the setup wizard's Field admin still needs creating.
+router.get('/health', async (_req, res, next) => {
+  try {
+    const { rows } = await query(`SELECT EXISTS (SELECT 1 FROM users WHERE username <> 'it-portal-service') AS has_users`);
+    res.json({ ok: true, hasUsers: rows[0].has_users });
+  } catch (err) { next(err); }
+});
 
 router.put('/security', async (req, res, next) => {
   try {

@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Changed
+- Admin pages trimmed: the recovery-secrets reveal is only in the setup wizard; the Field
+  App login retry appears in Admin → System only when the Field App has no login; the
+  certificate guide is in collapsible sections; refresh buttons spin until fresh data arrives.
 - Nginx Proxy Manager follows its 2.x releases (`PROXY_TAG`) instead of `latest`.
 - `scripts/backup.sh` is the backup engine behind Admin → Backups; backups are single
   files (`itm-<date>-<time>.tar.zst[.gpg]`) and include Nginx Proxy Manager's data.
@@ -37,17 +40,18 @@ All notable changes to this project are documented here. The format follows
 - Source comments describe current behavior only.
 
 ### Added
-- Scheduled backups (Admin → Backups): on by default every day at 01:00 and before each
-  update; Proxmox-style retention (last, daily, weekly, monthly, yearly); storage in a
+- Scheduled backups (Admin → Backups): on by default every day at 01:00, and always before
+  each update (the update stops if that backup fails); Proxmox-style retention (last,
+  daily, weekly, monthly, yearly; default keep last 3); storage in a
   folder, an SMB share or an NFS export, tested before saving; AES-256 encryption with a
-  passphrase; optional encryption keys inside encrypted backups; verification; protected
+  passphrase; a storage test before saving; optional encryption keys inside encrypted backups; verification; protected
   backups; restore from the Portal (password required) or with
   `sudo ./install.sh backup restore`. An update is skipped when the backup before it fails.
 - Dashboard alerts for admins: failed, overdue or disabled backups, backups kept only on
   the server, a failed or skipped update, and a new major version of Nginx Proxy Manager.
 - Admin → System shows Nginx Proxy Manager's installed version and latest release, and how
   to move to a new major version (`sudo ./install.sh proxy-version N`).
-- Admin → Certificate explains when the certificate changes and how to remove an old one.
+- Admin → Security shows a diagram of which services can talk to which.
 - The Field App on the office network without any proxy set up: `https://<server>:4433`,
   HTTPS with a certificate from the server's CA, office addresses only.
 - Admin → System → Office network: change the networks allowed to use the Portal and the
@@ -76,17 +80,18 @@ All notable changes to this project are documented here. The format follows
 ## [1.0.0]
 
 ### Added
-- Scheduled backups (Admin → Backups): on by default every day at 01:00 and before each
-  update; Proxmox-style retention (last, daily, weekly, monthly, yearly); storage in a
+- Scheduled backups (Admin → Backups): on by default every day at 01:00, and always before
+  each update (the update stops if that backup fails); Proxmox-style retention (last,
+  daily, weekly, monthly, yearly; default keep last 3); storage in a
   folder, an SMB share or an NFS export, tested before saving; AES-256 encryption with a
-  passphrase; optional encryption keys inside encrypted backups; verification; protected
+  passphrase; a storage test before saving; optional encryption keys inside encrypted backups; verification; protected
   backups; restore from the Portal (password required) or with
   `sudo ./install.sh backup restore`. An update is skipped when the backup before it fails.
 - Dashboard alerts for admins: failed, overdue or disabled backups, backups kept only on
   the server, a failed or skipped update, and a new major version of Nginx Proxy Manager.
 - Admin → System shows Nginx Proxy Manager's installed version and latest release, and how
   to move to a new major version (`sudo ./install.sh proxy-version N`).
-- Admin → Certificate explains when the certificate changes and how to remove an old one.
+- Admin → Security shows a diagram of which services can talk to which.
 - Docker Compose stack: edge (Caddy), Portal web/API/database, Field web/API/database,
   and a secret-generating `init` service, published to GHCR for amd64 and arm64.
 - `install.sh` (Docker install, settings, internal subnet check, firewall, start) and

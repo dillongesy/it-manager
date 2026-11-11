@@ -106,7 +106,7 @@ test('a network change is validated and sent as whitelisted lines', async () => 
 const goodBackup = {
   schedule: 'weekly:mon,wed,fri:00:30', storage: 'smb', share: '//nas.office.lan/Backups/IT Manager',
   user: 'svc-backup', domain: 'OFFICE', password: 'p@ss=word', keep: { last: 3, daily: 7, weekly: 4, monthly: 6, yearly: 1 },
-  compress: 'zstd', encryption: 'set', passphrase: 'correct horse battery=', includeKeys: true, beforeUpdate: true, verify: true,
+  compress: 'zstd', encryption: 'set', passphrase: 'correct horse battery=', includeKeys: true, verify: true,
 };
 
 test('backup schedules and names', () => {

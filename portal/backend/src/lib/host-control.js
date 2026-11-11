@@ -12,6 +12,7 @@
 //                                             helper re-issues the certificates and
 //                                             restarts portal-web and field-web
 //   backup-settings=save, backup-*=           backup schedule, retention, storage, options
+//                                             (with backup-test=1: only test the storage)
 //   backup-task=now|verify|restore|delete|protect|unprotect|refresh, backup-name=
 //
 // Passwords and passphrases travel base64-encoded and are never reported back.
@@ -124,11 +125,11 @@ export function backupSettingsLines(b = {}) {
     if (p.length < 12 || p.length > 256 || /[\r\n]/.test(p)) bad('The passphrase must be 12 to 256 characters, on one line.');
     lines.push(`backup-passphrase=${b64(p)}`);
   }
-  lines.push(`backup-secrets=${onOff(b.includeKeys)}`, `backup-before-update=${onOff(b.beforeUpdate)}`, `backup-verify=${onOff(b.verify)}`);
+  lines.push(`backup-secrets=${onOff(b.includeKeys)}`, `backup-verify=${onOff(b.verify)}`);
   return lines;
 }
 
-async function send({ updates, update, network, backup, backupTask } = {}) {
+async function send({ updates, update, network, backup, backupTest, backupTask } = {}) {
   if (!(await hostStatus())) fail(503, 'Server settings are available only on installations set up with install.sh.');
   const lines = [];
   if (updates !== undefined) {
@@ -146,6 +147,7 @@ async function send({ updates, update, network, backup, backupTask } = {}) {
     lines.push('network=apply', `lan=${lan.join(',')}`, `names=${names.join(',')}`);
   }
   if (backup !== undefined) lines.push(...backupSettingsLines(backup));
+  if (backupTest !== undefined) lines.push(...backupSettingsLines(backupTest), 'backup-test=1');
   if (backupTask !== undefined) {
     const { task, name } = backupTask;
     if (!BACKUP_TASKS.includes(task)) fail(400, 'Invalid backup task.');
@@ -162,7 +164,7 @@ async function send({ updates, update, network, backup, backupTask } = {}) {
   await writeFile(tmp, [`id=${id}`, ...lines, ''].join('\n'), { mode: 0o600 });
   await rename(tmp, join(dir(), 'request'));
   // Saving backup settings tests the storage (mounting a share can take a while).
-  return waitForResult(id, backup !== undefined ? 180_000 : RESULT_TIMEOUT_MS);
+  return waitForResult(id, backup !== undefined || backupTest !== undefined ? 180_000 : RESULT_TIMEOUT_MS);
 }
 
 export const LOGS = ['install', 'update', 'network', 'backup', 'verify', 'restore'];

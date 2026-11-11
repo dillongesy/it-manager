@@ -31,6 +31,7 @@ export const adminApi = {
 
   backups:         () => api.get('/admin/backups').then(r => r.data),
   saveBackups:     (body) => api.put('/admin/backups/settings', body).then(r => r.data),
+  testBackupStorage: (body) => api.post('/admin/backups/test', body).then(r => r.data),
   backupNow:       () => api.post('/admin/backups/run').then(r => r.data),
   refreshBackups:  () => api.post('/admin/backups/refresh').then(r => r.data),
   verifyBackup:    (name) => api.post(`/admin/backups/${encodeURIComponent(name)}/verify`).then(r => r.data),

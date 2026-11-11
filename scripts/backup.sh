@@ -37,8 +37,11 @@
 # passphrase an encrypted backup cannot be restored anywhere else: keep a copy of it
 # with the recovery secrets.
 # ------------------------------------------------------------------------------
-set -euo pipefail
+set -Eeuo pipefail
 umask 077
+# Never fail silently: name the step that stopped the script in the log.
+# (Deliberate refusals, `return 1` / `exit 1` after a message, are not reported again.)
+trap '[[ "$BASH_COMMAND" == return* || "$BASH_COMMAND" == exit* ]] || echo "Error: \"$BASH_COMMAND\" failed (line $LINENO)." >&2' ERR
 
 cd "$(dirname "$(readlink -f "$0")")/.."
 ROOT="$(pwd)"
@@ -73,7 +76,12 @@ need() { # need <command> <package>
   DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "$2" >/dev/null 2>&1 \
     || { apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "$2" >/dev/null; }
 }
-current_passphrase() { ls -1 "$PASS_DIR"/pass-* 2>/dev/null | sort | tail -n 1; }
+# The newest active passphrase file, or nothing when backups are not encrypted.
+current_passphrase() {
+  local f latest=""
+  for f in "$PASS_DIR"/pass-*; do [ -f "$f" ] && latest="$f"; done   # glob order is sorted
+  printf '%s' "$latest"
+}
 
 # -- Storage ---------------------------------------------------------------------------
 MOUNTED=0
@@ -129,7 +137,8 @@ decode() {
     if [[ "$f" == *.gpg ]]; then
       need gpg gnupg
       local ok=0 tmp; tmp="$(mktemp)"
-      for pf in ${EXTRA_PASSFILE:-} $(ls -1r "$PASS_DIR"/pass-* "$PASS_DIR"/old-pass-* 2>/dev/null); do
+      for pf in ${EXTRA_PASSFILE:-} "$PASS_DIR"/pass-* "$PASS_DIR"/old-pass-*; do
+        [ -f "$pf" ] || continue
         if gpg --batch --quiet --pinentry-mode loopback --passphrase-file "$pf" -d "$f" > "$tmp" 2>/dev/null; then ok=1; break; fi
       done
       [ "$ok" = 1 ] || { rm -f "$tmp"; echo "Could not decrypt the backup: the passphrase is wrong or the file is damaged. On another server, pass --passphrase-file." >&2; return 1; }
@@ -155,7 +164,7 @@ write_list() {
   local dir; dir="$(control_dir)"
   [ -n "$dir" ] && [ -d "$dir" ] || return 0
   local items="" f n size created enc prot ver meta avail total
-  for f in $(ls -1 "$DEST" 2>/dev/null | grep -E "$NAME_RE" | sort -r); do
+  for f in $(ls -1 "$DEST" 2>/dev/null | grep -E "$NAME_RE" | sort -r || true); do
     n="$f"; size="$(stat -c %s "$DEST/$n")"
     created="$(date -u -d "$(name_time "$n")" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || true)"
     [[ "$n" == *.gpg ]] && enc=true || enc=false
@@ -259,9 +268,11 @@ run_backup() {
   [ -n "$pass" ] && need gpg gnupg
 
   # Space: the staging copy (on this server) and the archive (on the storage).
-  local needed=0 v d
+  local needed=0 v d size
   for v in $VOLUMES portal_db_data field_db_data; do
-    d="$(vol_dir "$v")"; [ -n "$d" ] && needed=$((needed + $(du -sb "$d" 2>/dev/null | cut -f1)))
+    d="$(vol_dir "$v")"
+    # du reports an error when a file disappears mid-scan (Postgres temp files): an estimate is enough.
+    if [ -n "$d" ]; then size="$(du -sb "$d" 2>/dev/null | cut -f1 || true)"; needed=$((needed + ${size:-0})); fi
   done
   local free_here free_dest
   free_here="$(df -B1 --output=avail /var/tmp | tail -n 1 | tr -d ' ')"

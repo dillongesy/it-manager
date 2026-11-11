@@ -38,6 +38,7 @@ import { ipInCidr } from '../lib/cidr.js';
 //   GET    /api/admin/host/logs/:name           install, update, network, backup, verify or restore log
 //   GET    /api/admin/backups                   backup settings, status and the list of backups
 //   PUT    /api/admin/backups/settings          schedule, retention, storage and options
+//   POST   /api/admin/backups/test              test a storage location without saving it
 //   POST   /api/admin/backups/run               back up now
 //   POST   /api/admin/backups/refresh           re-read the backup storage
 //   POST   /api/admin/backups/:name/verify      check a backup
@@ -227,7 +228,7 @@ adminRouter.get('/system', async (_req, res, next) => {
   try {
     let field = { configured: isFieldConfigured(), reachable: false };
     if (field.configured) {
-      try { await fieldPlatform.health(); field.reachable = true; }
+      try { const h = await fieldPlatform.health(); field.reachable = true; field.hasUsers = h?.hasUsers ?? null; }
       catch (err) { field.error = err.message; }
     }
     res.json({ version: config.appVersion, nodeEnv: config.nodeEnv, field });
@@ -308,6 +309,14 @@ adminRouter.put('/backups/settings', async (req, res, next) => {
   const where = b.storage === 'local' ? b.path : b.share;
   await hostResult(req, res, `Backups: ${b.schedule}, ${b.storage} ${where ?? ''}, keep ${Object.values(b.keep ?? {}).join('/')}, encryption ${b.encryption}`, { backup: b })
     .catch(hostError(res, next));
+});
+
+adminRouter.post('/backups/test', async (req, res, next) => {
+  try {
+    const result = await requestHostChange({ backupTest: { ...(req.body ?? {}), encryption: 'keep', includeKeys: false } });
+    if (!result.ok) return res.status(400).json({ error: result.error || 'The storage did not work.' });
+    res.json({ ok: true });
+  } catch (err) { hostError(res, next)(err); }
 });
 
 const backupTask = (task, label) => async (req, res, next) => {

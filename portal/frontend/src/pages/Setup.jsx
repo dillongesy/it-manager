@@ -121,7 +121,7 @@ function StartStep({ status, error, onContinue }) {
         </button>
       </div>
       {portalUp && !fieldUp && (
-        <p className="text-xs text-gray-500">If you continue now, the Field App login can be created later from Admin → System.</p>
+        <p className="text-xs text-gray-500">If you continue now, Admin → System offers to create the Field App login once the Field App is running.</p>
       )}
     </div>
   );
@@ -250,7 +250,7 @@ function ApplyStep({ results, error, onBack, onContinue }) {
         <>
           {failed.length > 0 && (
             <p className="text-amber-400 text-sm bg-amber-900/30 rounded-sm p-2">
-              The Portal is set up. The Field App steps can be retried from Admin → System once the Field App is running.
+              The Portal is set up. Admin → System offers to create the Field App login once the Field App is running.
             </p>
           )}
           <div className="flex justify-end">

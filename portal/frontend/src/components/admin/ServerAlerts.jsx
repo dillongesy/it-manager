@@ -6,7 +6,7 @@ import { adminApi } from '../../api/admin.js';
 import { parseBackupSchedule } from './Backups.jsx';
 
 // Dashboard alerts for admins, from the host helper's status: backups (failed, overdue,
-// off, kept only on this server), updates (failed or skipped), and a new major version
+// off), updates (failed or skipped), and a new major version
 // of Nginx Proxy Manager. Each can be hidden for a week; a failure that changes (a newer
 // failed attempt) shows again.
 
@@ -30,7 +30,7 @@ export function serverAlerts(status, now = Date.now()) {
     const lastAt = b.lastAt ? Date.parse(b.lastAt) : null;
     if (b.lastResult === 'failed') {
       alerts.push({ id: `backup-failed:${b.lastAt}`, level: 'error', to: '/admin?tab=backups',
-        text: `The last backup failed (${new Date(lastAt).toLocaleString()}). Your data is not protected until a backup succeeds.` });
+        text: `The last backup failed (${new Date(lastAt).toLocaleString()}).` });
     } else if (schedule.frequency === 'off') {
       alerts.push({ id: 'backup-off', level: 'warning', to: '/admin?tab=backups',
         text: 'Automatic backups are off. A failed disk or a mistake would lose every record and file.' });
@@ -43,10 +43,6 @@ export function serverAlerts(status, now = Date.now()) {
         alerts.push({ id: `backup-overdue:${b.lastAt}`, level: 'warning', to: '/admin?tab=backups',
           text: `The last successful backup is ${Math.floor((now - lastAt) / DAY)} days old. Check the backup schedule and storage.` });
       }
-    }
-    if (b.storage === 'local') {
-      alerts.push({ id: 'backup-local', level: 'info', to: '/admin?tab=backups',
-        text: 'Backups are stored only on this server. They will not survive a failed disk; store them on a network share.' });
     }
   }
   if (status.lastUpdateResult === 'failed' || status.lastUpdateResult === 'skipped') {

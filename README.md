@@ -158,7 +158,7 @@ move to it (`sudo ./install.sh proxy-version 3`, after a backup).
 | **Integrations** | ConnectWise RMM, Dell TechDirect, ScreenConnect, UniFi, TD SYNNEX, Auvik, Outlook and ThreatLocker. Each has an on/off switch and its settings. Secrets are encrypted with the master key and never sent back to the browser. Changes apply immediately, with no restart. Integrations that are off are hidden from everyone. |
 | **Billing** | The default hourly rates (initially Standard $90 and Tech $70) that every new customer starts with. Each customer's rates can still be changed on its Overview tab. Saving can also update existing customers who are still on the old price; negotiated prices are left alone. The first rate is the default for new work orders. |
 | **Branding** | Company name, app name, Field App name, primary and accent colors (live preview, contrast warning), print/PDF header (address, phone, email, website, footer), plus image uploads: square logo, full logo, browser-tab icon, login background. Changes push to the Field App automatically. |
-| **Security** | The one-time recovery-secrets reveal and its status, and the **two-factor authentication** policy, set separately for the Portal and the Field App (see below). |
+| **Security** | The **two-factor authentication** policy, set separately for the Portal and the Field App (see below), and a diagram of which services can talk to which. The recovery secrets are shown once, in the setup wizard. |
 | **System** | Version, Field App connection, **automatic updates** (schedule, next and last run, "Update now", the last update's log), the firewall status (read-only), the installation log, storage (see below), and "Create my Field App login" if the wizard couldn't. |
 | **Backups** | Schedule, retention, storage (folder, SMB, NFS), encryption, verification, and the list of backups with verify, protect, delete and restore. See [Backups](#7-backups-and-disaster-recovery). |
 | **Certificate** | How to trust the server's certificate on Windows (by hand, PowerShell, Group Policy, Intune), iPhone, Android and macOS. Also at `/certificate` for every signed-in user. |
@@ -232,11 +232,11 @@ Admin → Backups offers:
 | Setting | Options |
 |---|---|
 | Schedule | Off, every day, or selected days, at a set time (server time) |
-| Retention | Keep last / daily / weekly / monthly / yearly, as in Proxmox VE. All zero keeps every backup |
-| Storage | A folder on the server (or a mounted second disk), an SMB share (Windows, NAS) or an NFS export. Shares are mounted only while in use. The storage is tested before the settings are saved |
+| Retention | Keep last / daily / weekly / monthly / yearly, as in Proxmox VE (default: keep the last 3), or keep all |
+| Storage | A folder on the server (or a mounted second disk), an SMB share (Windows, NAS) or an NFS export. Shares are mounted only while in use. A new location must pass “Test storage” before it can be saved |
 | Encryption | AES-256 (GnuPG) with a passphrase. Earlier passphrases are kept, so older backups stay readable |
 | Encryption keys | Optionally include the Portal and Field encryption keys (encrypted backups only), so a backup restores onto a new server with the passphrase alone |
-| Before updates | Back up before each update; if that backup fails, the update is skipped |
+| Before updates | Always: every update backs up first, and stops if that backup fails |
 | Verify | Re-read each new backup and check every checksum and both database dumps |
 | Compression | Zstandard (default), gzip or none |
 
