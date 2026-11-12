@@ -40,6 +40,9 @@ All notable changes to this project are documented here. The format follows
 - Source comments describe current behavior only.
 
 ### Added
+- Nginx Proxy Manager is optional: the setup wizard offers "I already have a reverse
+  proxy" with its IP address. field-web then accepts that proxy on port 4480 only, and the
+  Portal and the firewall refuse it. Switch later with `sudo ./install.sh proxy-mode`.
 - Scheduled backups (Admin → Backups): on by default every day at 01:00, and always before
   each update (the update stops if that backup fails); Proxmox-style retention (last,
   daily, weekly, monthly, yearly; default keep last 3); storage in a
@@ -80,6 +83,9 @@ All notable changes to this project are documented here. The format follows
 ## [1.0.0]
 
 ### Added
+- Nginx Proxy Manager is optional: the setup wizard offers "I already have a reverse
+  proxy" with its IP address. field-web then accepts that proxy on port 4480 only, and the
+  Portal and the firewall refuse it. Switch later with `sudo ./install.sh proxy-mode`.
 - Scheduled backups (Admin → Backups): on by default every day at 01:00, and always before
   each update (the update stops if that backup fails); Proxmox-style retention (last,
   daily, weekly, monthly, yearly; default keep last 3); storage in a

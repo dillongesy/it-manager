@@ -290,6 +290,20 @@ function FinishStep({ server, onDone }) {
         </p>
       </section>
 
+      {server?.proxyMode === 'external' ? (
+      <section className="space-y-2">
+        <h2 className="text-gray-200 font-semibold flex items-center gap-2"><Globe size={16} /> Put the Field App online</h2>
+        <ol className="list-decimal pl-5 space-y-1.5">
+          <li>
+            In your reverse proxy ({server.externalProxy}), add a host for the Field App's domain (for example{' '}
+            <code className="font-mono text-gray-300">field.example.com</code>) that forwards to{' '}
+            <strong className="text-gray-200">http://{ip}:{server.ports?.fieldProxy ?? 4480}</strong>, with a certificate and "Force SSL".
+          </li>
+          <li>Keep your router forwarding to your reverse proxy. Nothing needs forwarding to this server.</li>
+        </ol>
+        <p>Only {server.externalProxy} may reach that port, and it can never reach the Portal. Field App users sign in at the domain; your admin login works there too.</p>
+      </section>
+      ) : (
       <section className="space-y-2">
         <h2 className="text-gray-200 font-semibold flex items-center gap-2"><Globe size={16} /> Put the Field App online</h2>
         <ol className="list-decimal pl-5 space-y-1.5">
@@ -319,6 +333,7 @@ function FinishStep({ server, onDone }) {
         </ol>
         <p>Field App users sign in at that address. Your admin login works there too.</p>
       </section>
+      )}
 
       <section className="space-y-2">
         <h2 className="text-gray-200 font-semibold flex items-center gap-2"><DatabaseBackup size={16} /> Set up backups</h2>

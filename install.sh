@@ -10,6 +10,9 @@
 #                                                  backup run | list | restore <name>
 #   sudo ./install.sh proxy-version <major>        move Nginx Proxy Manager to another
 #                                                  major version (e.g. 3)
+#   sudo ./install.sh proxy-mode bundled | external <IP>
+#                                                  include Nginx Proxy Manager, or use an
+#                                                  existing reverse proxy at <IP>
 #
 # A new installation has three stages:
 #   1. This script: installs Docker, generates the secrets and the Portal's certificate,
@@ -29,7 +32,8 @@
 #   update=now                                start an update (any time)
 #   check-prefix=A.B                          check a subnet prefix (during setup only)
 #   install=start + lan, names, prefix,       install with the wizard's settings
-#     firewall, acme, updates                 (during setup only)
+#     firewall, acme, updates, proxy,         (during setup only)
+#     proxy-ip
 #   network=apply + lan, names                change the office network and the Portal's
 #                                             DNS names (once installed); re-issues the
 #                                             certificates and restarts the web containers
@@ -74,6 +78,12 @@ PROXY_HTTPS_PORT="${PROXY_HTTPS_PORT:-4443}"
 PROXY_ADMIN_PORT="${PROXY_ADMIN_PORT:-81}"
 FIELD_LAN_PORT="${FIELD_LAN_PORT:-4433}"
 PROXY_TAG="${PROXY_TAG:-2}"
+# How the Field App reaches the internet: the bundled Nginx Proxy Manager, or an existing
+# reverse proxy on the network (EXTERNAL_PROXY, comma-separated IPv4 addresses) that
+# forwards to field-web on FIELD_PROXY_PORT.
+PROXY_MODE="${PROXY_MODE:-bundled}"
+EXTERNAL_PROXY="${EXTERNAL_PROXY:-}"
+FIELD_PROXY_PORT="${FIELD_PROXY_PORT:-4480}"
 # Backups (scripts/backup.sh). On by default: daily at 01:00, before the default update
 # time, to a folder on this server until a network share is chosen in Admin → Backups.
 BACKUP_SCHEDULE="${BACKUP_SCHEDULE:-daily:01:00}"
@@ -109,6 +119,9 @@ FIREWALL=$FIREWALL
 ACME=$ACME
 UPDATE_PRESET=$UPDATE_PRESET
 PROXY_TAG=$PROXY_TAG
+PROXY_MODE=$PROXY_MODE
+EXTERNAL_PROXY=$EXTERNAL_PROXY
+FIELD_PROXY_PORT=$FIELD_PROXY_PORT
 EOF
   # Values that may hold spaces (share names) are quoted for the shell.
   local v
@@ -131,7 +144,14 @@ write_env() {
     [ "$PROXY_HTTPS_PORT" != 4443 ] && echo "PROXY_HTTPS_PORT=$PROXY_HTTPS_PORT"
     [ "$PROXY_ADMIN_PORT" != 81 ] && echo "PROXY_ADMIN_PORT=$PROXY_ADMIN_PORT"
     [ "$FIELD_LAN_PORT" != 4433 ] && echo "FIELD_LAN_PORT=$FIELD_LAN_PORT"
-    echo "PROXY_TAG=$PROXY_TAG"
+    if [ "$PROXY_MODE" = external ]; then
+      echo "FIELD_PROXY_BIND=0.0.0.0"
+      echo "FIELD_PROXY_PORT=$FIELD_PROXY_PORT"
+      echo "EXTERNAL_PROXY=\"$(tr ',' ' ' <<<"$EXTERNAL_PROXY")\""
+    else
+      echo "COMPOSE_PROFILES=proxy"
+      echo "PROXY_TAG=$PROXY_TAG"
+    fi
     [ -n "${IMAGE_REGISTRY:-}" ] && echo "IMAGE_REGISTRY=$IMAGE_REGISTRY"
     [ -n "${IMAGE_TAG:-}" ] && echo "IMAGE_TAG=$IMAGE_TAG"
     true
@@ -153,17 +173,28 @@ firewall_apply() {
   iptables -A DOCKER-USER -s "$NET_PREFIX.0.0/24" -d "$NET_PREFIX.1.0/24" -j DROP
   iptables -A DOCKER-USER -s "$NET_PREFIX.9.0/24" -d "$NET_PREFIX.1.0/24" -j DROP
   iptables -A DOCKER-USER -m conntrack --ctstate RELATED,ESTABLISHED -j RETURN
-  # Open to everyone (through the router): the Field App, and port 80 for HTTP validation.
-  iptables -A DOCKER-USER $rule --ctorigdstport "$PROXY_HTTPS_PORT" -j RETURN
-  [ "${ACME:-dns}" = http ] && iptables -A DOCKER-USER $rule --ctorigdstport 80 -j RETURN
-  # Office network only: the Portal, the Field App's office port, the proxy admin page,
-  # and port 80 otherwise.
-  local lan
+  local lan ip
+  if [ "$PROXY_MODE" = external ]; then
+    # An external reverse proxy reaches only field-web's proxy port, never the Portal
+    # (it faces the internet, so it is treated like the bundled proxy's network).
+    for ip in $(tr ',' ' ' <<<"$EXTERNAL_PROXY"); do
+      iptables -A DOCKER-USER $rule -s "$ip" --ctorigdstport "$PORTAL_PORT" -j DROP
+      iptables -A DOCKER-USER $rule -s "$ip" --ctorigdstport "$FIELD_PROXY_PORT" -j RETURN
+    done
+  else
+    # Open to everyone (through the router): the Field App, and port 80 for HTTP validation.
+    iptables -A DOCKER-USER $rule --ctorigdstport "$PROXY_HTTPS_PORT" -j RETURN
+    [ "${ACME:-dns}" = http ] && iptables -A DOCKER-USER $rule --ctorigdstport 80 -j RETURN
+  fi
+  # Office network only: the Portal, the Field App's office port, and with the bundled
+  # proxy its admin page (and port 80 when it is not open to everyone).
   for lan in $(tr ',' ' ' <<<"$LAN_CIDR"); do
     iptables -A DOCKER-USER $rule -s "$lan" --ctorigdstport "$PORTAL_PORT" -j RETURN
     iptables -A DOCKER-USER $rule -s "$lan" --ctorigdstport "$FIELD_LAN_PORT" -j RETURN
-    iptables -A DOCKER-USER $rule -s "$lan" --ctorigdstport "$PROXY_ADMIN_PORT" -j RETURN
-    [ "${ACME:-dns}" = http ] || iptables -A DOCKER-USER $rule -s "$lan" --ctorigdstport 80 -j RETURN
+    if [ "$PROXY_MODE" != external ]; then
+      iptables -A DOCKER-USER $rule -s "$lan" --ctorigdstport "$PROXY_ADMIN_PORT" -j RETURN
+      [ "${ACME:-dns}" = http ] || iptables -A DOCKER-USER $rule -s "$lan" --ctorigdstport 80 -j RETURN
+    fi
   done
   iptables -A DOCKER-USER -i "$EXT_IF" -m conntrack --ctstate NEW -j DROP
   iptables -A DOCKER-USER -j RETURN
@@ -189,8 +220,13 @@ EOF
   systemctl enable "$FIREWALL_UNIT.service" >/dev/null 2>&1
   systemctl restart "$FIREWALL_UNIT.service"
   FIREWALL=on
-  info "Firewall on. Open to everyone: $PROXY_HTTPS_PORT (Field App)$( [ "${ACME:-dns}" = http ] && echo ', 80')."
-  info "Office network ($LAN_CIDR) only: $PORTAL_PORT (Portal), $FIELD_LAN_PORT (Field App), $PROXY_ADMIN_PORT (proxy admin)$( [ "${ACME:-dns}" = http ] || echo ', 80')."
+  if [ "$PROXY_MODE" = external ]; then
+    info "Firewall on. Your reverse proxy ($EXTERNAL_PROXY) only: $FIELD_PROXY_PORT (Field App)."
+    info "Office network ($LAN_CIDR) only: $PORTAL_PORT (Portal), $FIELD_LAN_PORT (Field App)."
+  else
+    info "Firewall on. Open to everyone: $PROXY_HTTPS_PORT (Field App)$( [ "${ACME:-dns}" = http ] && echo ', 80')."
+    info "Office network ($LAN_CIDR) only: $PORTAL_PORT (Portal), $FIELD_LAN_PORT (Field App), $PROXY_ADMIN_PORT (proxy admin)$( [ "${ACME:-dns}" = http ] || echo ', 80')."
+  fi
 }
 
 firewall_off() {
@@ -490,6 +526,7 @@ proxy_latest_version() {
 }
 
 proxy_version() { # proxy_version <major>
+  [ "$PROXY_MODE" = bundled ] || die "Nginx Proxy Manager is not included on this server (proxy-mode external)."
   [[ "${1:-}" =~ ^[0-9]{1,2}$ ]] || die "Usage: sudo ./install.sh proxy-version <major version, e.g. 3>"
   bold "Moving Nginx Proxy Manager to version $1.x"
   info "Its settings and certificates are kept. Back up first if you have not: sudo ./install.sh backup run"
@@ -499,6 +536,32 @@ proxy_version() { # proxy_version <major>
   docker compose up -d proxy
   host_status
   info "Running: $(proxy_running_version). To go back: sudo ./install.sh proxy-version <previous major>"
+}
+
+# Switch between the included Nginx Proxy Manager and an existing reverse proxy.
+proxy_mode() { # proxy_mode bundled | external <ip>[,<ip>…]
+  local ip4='(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])(\.(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])){3}'
+  case "${1:-}" in
+    bundled) PROXY_MODE=bundled; EXTERNAL_PROXY="" ;;
+    external)
+      [[ "${2:-}" =~ ^$ip4(,$ip4){0,3}$ ]] || die "Usage: sudo ./install.sh proxy-mode external <reverse proxy IP>[,<IP>…]"
+      PROXY_MODE=external; EXTERNAL_PROXY="$2" ;;
+    *) die "Usage: sudo ./install.sh proxy-mode bundled | external <reverse proxy IP>" ;;
+  esac
+  save_conf; write_env
+  if [ "${FIREWALL:-off}" = on ]; then firewall_apply; fi
+  cd "$ROOT"
+  # The included proxy's settings and certificates stay in their volumes if it is removed.
+  [ "$PROXY_MODE" = external ] && docker compose --profile proxy rm -sf proxy
+  docker compose up -d --remove-orphans
+  host_status
+  if [ "$PROXY_MODE" = external ]; then
+    info "In your reverse proxy, forward the Field App's domain to http://$HOST_IP:$FIELD_PROXY_PORT."
+    info "Only $EXTERNAL_PROXY may reach that port, and it can never reach the Portal."
+  else
+    info "Nginx Proxy Manager is included again: http://$HOST_IP:$PROXY_ADMIN_PORT (office network only)."
+    info "On the router, forward external port 443 to $HOST_IP port $PROXY_HTTPS_PORT."
+  fi
 }
 
 # -- Host helper ---------------------------------------------------------------------------
@@ -535,7 +598,9 @@ host_status() {
   "state": $(json_str "$STATE"),
   "host": { "ip": $(json_str "${HOST_IP:-}"), "lanCidr": $(json_str "${LAN_CIDR:-}"), "prefix": $(json_str "${NET_PREFIX:-}") },
   "portalNames": $(json_str "${PORTAL_HOSTNAMES:-}"),
-  "ports": { "portal": $PORTAL_PORT, "proxyHttps": $PROXY_HTTPS_PORT, "proxyAdmin": $PROXY_ADMIN_PORT, "fieldLan": $FIELD_LAN_PORT },
+  "ports": { "portal": $PORTAL_PORT, "proxyHttps": $PROXY_HTTPS_PORT, "proxyAdmin": $PROXY_ADMIN_PORT, "fieldLan": $FIELD_LAN_PORT, "fieldProxy": $FIELD_PROXY_PORT },
+  "proxyMode": $(json_str "$PROXY_MODE"),
+  "externalProxy": $(json_str "$EXTERNAL_PROXY"),
   "firewall": $(json_str "${FIREWALL:-unknown}"),
   "acme": $(json_str "${ACME:-dns}"),
   "updates": $(json_str "${UPDATE_PRESET:-off}"),
@@ -562,7 +627,7 @@ host_status() {
     "lastSize": ${b_size:-0},
     "lastName": $(json_str "$b_name")
   },
-  "proxy": { "tag": $(json_str "$PROXY_TAG"), "version": $(json_str "$(proxy_running_version)"), "latest": $(json_str "$(proxy_latest_version)") },
+  "proxy": $( if [ "$PROXY_MODE" = external ]; then echo null; else echo "{ \"tag\": $(json_str "$PROXY_TAG"), \"version\": $(json_str "$(proxy_running_version)"), \"latest\": $(json_str "$(proxy_latest_version)") }"; fi ),
   "updatedAt": $(json_str "$(date -u +%Y-%m-%dT%H:%M:%SZ)")
 }
 EOF
@@ -604,6 +669,8 @@ host_apply() {
   local host='[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*'
   local pfx='(10\.(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])|172\.(1[6-9]|2[0-9]|3[01])|192\.168)'
   local b64='^[A-Za-z0-9+/]+={0,2}$'
+  local ip4='(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])(\.(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])){3}'
+  local proxymode="" proxyip=""
   local bk='^itm-[0-9]{4}_[0-9]{2}_[0-9]{2}-[0-9]{2}_[0-9]{2}_[0-9]{2}\.tar(\.zst|\.gz)?(\.gpg)?$'
   local line key value
   while IFS= read -r line; do
@@ -641,6 +708,8 @@ host_apply() {
       prefix)       [[ "$value" =~ ^$pfx$ ]] && prefix="$value" || error="Invalid subnet prefix." ;;
       firewall)     [[ "$value" =~ ^(on|off)$ ]] && firewall="$value" || error="Invalid firewall setting." ;;
       acme)         [[ "$value" =~ ^(dns|http)$ ]] && acme="$value" || error="Invalid certificate validation." ;;
+      proxy)        [[ "$value" =~ ^(bundled|external)$ ]] && proxymode="$value" || error="Invalid reverse proxy choice." ;;
+      proxy-ip)     [[ "$value" =~ ^$ip4(,$ip4){0,3}$ ]] && proxyip="$value" || error="Invalid reverse proxy address." ;;
       '') ;;
       *) error="Unknown setting in request." ;;
     esac
@@ -667,6 +736,7 @@ host_apply() {
   fi
   if [ -z "$error" ] && [ -n "$install" ]; then
     [ -n "$lan" ] && [ -n "$prefix" ] && [ -n "$firewall" ] && [ -n "$acme" ] && [ -n "$updates" ] || error="Incomplete settings."
+    if [ "${proxymode:-bundled}" = external ] && [ -z "$proxyip" ]; then error="Enter the IP address of your reverse proxy."; fi
   fi
   if [ -z "$error" ] && [ -n "$updates" ] && [ -z "$install" ]; then
     UPDATE_PRESET="$updates"
@@ -696,6 +766,7 @@ host_apply() {
     apply_network "$dir"
   elif [ "$ok" = true ] && [ -n "$install" ]; then
     LAN_CIDR="$lan"; NET_PREFIX="$prefix"; FIREWALL="$firewall"; ACME="$acme"; UPDATE_PRESET="$updates"
+    PROXY_MODE="${proxymode:-bundled}"; EXTERNAL_PROXY=""; [ "$PROXY_MODE" = external ] && EXTERNAL_PROXY="$proxyip"
     PORTAL_HOSTNAMES="$HOST_IP${names:+,$names}"
     install_stack "$dir"
   else
@@ -735,7 +806,9 @@ install_stack() {
 
   step 1 "Saving the settings"
   write_env
-  { echo "Office network: $LAN_CIDR"; echo "Portal names: $PORTAL_HOSTNAMES"; echo "Container networks: $NET_PREFIX.0.0/24 - $NET_PREFIX.9.0/24"; } >> "$log"
+  { echo "Office network: $LAN_CIDR"; echo "Portal names: $PORTAL_HOSTNAMES"; echo "Container networks: $NET_PREFIX.0.0/24 - $NET_PREFIX.9.0/24"
+    if [ "$PROXY_MODE" = external ]; then echo "Reverse proxy: yours at $EXTERNAL_PROXY, forwarding to port $FIELD_PROXY_PORT"
+    else echo "Reverse proxy: included Nginx Proxy Manager"; fi; } >> "$log"
 
   step 2 "Configuring the firewall"
   if [ "$FIREWALL" = on ]; then firewall_on >> "$log" 2>&1 || fail "Configuring the firewall"; else firewall_off >> "$log" 2>&1; fi
@@ -839,8 +912,11 @@ case "${1:-install}" in
   proxy-version)
     [ "$STATE" = installed ] || die "IT Manager is not installed yet."
     proxy_version "${2:-}"; exit 0 ;;
+  proxy-mode)
+    [ "$STATE" = installed ] || die "IT Manager is not installed yet."
+    proxy_mode "${2:-}" "${3:-}"; exit 0 ;;
   install) ;;
-  *) die "Usage: sudo ./install.sh [firewall on|off|status | auto-update on|off|status | backup … | proxy-version N]" ;;
+  *) die "Usage: sudo ./install.sh [firewall on|off|status | auto-update on|off|status | backup … | proxy-version N | proxy-mode …]" ;;
 esac
 
 # -- Stage 1 ------------------------------------------------------------------------------

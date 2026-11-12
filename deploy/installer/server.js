@@ -31,6 +31,7 @@ const RE = {
   prefix: /^(10\.(25[0-5]|2[0-4]\d|1?\d?\d)|172\.(1[6-9]|2\d|3[01])|192\.168)$/,
   name: /^(?=.{1,253}$)([A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$/,
   updates: /^(off|daily:([01]\d|2[0-3])|weekly:(mon|tue|wed|thu|fri|sat|sun):([01]\d|2[0-3]))$/,
+  ipv4: /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/,
 };
 
 function validateSettings(s = {}) {
@@ -41,6 +42,8 @@ function validateSettings(s = {}) {
   if (names.length > 10 || !names.every(n => RE.name.test(n))) errors.push('Portal names must be host names such as portal.office.lan.');
   if (!RE.prefix.test(String(s.prefix ?? ''))) errors.push('The internal subnet prefix must be a private range such as 172.29.');
   if (!['on', 'off'].includes(s.firewall)) errors.push('Choose whether to keep the firewall hardening.');
+  if (!['bundled', 'external'].includes(s.proxy)) errors.push('Choose how the Field App is published.');
+  if (s.proxy === 'external' && !RE.ipv4.test(String(s.proxyIp ?? ''))) errors.push('Enter the IP address of your reverse proxy.');
   if (!['dns', 'http'].includes(s.acme)) errors.push('Choose how the Field App certificate is validated.');
   if (!RE.updates.test(String(s.updates ?? ''))) errors.push('Choose an automatic update schedule.');
   return { errors, lans, names };
@@ -161,6 +164,7 @@ async function api(req, res, url) {
     const r = await helperRequest([
       'install=start', `lan=${lans.join(',')}`, `names=${names.join(',')}`, `prefix=${s.prefix}`,
       `firewall=${s.firewall}`, `acme=${s.acme}`, `updates=${s.updates}`,
+      `proxy=${s.proxy}`, ...(s.proxy === 'external' ? [`proxy-ip=${s.proxyIp}`] : []),
     ]);
     return send(res, r.ok ? 202 : 400, r.ok ? { ok: true } : { error: r.error || 'The server refused the settings.' });
   }

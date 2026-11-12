@@ -82,8 +82,8 @@
           <legend>Firewall</legend>
           <label class="choice"><input type="radio" name="firewall" value="on" checked>
             <span><strong>Keep hardening on (recommended)</strong>
-              <span class="hint">Only the Field App's port is open to the internet, and only through your router. The Portal, the Field
-                App's office port and the Nginx Proxy Manager admin page accept your office network only. Every other port of the app is closed.</span></span></label>
+              <span class="hint">Only the Field App's port is open to the internet, and only through your router (or only to your own reverse proxy).
+                The Portal and the Field App's office port accept your office network only. Every other port of the app is closed.</span></span></label>
           <label class="choice"><input type="radio" name="firewall" value="off">
             <span><strong>Turn hardening off</strong>
               <span class="hint">For servers behind another firewall you manage. The Portal still refuses anything outside your office network.</span></span></label>
@@ -91,6 +91,21 @@
         </fieldset>
 
         <fieldset class="field">
+          <legend>Publishing the Field App</legend>
+          <label class="choice"><input type="radio" name="proxy" value="bundled" checked>
+            <span><strong>Include Nginx Proxy Manager (recommended)</strong>
+              <span class="hint">Installed and updated with the app. It publishes the Field App to the internet with a free Let's Encrypt certificate.</span></span></label>
+          <label class="choice"><input type="radio" name="proxy" value="external">
+            <span><strong>I already have a reverse proxy</strong>
+              <span class="hint">For example an Nginx Proxy Manager elsewhere on your network. Only that proxy may reach the Field App's proxy port, and it can never reach the Portal.</span></span></label>
+          <div class="field" id="proxy-ip-field" hidden>
+            <label for="proxy-ip">Your reverse proxy's IP address</label>
+            <input id="proxy-ip" class="mono" placeholder="192.168.1.20">
+            <p class="status" id="proxy-ip-status"></p>
+          </div>
+        </fieldset>
+
+        <fieldset class="field" id="acme-fieldset">
           <legend>Field App certificate</legend>
           <p class="hint">The Field App is published with a free Let's Encrypt certificate, requested by Nginx Proxy Manager. Let's Encrypt must confirm you own the domain:</p>
           <label class="choice"><input type="radio" name="acme" value="dns" checked>
@@ -116,7 +131,7 @@
             </select>
             <select id="update-hour" aria-label="Time"></select>
           </div>
-          <p class="hint">Downloads new versions of every part of the app, including Nginx Proxy Manager. Can be changed later in Admin → System.</p>
+          <p class="hint">Downloads new versions of every part of the app. Can be changed later in Admin → System.</p>
         </fieldset>
 
         <div class="actions">

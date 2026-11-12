@@ -101,10 +101,26 @@ syncUpdateFields();
 
 const DAY_NAMES = { mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' };
 
+const IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
+function syncProxyFields() {
+  const external = document.querySelector('input[name=proxy]:checked').value === 'external';
+  $('#proxy-ip-field').hidden = !external;
+  $('#acme-fieldset').hidden = external;
+}
+document.querySelectorAll('input[name=proxy]').forEach(r => r.addEventListener('change', syncProxyFields));
+syncProxyFields();
+
 $('#security-form').addEventListener('submit', (e) => {
   e.preventDefault();
   settings.firewall = document.querySelector('input[name=firewall]:checked').value;
-  settings.acme = document.querySelector('input[name=acme]:checked').value;
+  settings.proxy = document.querySelector('input[name=proxy]:checked').value;
+  settings.proxyIp = settings.proxy === 'external' ? $('#proxy-ip').value.trim() : '';
+  if (settings.proxy === 'external' && !IPV4.test(settings.proxyIp)) {
+    setError($('#proxy-ip-status'), 'Enter the IP address of your reverse proxy, such as 192.168.1.20.');
+    return;
+  }
+  setError($('#proxy-ip-status'), '');
+  settings.acme = settings.proxy === 'external' ? 'dns' : document.querySelector('input[name=acme]:checked').value;
   const f = $('#update-frequency').value;
   const hour = $('#update-hour').value;
   settings.updates = f === 'off' ? 'off' : f === 'daily' ? `daily:${hour}` : `weekly:${$('#update-day').value}:${hour}`;
@@ -128,7 +144,8 @@ function renderReview() {
     ['Container networks', `${settings.prefix}.0.0 – ${settings.prefix}.9.255`],
     ['Field App in the office', `https://${ip}:4433 (office network only)`],
     ['Firewall hardening', settings.firewall === 'on' ? 'On' : 'Off'],
-    ['Field App certificate', settings.acme === 'dns' ? 'DNS validation (port 443 only)' : 'HTTP validation (ports 443 and 80)'],
+    ['Field App publishing', settings.proxy === 'external' ? `Your reverse proxy at ${settings.proxyIp}` : 'Included Nginx Proxy Manager'],
+    ...(settings.proxy === 'external' ? [] : [['Field App certificate', settings.acme === 'dns' ? 'DNS validation (port 443 only)' : 'HTTP validation (ports 443 and 80)']]),
     ['Automatic updates', describeUpdates(settings.updates)],
     ['Backups', 'Every day at 01:00, before the updates, on this server. Choose a network share in Admin → Backups after setup.'],
   ];
@@ -141,11 +158,20 @@ function renderReview() {
   const note = $('#router-note');
   note.replaceChildren();
   const h = document.createElement('strong');
-  h.textContent = 'Later, on your router (to publish the Field App):';
   const ul = document.createElement('ul');
-  const items = [`Forward external TCP port 443 to ${ip} port 4443.`];
-  if (settings.acme === 'http') items.push(`Forward external TCP port 80 to ${ip} port 80.`);
-  items.push('Do not forward any other port.');
+  let items;
+  if (settings.proxy === 'external') {
+    h.textContent = 'Later, in your reverse proxy (to publish the Field App):';
+    items = [
+      `Add a host for the Field App's domain that forwards to http://${ip}:4480.`,
+      'Keep your router forwarding to your reverse proxy, as it does now. Do not forward anything to this server.',
+    ];
+  } else {
+    h.textContent = 'Later, on your router (to publish the Field App):';
+    items = [`Forward external TCP port 443 to ${ip} port 4443.`];
+    if (settings.acme === 'http') items.push(`Forward external TCP port 80 to ${ip} port 80.`);
+    items.push('Do not forward any other port.');
+  }
   for (const t of items) { const li = document.createElement('li'); li.textContent = t; ul.append(li); }
   note.append(h, ul);
 }

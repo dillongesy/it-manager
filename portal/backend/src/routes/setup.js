@@ -62,7 +62,8 @@ async function serviceStatus() {
   // What the installer configured (for the finish page), when installed with install.sh.
   const host = await hostStatus();
   const server = host
-    ? { available: true, ip: host.host?.ip ?? null, ports: host.ports ?? null, acme: host.acme, firewall: host.firewall }
+    ? { available: true, ip: host.host?.ip ?? null, ports: host.ports ?? null, acme: host.acme, firewall: host.firewall,
+        proxyMode: host.proxyMode ?? 'bundled', externalProxy: host.externalProxy ?? '' }
     : { available: false };
   return { portal: { reachable: true }, field, server };
 }

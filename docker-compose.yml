@@ -95,7 +95,9 @@ services:
     ports:
       - "0.0.0.0:${PORTAL_PORT:-443}:8443"
     environment:
-      PORTAL_DENIED_SOURCES: "${NET_PREFIX:-172.29}.0.0/24 ${NET_PREFIX:-172.29}.9.0/24"
+      # The Field App's entrances: the bundled proxy, field-web's office port, and an
+      # external reverse proxy when one is used instead.
+      PORTAL_DENIED_SOURCES: "${NET_PREFIX:-172.29}.0.0/24 ${NET_PREFIX:-172.29}.9.0/24 ${EXTERNAL_PROXY:-}"
       PORTAL_ALLOWED_SOURCES: ${PORTAL_ALLOWED_SOURCES:-}
     volumes:
       - secrets_portal_web:/etc/nginx/tls:ro
@@ -118,7 +120,7 @@ services:
       HOST: ${NET_PREFIX:-172.29}.3.10
       PORT: "3000"
       TRUST_PROXY: "1"                       # portal-web → api
-      DENIED_SOURCES: "${NET_PREFIX:-172.29}.0.0/24 ${NET_PREFIX:-172.29}.9.0/24"
+      DENIED_SOURCES: "${NET_PREFIX:-172.29}.0.0/24 ${NET_PREFIX:-172.29}.9.0/24 ${EXTERNAL_PROXY:-}"
       DB_HOST: portal-db
       DB_NAME: portal
       DB_USER: portal
@@ -171,12 +173,16 @@ services:
       init: { condition: service_completed_successfully }
 
   # -- Reverse proxy for the Field App (internet-facing) ------------------------
-  # Nginx Proxy Manager. On the router, forward external port 443 to this host's port
-  # 4443 (and external port 80 to port 80 when using HTTP certificate validation). In the
-  # admin UI (http://<server>:81, LAN only) add a proxy host for the Field App domain →
+  # Nginx Proxy Manager, included when chosen in the setup wizard (profile "proxy",
+  # enabled by COMPOSE_PROFILES in .env). Otherwise an existing reverse proxy on the
+  # network forwards to field-web's proxy port (FIELD_PROXY_PORT).
+  # With Nginx Proxy Manager: on the router, forward external port 443 to this host's
+  # port 4443 (and external port 80 to port 80 when using HTTP certificate validation). In
+  # the admin UI (http://<server>:81, LAN only) add a proxy host for the Field App domain →
   # field-web:8080 with a Let's Encrypt certificate and "Force SSL".
   proxy:
     <<: *hardening
+    profiles: [proxy]
     # Follows the 2.x releases automatically. A new major version is a deliberate step:
     # Admin → System shows when one exists; then sudo ./install.sh proxy-version <major>.
     image: jc21/nginx-proxy-manager:${PROXY_TAG:-2}
@@ -202,8 +208,12 @@ services:
     # Office addresses only (nginx and the firewall); IPv4 only, as for portal-web.
     ports:
       - "0.0.0.0:${FIELD_LAN_PORT:-4433}:8443"
+      # Plain HTTP for an external reverse proxy, published only when one is used
+      # (FIELD_PROXY_BIND=0.0.0.0) and open only to its address (EXTERNAL_PROXY).
+      - "${FIELD_PROXY_BIND:-127.0.0.1}:${FIELD_PROXY_PORT:-4480}:8080"
     environment:
       OFFICE_SOURCES: ${PORTAL_ALLOWED_SOURCES:-}
+      PROXY_SOURCES: ${EXTERNAL_PROXY:-}
     volumes:
       - secrets_field_web:/etc/nginx/tls:ro
     networks: [field_ingress, field_edge, field_app]

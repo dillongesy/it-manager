@@ -219,6 +219,9 @@ destination port via conntrack:
 
 - traffic from `proxy_public` or `field_ingress` to `portal_ingress`: dropped;
 - 4443 (proxy, reached through the router's 443 mapping): from anywhere;
+- with an external reverse proxy instead (`PROXY_MODE=external`): 4480 (field-web's
+  plain-HTTP listener) from that proxy's addresses only, and 443 from them dropped;
+  4443, 80 and 81 are not published;
 - 80 (proxy): from anywhere with HTTP validation, otherwise from the office network;
 - 443 (Portal), 4433 (Field App on the office network) and 81 (proxy admin): from the
   office network only;

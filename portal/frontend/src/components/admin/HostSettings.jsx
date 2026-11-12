@@ -152,7 +152,15 @@ export function HostSettings() {
         </p>
       </div>
 
-      {data.proxy && <ProxyVersion proxy={data.proxy} ip={data.host?.ip} adminPort={data.ports?.proxyAdmin} />}
+      {data.proxyMode === 'external' ? (
+        <div className="space-y-1 border-t border-surface-600 pt-4">
+          <p className="text-gray-200 font-medium">Reverse proxy</p>
+          <p className="text-gray-400 text-xs">
+            Yours, at <span className="font-mono">{data.externalProxy}</span>. It forwards the Field App's domain to{' '}
+            <span className="font-mono">http://{data.host?.ip}:{data.ports?.fieldProxy ?? 4480}</span>.
+          </p>
+        </div>
+      ) : data.proxy && <ProxyVersion proxy={data.proxy} ip={data.host?.ip} adminPort={data.ports?.proxyAdmin} />}
 
       <div className="space-y-2 border-t border-surface-600 pt-4">
         <details>

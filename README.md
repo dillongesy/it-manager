@@ -119,6 +119,19 @@ port 443 on the office network.
    **Use a DNS Challenge**, choose your DNS provider and paste its API token. Turn on
    **Force SSL** and **HTTP/2 Support**.
 
+### Using your own reverse proxy
+
+If the network already has a reverse proxy (for example an Nginx Proxy Manager on
+another machine), choose **I already have a reverse proxy** in the setup wizard and enter
+its IP address. Nginx Proxy Manager is then not installed. In your proxy, forward the
+Field App's domain to `http://<server-ip>:4480` with a certificate and Force SSL; the
+router keeps forwarding to your proxy. Only your proxy's address may reach port 4480, and
+the Portal and the firewall both refuse it, so it can never reach the Portal.
+
+To switch later: `sudo ./install.sh proxy-mode external <proxy IP>` or
+`sudo ./install.sh proxy-mode bundled`. The included proxy's settings and certificates
+are kept if it is removed.
+
 The Field App requires HTTPS, because its sign-in cookies are marked secure. It keeps
 its own copy of the branding and security settings, pushed by the Portal, and never
 contacts the Portal. Inside the office, phones reach the Field App's public name through
